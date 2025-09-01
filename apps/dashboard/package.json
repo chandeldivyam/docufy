@@ -5,11 +5,14 @@
   "type": "module",
   "description": "Admin dashboard for managing docs (Next.js app)",
   "dependencies": {
+    "@convex-dev/workos": "^0.0.1",
+    "@docufy/mdx-components": "workspace:*",
+    "@docufy/ui": "workspace:*",
+    "@workos-inc/authkit-nextjs": "^2.5.0",
+    "convex": "^1.26.2",
     "next": "^15.0.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "@docufy/ui": "workspace:*",
-    "@docufy/mdx-components": "workspace:*"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@docufy/tsconfig": "workspace:*",

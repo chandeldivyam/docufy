@@ -6,4 +6,4 @@ out
 .turbo
 coverage
 pnpm-lock.yaml
-
+apps/dashboard/convex/_generated/*
