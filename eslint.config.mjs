@@ -13,6 +13,7 @@ export default [
       '**/.git/**',
       '**/public/**',
       '**/*.d.ts',
+      '**/convex/_generated/**',
     ],
   },
 ];
