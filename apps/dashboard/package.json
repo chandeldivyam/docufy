@@ -1,0 +1,29 @@
+{
+  "name": "@docufy/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Admin dashboard for managing docs (Next.js app)",
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@docufy/ui": "workspace:*",
+    "@docufy/mdx-components": "workspace:*"
+  },
+  "devDependencies": {
+    "@docufy/tsconfig": "workspace:*",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.6.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "format": "prettier --write ."
+  }
+}

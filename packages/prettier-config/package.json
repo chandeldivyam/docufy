@@ -1,0 +1,13 @@
+{
+  "name": "@docufy/prettier-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.mjs",
+  "exports": "./index.mjs",
+  "description": "Shared Prettier config for Docufy monorepo",
+  "peerDependencies": {
+    "prettier": ">=3.0.0",
+    "prettier-plugin-tailwindcss": ">=0.5.0"
+  }
+}

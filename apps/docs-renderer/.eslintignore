@@ -1,0 +1,17 @@
+# Build outputs
+.next/
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Generated files
+*.d.ts
+.turbo/
+
+# Public assets
+public/
+
+# Logs
+*.log
