@@ -1,14 +1,23 @@
-export const metadata = {
+import './globals.css';
+
+import type { Metadata } from 'next';
+import { ConvexClientProvider } from '@/components/ConvexClientProvider';
+
+export const metadata: Metadata = {
   title: 'Docufy Dashboard',
   description: 'Admin dashboard for Docufy',
 };
 
-import './globals.css';
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ConvexClientProvider>{children}</ConvexClientProvider>
+      </body>
     </html>
   );
 }
