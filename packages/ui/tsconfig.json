@@ -1,9 +1,0 @@
-{
-  "extends": "@docufy/tsconfig/react-library",
-  "include": ["src"],
-  "exclude": ["dist", "node_modules"],
-  "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
-  }
-}

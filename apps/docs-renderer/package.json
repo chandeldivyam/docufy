@@ -8,7 +8,6 @@
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@docufy/ui": "workspace:*",
     "@docufy/mdx-components": "workspace:*"
   },
   "devDependencies": {
@@ -19,7 +18,7 @@
     "typescript": "^5.6.0"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3008",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
