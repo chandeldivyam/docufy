@@ -10,6 +10,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/postcss": "^4.1.12",
     "@workos-inc/authkit-nextjs": "^2.5.0",
+    "@workos-inc/node": "^7.69.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.26.2",

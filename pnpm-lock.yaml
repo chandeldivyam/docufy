@@ -74,6 +74,9 @@ importers:
       '@workos-inc/authkit-nextjs':
         specifier: ^2.5.0
         version: 2.5.0(next@15.5.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@workos-inc/node':
+        specifier: ^7.69.1
+        version: 7.69.1(next@15.5.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1))
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
