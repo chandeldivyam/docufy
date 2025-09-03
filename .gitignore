@@ -32,3 +32,7 @@ pnpm-debug.log*
 
 # Misc
 *.tsbuildinfo
+
+# LLM Guideliens
+guidelines
+plans
