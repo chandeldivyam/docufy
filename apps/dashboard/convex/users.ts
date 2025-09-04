@@ -66,6 +66,7 @@ export const getCurrentUser = query({
       firstName: user.firstName,
       lastName: user.lastName,
       profilePictureUrl: user.profilePictureUrl,
+      defaultProjectId: user.defaultProjectId,
     };
   },
 });

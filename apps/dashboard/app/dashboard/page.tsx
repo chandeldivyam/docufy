@@ -1,16 +1,8 @@
-'use client';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-import { useQuery } from 'convex/react';
-import { api } from '@/convex/_generated/api';
-
-export default function Dashboard() {
-  const user = useQuery(api.users.getCurrentUser);
-
-  return (
-    <>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        Welcome back, {user?.firstName} {user?.lastName}
-      </div>
-    </>
-  );
+export default async function DashboardRedirect() {
+  const cookie = (await cookies()).get('docufy_active_project');
+  if (cookie?.value) return redirect(`/dashboard/${cookie.value}`);
+  return redirect('/dashboard/onboarding/new-project');
 }

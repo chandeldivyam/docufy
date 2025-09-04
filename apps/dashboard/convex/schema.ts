@@ -16,7 +16,30 @@ export default defineSchema({
 
     // Timestamps
     createdAt: v.number(),
+
+    // Default project to use for redirects when no cookie is set
+    defaultProjectId: v.optional(v.id('projects')),
   })
     .index('by_workos_user_id', ['workosUserId'])
     .index('by_email', ['email']),
+
+  projects: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    ownerId: v.id('users'),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_owner', ['ownerId'])
+    .index('by_slug', ['slug']),
+
+  projectMembers: defineTable({
+    projectId: v.id('projects'),
+    userId: v.id('users'),
+    role: v.union(v.literal('owner'), v.literal('admin'), v.literal('editor'), v.literal('viewer')),
+    createdAt: v.number(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_project', ['projectId'])
+    .index('by_project_and_user', ['projectId', 'userId']),
 });

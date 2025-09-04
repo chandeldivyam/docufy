@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 export default function Home() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   return (
     <div className="p-4">
@@ -17,7 +17,6 @@ export default function Home() {
               <Link href="/dashboard">
                 <Button>Dashboard</Button>
               </Link>
-              <Button onClick={() => signOut()}>Sign out</Button>
             </>
           ) : (
             <>
