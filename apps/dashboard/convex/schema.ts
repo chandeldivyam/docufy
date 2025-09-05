@@ -42,4 +42,17 @@ export default defineSchema({
     .index('by_user', ['userId'])
     .index('by_project', ['projectId'])
     .index('by_project_and_user', ['projectId', 'userId']),
+
+  projectInvites: defineTable({
+    projectId: v.id('projects'),
+    inviterUserId: v.id('users'),
+    inviteeEmail: v.string(),
+    role: v.union(v.literal('admin'), v.literal('editor'), v.literal('viewer')),
+    status: v.union(v.literal('pending'), v.literal('accepted'), v.literal('declined')),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index('by_email_and_status', ['inviteeEmail', 'status'])
+    .index('by_project', ['projectId'])
+    .index('by_project_and_email', ['projectId', 'inviteeEmail']),
 });
