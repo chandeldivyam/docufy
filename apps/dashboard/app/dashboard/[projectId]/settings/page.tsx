@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -32,35 +33,28 @@ import {
   Edit3,
   Eye,
   AlertCircle,
-  Loader2,
+  RefreshCw,
 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { Id } from '@/convex/_generated/dataModel';
 import { toast } from 'sonner';
-import { parseConvexError } from '@/lib/errors';
+import { parseConvexError, getErrorMessage, isAuthError } from '@/lib/errors';
 import { useQueryWithStatus } from '@/lib/convexHooks';
+import { MembersListSkeleton, InviteItemSkeleton } from '@/components/settings/MembersSkeleton';
 
 export default function SettingsPage() {
   const params = useParams();
   const projectId = params.projectId as Id<'projects'>;
 
   // Each query loads independently
-  const projectQuery = useQueryWithStatus(api.projects.get, { projectId });
   const membersQuery = useQueryWithStatus(api.projectMembers.listMembers, { projectId });
   const invitesQuery = useQueryWithStatus(api.projectInvites.listProjectInvites, { projectId });
   const meQuery = useQueryWithStatus(api.users.getCurrentUser, {});
 
   // Extract data
-  const project = projectQuery.data;
   const members = membersQuery.data;
   const invites = invitesQuery.data;
   const me = meQuery.data;
-
-  // Check for critical auth errors (project access is the most important)
-  const hasProjectAuthError =
-    projectQuery.isError &&
-    (projectQuery.error?.message?.includes('FORBIDDEN') ||
-      projectQuery.error?.message?.includes('UNAUTHORIZED'));
 
   // Mutations with optimistic updates
   const inviteToProject = useMutation(api.projectInvites.inviteToProject).withOptimisticUpdate(
@@ -191,33 +185,12 @@ export default function SettingsPage() {
 
   const pendingInvites = (invites ?? []).filter((i) => i.status === 'pending' && !i.isExpired);
 
-  // Only block the entire page if we can't access the project at all
-  if (hasProjectAuthError) {
-    return (
-      <div className="max-w-4xl space-y-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            You don't have permission to view this project.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   // Render the page progressively - show what's loaded
   return (
     <div className="max-w-4xl space-y-6">
-      {/* Header section - shows immediately with loading state if needed */}
+      {/* Header section with skeleton */}
       <div>
         <h1 className="text-2xl font-bold">Project Settings</h1>
-        {projectQuery.isPending ? (
-          <div className="bg-muted mt-1 h-4 w-32 animate-pulse rounded" />
-        ) : projectQuery.isError ? (
-          <p className="text-muted-foreground text-sm">Error loading project</p>
-        ) : (
-          <p className="text-muted-foreground">{project?.name ?? 'Unknown Project'}</p>
-        )}
       </div>
 
       {/* Team Members card - always show structure */}
@@ -228,12 +201,17 @@ export default function SettingsPage() {
               <h2 className="font-semibold">Team Members</h2>
               <p className="text-muted-foreground text-sm">Manage who has access to this project</p>
             </div>
-            {/* Only show invite button when we know user's permissions */}
-            {!membersQuery.isPending && canInvite && !showInviteForm && (
-              <Button onClick={() => setShowInviteForm(true)} size="sm">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Invite Member
-              </Button>
+            {/* Show skeleton for button area while loading permissions */}
+            {membersQuery.isPending ? (
+              <Skeleton className="h-9 w-32" />
+            ) : (
+              canInvite &&
+              !showInviteForm && (
+                <Button onClick={() => setShowInviteForm(true)} size="sm">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Invite Member
+                </Button>
+              )
             )}
           </div>
         </div>
@@ -294,23 +272,33 @@ export default function SettingsPage() {
             </form>
           )}
 
-          {/* Members section with independent loading/error states */}
+          {/* Members section with skeleton loader */}
           {membersQuery.isPending ? (
-            <div className="space-y-3">
-              <div className="text-muted-foreground flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Loading members...</span>
-              </div>
-            </div>
+            <MembersListSkeleton count={3} />
           ) : membersQuery.isError ? (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Failed to load team members. Please try refreshing the page.
+              <AlertTitle>Failed to load members</AlertTitle>
+              <AlertDescription className="mt-2">
+                {getErrorMessage(membersQuery.error)}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
+                >
+                  <RefreshCw className="mr-2 h-3 w-3" />
+                  Retry
+                </Button>
               </AlertDescription>
             </Alert>
           ) : members && members.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-sm">No members yet</p>
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground text-sm">No members yet</p>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Invite team members to collaborate on this project
+              </p>
+            </div>
           ) : members ? (
             <div className="space-y-1">
               {members.map((member) => {
@@ -412,17 +400,24 @@ export default function SettingsPage() {
             </div>
           ) : null}
 
-          {/* Pending invites section - loads independently */}
+          {/* Pending invites section with better loading */}
           {invitesQuery.isPending ? (
-            // Show loading state only if there might be invites
-            <div className="border-t pt-4">
-              <div className="text-muted-foreground flex items-center gap-2">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                <span className="text-xs">Checking invitations...</span>
+            // Show subtle loading state for invites
+            canInvite && (
+              <div className="space-y-1 border-t pt-4">
+                <Skeleton className="mb-3 h-4 w-32" />
+                <InviteItemSkeleton />
               </div>
-            </div>
-          ) : invitesQuery.isError ? // Silently fail for invites - not critical
-          null : pendingInvites && pendingInvites.length > 0 ? (
+            )
+          ) : invitesQuery.isError ? (
+            // Show error only if it's not an auth error (which is expected for viewers)
+            !isAuthError(invitesQuery.error) ? (
+              <Alert variant="destructive" className="mt-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{getErrorMessage(invitesQuery.error)}</AlertDescription>
+              </Alert>
+            ) : null
+          ) : pendingInvites && pendingInvites.length > 0 ? (
             <div className="space-y-1 border-t pt-4">
               <h3 className="text-muted-foreground mb-3 text-sm font-medium">
                 Pending Invitations

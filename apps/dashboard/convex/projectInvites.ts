@@ -15,7 +15,7 @@ export const inviteToProject = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Check that the inviter has permission (owner or admin)
-    const { membership } = await assertMembership(ctx, args.projectId, ['owner', 'admin']);
+    const { me, membership } = await assertMembership(ctx, args.projectId, ['owner', 'admin']);
 
     // Additional check: only owners can invite admins
     if (args.role === 'admin' && membership.role !== 'owner') {
@@ -24,6 +24,10 @@ export const inviteToProject = mutation({
 
     // Normalize email to lowercase for consistency
     const normalizedEmail = args.inviteeEmail.toLowerCase().trim();
+
+    if (normalizedEmail === me.email) {
+      throw appError('FORBIDDEN', 'You cannot invite yourself');
+    }
 
     // Check if user with this email already exists and is a member
     const existingUser = await ctx.db
