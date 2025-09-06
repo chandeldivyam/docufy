@@ -1,6 +1,7 @@
 import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
 import { getUserOrThrow } from './_utils/auth';
+import { appError } from './_utils/errors';
 
 export const listMyPendingInvites = query({
   args: {},
@@ -73,28 +74,31 @@ export const acceptInvite = mutation({
 
     const invite = await ctx.db.get(args.inviteId);
     if (!invite) {
-      throw new Error('Invite not found');
+      throw appError('INVITE_NOT_FOUND', 'Invite not found');
     }
 
     // Verify the invite is for this user
     if (invite.inviteeEmail.toLowerCase() !== user.email.toLowerCase()) {
-      throw new Error('This invite is not for you');
+      throw appError('THIS_INVITE_IS_NOT_FOR_YOU', 'This invite is not for you');
     }
 
     // Check invite status
     if (invite.status !== 'pending') {
-      throw new Error('This invite has already been processed');
+      throw appError(
+        'THIS_INVITE_HAS_ALREADY_BEEN_PROCESSED',
+        'This invite has already been processed',
+      );
     }
 
     // Check if invite has expired
     if (Date.now() > invite.expiresAt) {
-      throw new Error('This invite has expired');
+      throw appError('THIS_INVITE_HAS_EXPIRED', 'This invite has expired');
     }
 
     // Check if project still exists
     const project = await ctx.db.get(invite.projectId);
     if (!project) {
-      throw new Error('Project no longer exists');
+      throw appError('PROJECT_NO_LONGER_EXISTS', 'Project no longer exists');
     }
 
     // Check if user is already a member (shouldn't happen, but double-check)
@@ -141,17 +145,20 @@ export const declineInvite = mutation({
 
     const invite = await ctx.db.get(args.inviteId);
     if (!invite) {
-      throw new Error('Invite not found');
+      throw appError('INVITE_NOT_FOUND', 'Invite not found');
     }
 
     // Verify the invite is for this user
     if (invite.inviteeEmail.toLowerCase() !== user.email.toLowerCase()) {
-      throw new Error('This invite is not for you');
+      throw appError('THIS_INVITE_IS_NOT_FOR_YOU', 'This invite is not for you');
     }
 
     // Check invite status
     if (invite.status !== 'pending') {
-      throw new Error('This invite has already been processed');
+      throw appError(
+        'THIS_INVITE_HAS_ALREADY_BEEN_PROCESSED',
+        'This invite has already been processed',
+      );
     }
 
     // Mark invite as declined

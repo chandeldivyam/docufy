@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useMemo, useState } from 'react';
+import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -26,72 +26,142 @@ import {
   UserPlus,
   X,
   Clock,
-  Loader2,
   MoreHorizontal,
   Trash2,
   Shield,
   Edit3,
   Eye,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { Id } from '@/convex/_generated/dataModel';
-
-type Role = 'owner' | 'admin' | 'editor' | 'viewer';
+import { toast } from 'sonner';
+import { parseConvexError } from '@/lib/errors';
+import { useQueryWithStatus } from '@/lib/convexHooks';
 
 export default function SettingsPage() {
   const params = useParams();
   const projectId = params.projectId as Id<'projects'>;
 
-  const project = useQuery(api.projects.get, { projectId });
-  const members = useQuery(api.projectMembers.listMembers, { projectId });
-  const invites = useQuery(api.projectInvites.listProjectInvites, { projectId });
-  const currentUser = useQuery(api.users.getCurrentUser);
+  // Each query loads independently
+  const projectQuery = useQueryWithStatus(api.projects.get, { projectId });
+  const membersQuery = useQueryWithStatus(api.projectMembers.listMembers, { projectId });
+  const invitesQuery = useQueryWithStatus(api.projectInvites.listProjectInvites, { projectId });
+  const meQuery = useQueryWithStatus(api.users.getCurrentUser, {});
 
-  const inviteToProject = useMutation(api.projectInvites.inviteToProject);
-  const cancelInvite = useMutation(api.projectInvites.cancelInvite);
-  const updateMemberRole = useMutation(api.projectMembers.updateMemberRole);
-  const removeMember = useMutation(api.projectMembers.removeMember);
+  // Extract data
+  const project = projectQuery.data;
+  const members = membersQuery.data;
+  const invites = invitesQuery.data;
+  const me = meQuery.data;
 
+  // Check for critical auth errors (project access is the most important)
+  const hasProjectAuthError =
+    projectQuery.isError &&
+    (projectQuery.error?.message?.includes('FORBIDDEN') ||
+      projectQuery.error?.message?.includes('UNAUTHORIZED'));
+
+  // Mutations with optimistic updates
+  const inviteToProject = useMutation(api.projectInvites.inviteToProject).withOptimisticUpdate(
+    (store, { projectId, inviteeEmail, role }) => {
+      const list = store.getQuery(api.projectInvites.listProjectInvites, { projectId });
+      if (!list) return;
+      const meVal = store.getQuery(api.users.getCurrentUser, {}) ?? null;
+      const inviterName = meVal
+        ? `${meVal.firstName ?? ''} ${meVal.lastName ?? ''}`.trim() || meVal.email
+        : undefined;
+      const now = Date.now();
+      const optimisticId = `optimistic:${inviteeEmail}` as Id<'projectInvites'>;
+      const withoutOld = list.filter(
+        (i) => i.inviteeEmail.toLowerCase() !== inviteeEmail.toLowerCase(),
+      );
+      store.setQuery(api.projectInvites.listProjectInvites, { projectId }, [
+        ...withoutOld,
+        {
+          _id: optimisticId,
+          inviteeEmail: inviteeEmail.toLowerCase().trim(),
+          role,
+          status: 'pending' as const,
+          inviterName,
+          createdAt: now,
+          expiresAt: now + 7 * 24 * 60 * 60 * 1000,
+          isExpired: false,
+        },
+      ]);
+    },
+  );
+
+  const cancelInvite = useMutation(api.projectInvites.cancelInvite).withOptimisticUpdate(
+    (store, { inviteId }) => {
+      const list = store.getQuery(api.projectInvites.listProjectInvites, { projectId });
+      if (!list) return;
+      store.setQuery(
+        api.projectInvites.listProjectInvites,
+        { projectId },
+        list.filter((i) => i._id !== inviteId),
+      );
+    },
+  );
+
+  const updateMemberRole = useMutation(api.projectMembers.updateMemberRole).withOptimisticUpdate(
+    (store, { memberId, newRole }) => {
+      const list = store.getQuery(api.projectMembers.listMembers, { projectId });
+      if (!list) return;
+      const updated = list.map((m) => (m._id === memberId ? { ...m, role: newRole } : m));
+      store.setQuery(api.projectMembers.listMembers, { projectId }, updated);
+    },
+  );
+
+  const removeMember = useMutation(api.projectMembers.removeMember).withOptimisticUpdate(
+    (store, { memberId }) => {
+      const list = store.getQuery(api.projectMembers.listMembers, { projectId });
+      if (!list) return;
+      store.setQuery(
+        api.projectMembers.listMembers,
+        { projectId },
+        list.filter((m) => m._id !== memberId),
+      );
+    },
+  );
+
+  // UI state
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
-  const [isInviting, setIsInviting] = useState(false);
-  const [inviteError, setInviteError] = useState<string | null>(null);
-  const [processingMemberId, setProcessingMemberId] = useState<Id<'projectMembers'> | null>(null);
 
-  // Get current user's role
-  const currentUserMembership = members?.find((m) => m.userId === currentUser?._id);
+  const currentUserMembership = useMemo(() => {
+    if (!members || !me) return undefined;
+    return members.find((m) => m.userId === me._id);
+  }, [members, me]);
+
   const canInvite =
-    currentUserMembership?.role === 'owner' || currentUserMembership?.role === 'admin';
-  const canManageMembers =
-    currentUserMembership?.role === 'owner' || currentUserMembership?.role === 'admin';
+    !!currentUserMembership &&
+    (currentUserMembership.role === 'owner' || currentUserMembership.role === 'admin');
+  const canManageMembers = canInvite;
   const isOwner = currentUserMembership?.role === 'owner';
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
-    setIsInviting(true);
-    setInviteError(null);
-
     try {
-      await inviteToProject({
-        projectId,
-        inviteeEmail: inviteEmail,
-        role: inviteRole,
-      });
+      await inviteToProject({ projectId, inviteeEmail: inviteEmail, role: inviteRole });
+      toast.success('Invite sent');
       setInviteEmail('');
       setInviteRole('viewer');
       setShowInviteForm(false);
     } catch (error) {
-      setInviteError(error instanceof Error ? error.message : 'Failed to send invite');
-    } finally {
-      setIsInviting(false);
+      const { message, code } = parseConvexError(error);
+      toast.error(message ?? code ?? 'Something went wrong');
     }
   }
 
   async function handleCancelInvite(inviteId: Id<'projectInvites'>) {
     try {
       await cancelInvite({ inviteId });
+      toast.success('Invite canceled');
     } catch (error) {
-      console.error('Failed to cancel invite:', error);
+      const { message, code } = parseConvexError(error);
+      toast.error(message ?? code ?? 'Failed to cancel invite');
     }
   }
 
@@ -99,72 +169,58 @@ export default function SettingsPage() {
     memberId: Id<'projectMembers'>,
     newRole: 'admin' | 'editor' | 'viewer',
   ) {
-    setProcessingMemberId(memberId);
     try {
       await updateMemberRole({ memberId, newRole });
+      toast.success('Member role updated');
     } catch (error) {
-      console.error('Failed to update role:', error);
-    } finally {
-      setProcessingMemberId(null);
+      const { message, code } = parseConvexError(error);
+      toast.error(message ?? code ?? 'Failed to update role');
     }
   }
 
   async function handleRemoveMember(memberId: Id<'projectMembers'>) {
-    if (!confirm('Are you sure you want to remove this member from the project?')) {
-      return;
-    }
-
-    setProcessingMemberId(memberId);
+    if (!confirm('Remove this member from the project?')) return;
     try {
       await removeMember({ memberId });
+      toast.success('Member removed');
     } catch (error) {
-      console.error('Failed to remove member:', error);
-    } finally {
-      setProcessingMemberId(null);
+      const { message, code } = parseConvexError(error);
+      toast.error(message ?? code ?? 'Failed to remove member');
     }
   }
 
-  const getRoleBadgeVariant = (role: Role): 'default' | 'secondary' | 'outline' | 'destructive' => {
-    switch (role) {
-      case 'owner':
-        return 'destructive';
-      case 'admin':
-        return 'default';
-      default:
-        return 'secondary';
-    }
-  };
+  const pendingInvites = (invites ?? []).filter((i) => i.status === 'pending' && !i.isExpired);
 
-  const getRoleIcon = (role: Role) => {
-    switch (role) {
-      case 'owner':
-      case 'admin':
-        return <Shield className="h-3 w-3" />;
-      case 'editor':
-        return <Edit3 className="h-3 w-3" />;
-      case 'viewer':
-        return <Eye className="h-3 w-3" />;
-    }
-  };
+  // Only block the entire page if we can't access the project at all
+  if (hasProjectAuthError) {
+    return (
+      <div className="max-w-4xl space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            You don't have permission to view this project.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
-  const pendingInvites = invites?.filter((i) => i.status === 'pending' && !i.isExpired) ?? [];
-
+  // Render the page progressively - show what's loaded
   return (
     <div className="max-w-4xl space-y-6">
+      {/* Header section - shows immediately with loading state if needed */}
       <div>
         <h1 className="text-2xl font-bold">Project Settings</h1>
-        <p className="text-muted-foreground">
-          {project === undefined ? (
-            <span className="inline-flex items-center gap-1">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Loading...
-            </span>
-          ) : (
-            (project?.name ?? 'Unknown Project')
-          )}
-        </p>
+        {projectQuery.isPending ? (
+          <div className="bg-muted mt-1 h-4 w-32 animate-pulse rounded" />
+        ) : projectQuery.isError ? (
+          <p className="text-muted-foreground text-sm">Error loading project</p>
+        ) : (
+          <p className="text-muted-foreground">{project?.name ?? 'Unknown Project'}</p>
+        )}
       </div>
 
+      {/* Team Members card - always show structure */}
       <div className="bg-card rounded-lg border">
         <div className="border-b px-6 py-4">
           <div className="flex items-center justify-between">
@@ -172,7 +228,8 @@ export default function SettingsPage() {
               <h2 className="font-semibold">Team Members</h2>
               <p className="text-muted-foreground text-sm">Manage who has access to this project</p>
             </div>
-            {canInvite && !showInviteForm && (
+            {/* Only show invite button when we know user's permissions */}
+            {!membersQuery.isPending && canInvite && !showInviteForm && (
               <Button onClick={() => setShowInviteForm(true)} size="sm">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Invite Member
@@ -182,6 +239,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-6 p-6">
+          {/* Invite form - shown based on state */}
           {showInviteForm && (
             <form onSubmit={handleInvite} className="bg-muted/30 space-y-4 rounded-lg border p-4">
               <div className="flex items-center justify-between">
@@ -192,7 +250,6 @@ export default function SettingsPage() {
                   size="icon"
                   onClick={() => {
                     setShowInviteForm(false);
-                    setInviteError(null);
                     setInviteEmail('');
                   }}
                 >
@@ -210,7 +267,6 @@ export default function SettingsPage() {
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     required
-                    disabled={isInviting}
                   />
                 </div>
 
@@ -218,11 +274,10 @@ export default function SettingsPage() {
                   <Label htmlFor="role">Role</Label>
                   <Select
                     value={inviteRole}
-                    onValueChange={(value) => setInviteRole(value as 'admin' | 'editor' | 'viewer')}
-                    disabled={isInviting}
+                    onValueChange={(v) => setInviteRole(v as 'admin' | 'editor' | 'viewer')}
                   >
                     <SelectTrigger id="role">
-                      <SelectValue />
+                      <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
                       {isOwner && <SelectItem value="admin">Admin</SelectItem>}
@@ -233,26 +288,33 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {inviteError && <p className="text-destructive text-sm">{inviteError}</p>}
-
-              <Button type="submit" size="sm" disabled={isInviting}>
-                {isInviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isInviting ? 'Sending...' : 'Send Invite'}
+              <Button type="submit" size="sm">
+                Send Invite
               </Button>
             </form>
           )}
 
-          <div className="space-y-1">
-            {members === undefined ? (
-              <div className="text-muted-foreground flex items-center gap-2 py-4">
+          {/* Members section with independent loading/error states */}
+          {membersQuery.isPending ? (
+            <div className="space-y-3">
+              <div className="text-muted-foreground flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading members...
+                <span className="text-sm">Loading members...</span>
               </div>
-            ) : members.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-sm">No members yet</p>
-            ) : (
-              members.map((member) => {
-                const isCurrentUser = member.userId === currentUser?._id;
+            </div>
+          ) : membersQuery.isError ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Failed to load team members. Please try refreshing the page.
+              </AlertDescription>
+            </Alert>
+          ) : members && members.length === 0 ? (
+            <p className="text-muted-foreground py-4 text-sm">No members yet</p>
+          ) : members ? (
+            <div className="space-y-1">
+              {members.map((member) => {
+                const isCurrentUser = me && member.userId === me._id;
                 const canModifyMember =
                   canManageMembers &&
                   !isCurrentUser &&
@@ -279,24 +341,33 @@ export default function SettingsPage() {
                         {member.user?.email ?? 'No email'}
                       </p>
                     </div>
+
                     <div className="flex items-center gap-2">
-                      <Badge variant={getRoleBadgeVariant(member.role)} className="gap-1">
-                        {getRoleIcon(member.role)}
+                      <Badge
+                        variant={
+                          member.role === 'owner'
+                            ? 'destructive'
+                            : member.role === 'admin'
+                              ? 'default'
+                              : 'secondary'
+                        }
+                        className="gap-1"
+                      >
+                        {member.role === 'owner' || member.role === 'admin' ? (
+                          <Shield className="h-3 w-3" />
+                        ) : member.role === 'editor' ? (
+                          <Edit3 className="h-3 w-3" />
+                        ) : (
+                          <Eye className="h-3 w-3" />
+                        )}
                         {member.role}
                       </Badge>
+
                       {canModifyMember && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              disabled={processingMemberId === member._id}
-                            >
-                              {processingMemberId === member._id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <MoreHorizontal className="h-4 w-4" />
-                              )}
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -337,11 +408,21 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          ) : null}
 
-          {pendingInvites.length > 0 && (
+          {/* Pending invites section - loads independently */}
+          {invitesQuery.isPending ? (
+            // Show loading state only if there might be invites
+            <div className="border-t pt-4">
+              <div className="text-muted-foreground flex items-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span className="text-xs">Checking invitations...</span>
+              </div>
+            </div>
+          ) : invitesQuery.isError ? // Silently fail for invites - not critical
+          null : pendingInvites && pendingInvites.length > 0 ? (
             <div className="space-y-1 border-t pt-4">
               <h3 className="text-muted-foreground mb-3 text-sm font-medium">
                 Pending Invitations
@@ -375,7 +456,7 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
 import { assertMembership } from './_utils/auth';
+import { appError } from './_utils/errors';
 
 // 7 days in milliseconds
 const INVITE_EXPIRY_DURATION = 7 * 24 * 60 * 60 * 1000;
@@ -18,7 +19,7 @@ export const inviteToProject = mutation({
 
     // Additional check: only owners can invite admins
     if (args.role === 'admin' && membership.role !== 'owner') {
-      throw new Error('Only project owners can invite administrators');
+      throw appError('FORBIDDEN', 'Only project owners can invite administrators');
     }
 
     // Normalize email to lowercase for consistency
@@ -39,7 +40,7 @@ export const inviteToProject = mutation({
         .first();
 
       if (existingMembership) {
-        throw new Error('User is already a member of this project');
+        throw appError('USER_ALREADY_MEMBER', 'User is already a member of this project');
       }
     }
 
@@ -134,14 +135,14 @@ export const cancelInvite = mutation({
   handler: async (ctx, args) => {
     const invite = await ctx.db.get(args.inviteId);
     if (!invite) {
-      throw new Error('Invite not found');
+      throw appError('INVITE_NOT_FOUND', 'Invite not found');
     }
 
     // Check that the user has permission to cancel this invite
     await assertMembership(ctx, invite.projectId, ['owner', 'admin']);
 
     if (invite.status !== 'pending') {
-      throw new Error('Can only cancel pending invites');
+      throw appError('INVITE_NOT_PENDING', 'Can only cancel pending invites');
     }
 
     await ctx.db.patch(args.inviteId, {

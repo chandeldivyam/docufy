@@ -1,7 +1,7 @@
-import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
+import { query, mutation } from './_generated/server';
 import { assertMembership } from './_utils/auth';
-import { ConvexError } from 'convex/values';
+import { appError } from './_utils/errors';
 
 export const addMember = mutation({
   args: {
@@ -29,7 +29,7 @@ export const updateMemberRole = mutation({
   handler: async (ctx, args) => {
     const memberToUpdate = await ctx.db.get(args.memberId);
     if (!memberToUpdate) {
-      throw new ConvexError('Member not found');
+      throw appError('MEMBER_NOT_FOUND', 'Member not found');
     }
 
     // Check permissions
@@ -40,7 +40,7 @@ export const updateMemberRole = mutation({
 
     // Can't change owner's role
     if (memberToUpdate.role === 'owner') {
-      throw new ConvexError('Cannot change owner role');
+      throw appError('CANNOT_CHANGE_OWNER_ROLE', 'Cannot change owner role');
     }
 
     // Only owner can promote/demote admins
@@ -48,12 +48,15 @@ export const updateMemberRole = mutation({
       (memberToUpdate.role === 'admin' || args.newRole === 'admin') &&
       membership.role !== 'owner'
     ) {
-      throw new ConvexError('Only project owners can manage administrator roles');
+      throw appError(
+        'ONLY_PROJECT_OWNERS_CAN_MANAGE_ADMINISTRATOR_ROLES',
+        'Only project owners can manage administrator roles',
+      );
     }
 
     // Can't change your own role
     if (memberToUpdate.userId === membership.userId) {
-      throw new ConvexError('You cannot change your own role');
+      throw appError('YOU_CANNOT_CHANGE_YOUR_OWN_ROLE', 'You cannot change your own role');
     }
 
     await ctx.db.patch(args.memberId, { role: args.newRole });
@@ -69,7 +72,7 @@ export const removeMember = mutation({
   handler: async (ctx, args) => {
     const memberToRemove = await ctx.db.get(args.memberId);
     if (!memberToRemove) {
-      throw new ConvexError('Member not found');
+      throw appError('MEMBER_NOT_FOUND', 'Member not found');
     }
 
     // Check permissions
@@ -80,17 +83,23 @@ export const removeMember = mutation({
 
     // Can't remove owner
     if (memberToRemove.role === 'owner') {
-      throw new ConvexError('Cannot remove project owner');
+      throw appError('CANNOT_REMOVE_PROJECT_OWNER', 'Cannot remove project owner');
     }
 
     // Only owner can remove admins
     if (memberToRemove.role === 'admin' && membership.role !== 'owner') {
-      throw new ConvexError('Only project owners can remove administrators');
+      throw appError(
+        'ONLY_PROJECT_OWNERS_CAN_REMOVE_ADMINISTRATORS',
+        'Only project owners can remove administrators',
+      );
     }
 
     // Can't remove yourself
     if (memberToRemove.userId === membership.userId) {
-      throw new ConvexError('You cannot remove yourself from the project');
+      throw appError(
+        'YOU_CANNOT_REMOVE_YOURSELF_FROM_THE_PROJECT',
+        'You cannot remove yourself from the project',
+      );
     }
 
     await ctx.db.delete(args.memberId);

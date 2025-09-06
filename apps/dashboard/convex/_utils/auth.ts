@@ -1,17 +1,17 @@
 import type { QueryCtx, MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
-import { ConvexError } from 'convex/values';
+import { appError } from './errors';
 
 export type Role = 'owner' | 'admin' | 'editor' | 'viewer';
 
 export async function getUserOrThrow(ctx: QueryCtx | MutationCtx) {
   const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error('Unauthorized');
+  if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
   const user = await ctx.db
     .query('users')
     .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
     .first();
-  if (!user) throw new ConvexError('User not found');
+  if (!user) throw appError('USER_NOT_FOUND', 'User not found');
   return user;
 }
 
@@ -26,7 +26,7 @@ export async function assertMembership(
     .withIndex('by_project_and_user', (q) => q.eq('projectId', projectId).eq('userId', me._id))
     .first();
   if (!membership || !allowed.includes(membership.role)) {
-    throw new ConvexError('Forbidden');
+    throw appError('FORBIDDEN', 'Forbidden');
   }
   return { me, membership };
 }

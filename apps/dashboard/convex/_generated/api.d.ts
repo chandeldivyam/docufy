@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as _utils_auth from "../_utils/auth.js";
+import type * as _utils_errors from "../_utils/errors.js";
 import type * as http from "../http.js";
 import type * as projectInvites from "../projectInvites.js";
 import type * as projectMembers from "../projectMembers.js";
@@ -32,6 +33,7 @@ import type * as workos from "../workos.js";
  */
 declare const fullApi: ApiFromModules<{
   "_utils/auth": typeof _utils_auth;
+  "_utils/errors": typeof _utils_errors;
   http: typeof http;
   projectInvites: typeof projectInvites;
   projectMembers: typeof projectMembers;
