@@ -1,7 +1,8 @@
 import './globals.css';
 
 import type { Metadata } from 'next';
-import { ConvexClientProvider } from '@/components/ConvexClientProvider';
+import { ThemeProvider } from '@/components/theme/NextThemeProvider';
+import { AuthKitProvider } from '@workos-inc/authkit-nextjs/components';
 
 export const metadata: Metadata = {
   title: 'Docufy Dashboard',
@@ -14,9 +15,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <AuthKitProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+          </ThemeProvider>
+        </AuthKitProvider>
       </body>
     </html>
   );
