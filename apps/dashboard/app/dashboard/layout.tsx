@@ -12,7 +12,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex flex-1 flex-col overflow-hidden">
             <main className="flex-1 overflow-y-auto">
-              <div className="container mx-auto p-6">{children}</div>
+              <div className="container mr-auto p-6">{children}</div>
             </main>
           </div>
           <Toaster position="bottom-right" />

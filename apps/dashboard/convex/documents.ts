@@ -1,19 +1,29 @@
 import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { appError } from './_utils/errors';
+import { Id } from './_generated/dataModel';
+
+function slugify(s: string) {
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .slice(0, 80);
+}
 
 // Create a new document in your database
 export const createDocument = mutation({
   args: {
     spaceId: v.id('spaces'),
     title: v.string(),
-    slug: v.string(),
+    slug: v.string(), // client may pass; we’ll normalize
     type: v.union(v.literal('page'), v.literal('group')),
     parentId: v.optional(v.id('documents')),
     order: v.optional(v.number()),
+    isHidden: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    // Check permissions first
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
 
@@ -21,66 +31,81 @@ export const createDocument = mutation({
       .query('users')
       .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
       .first();
-
     if (!user) throw appError('USER_NOT_FOUND', 'User not found');
 
     const space = await ctx.db.get(args.spaceId);
     if (!space) throw appError('SPACE_NOT_FOUND', 'Space not found');
 
-    // Check membership
+    // Membership & role
     const membership = await ctx.db
       .query('projectMembers')
       .withIndex('by_project_and_user', (q) =>
         q.eq('projectId', space.projectId).eq('userId', user._id),
       )
       .first();
-
     if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
-
-    // Check write permissions
     const allowedRoles = ['owner', 'admin', 'editor'];
-    if (!allowedRoles.includes(membership.role)) {
+    if (!allowedRoles.includes(membership.role))
       throw appError('WRITE_ACCESS_DENIED', 'Insufficient permissions');
+
+    // Type constraints
+    if (args.type === 'group' && args.parentId) {
+      throw appError('GROUP_MUST_BE_TOP_LEVEL', 'Groups can only exist at top level');
+    }
+    if (args.parentId) {
+      const parent = await ctx.db.get(args.parentId);
+      if (!parent) throw appError('PARENT_NOT_FOUND', 'Parent not found');
+      if (args.type === 'page' && !['group', 'page'].includes(parent.type)) {
+        throw appError('INVALID_PARENT', 'Invalid parent for page');
+      }
+      if (parent.archivedAt) throw appError('PARENT_ARCHIVED', 'Cannot add under archived parent');
     }
 
-    // Get the next order value if not provided
+    const slug = slugify(args.slug || args.title);
+    // we need to ensure that the slug is unique
+    const existing = await ctx.db
+      .query('documents')
+      .withIndex('by_space_parent_slug', (q) =>
+        q
+          .eq('spaceId', args.spaceId)
+          .eq('parentId', args.parentId ?? undefined)
+          .eq('slug', slug),
+      )
+      .first();
+    if (existing) throw appError('SLUG_EXISTS', 'A document with this slug already exists here');
+
+    // Determine order (last sibling + 1) using "by_space_parent_order"
     let order = args.order;
     if (order === undefined) {
-      const lastDoc = await ctx.db
+      const last = await ctx.db
         .query('documents')
-        .withIndex('by_space_parent', (q) =>
-          q.eq('spaceId', args.spaceId).eq('parentId', args.parentId),
+        .withIndex('by_space_parent_order', (q) =>
+          q.eq('spaceId', args.spaceId).eq('parentId', args.parentId ?? undefined),
         )
         .order('desc')
         .first();
-
-      order = lastDoc ? lastDoc.order + 1 : 0;
+      order = last ? last.order + 1 : 0;
     }
 
     const now = Date.now();
-
-    // Create the document record first without pmsDocKey
-    const documentId = await ctx.db.insert('documents', {
+    const docId = await ctx.db.insert('documents', {
       spaceId: args.spaceId,
       type: args.type,
       title: args.title,
-      slug: args.slug,
+      slug,
       parentId: args.parentId,
       order,
+      isHidden: args.isHidden ?? false,
       createdAt: now,
       updatedAt: now,
     });
 
-    // For page type documents, update with the ProseMirror sync key now that we have the ID
     if (args.type === 'page') {
-      const pmsDocKey = `space/${args.spaceId}/doc/${documentId}`;
-      await ctx.db.patch(documentId, {
-        pmsDocKey,
-      });
+      const pmsDocKey = `space/${args.spaceId}/doc/${docId}`;
+      await ctx.db.patch(docId, { pmsDocKey });
     }
 
-    // Return the updated document
-    return await ctx.db.get(documentId);
+    return await ctx.db.get(docId);
   },
 });
 
@@ -120,10 +145,7 @@ export const getDocument = query({
 
 // Get documents in a space
 export const getDocumentsInSpace = query({
-  args: {
-    spaceId: v.id('spaces'),
-    parentId: v.optional(v.id('documents')),
-  },
+  args: { spaceId: v.id('spaces'), parentId: v.optional(v.id('documents')) },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
@@ -135,23 +157,20 @@ export const getDocumentsInSpace = query({
       .query('users')
       .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
       .first();
-
     if (!user) throw appError('USER_NOT_FOUND', 'User not found');
 
-    // Check membership
     const membership = await ctx.db
       .query('projectMembers')
       .withIndex('by_project_and_user', (q) =>
         q.eq('projectId', space.projectId).eq('userId', user._id),
       )
       .first();
-
     if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
 
     return await ctx.db
       .query('documents')
-      .withIndex('by_space_parent', (q) =>
-        q.eq('spaceId', args.spaceId).eq('parentId', args.parentId),
+      .withIndex('by_space_parent_order', (q) =>
+        q.eq('spaceId', args.spaceId).eq('parentId', args.parentId ?? undefined),
       )
       .order('asc')
       .collect();
@@ -253,5 +272,97 @@ export const deleteDocument = mutation({
     });
 
     return { success: true };
+  },
+});
+
+type DocumentNode = {
+  _id: Id<'documents'>;
+  type: 'page' | 'group';
+  title: string;
+  slug: string;
+  order: number;
+  parentId?: Id<'documents'>;
+  isHidden: boolean;
+  pmsDocKey?: string;
+};
+
+// Define the tree node type (document node with children)
+type TreeNode = DocumentNode & {
+  children: TreeNode[];
+};
+
+// Export these types so the frontend can use them
+export type { DocumentNode, TreeNode };
+
+// Updated getTreeForSpace query with proper types
+export const getTreeForSpace = query({
+  args: { spaceId: v.id('spaces') },
+  handler: async (ctx, { spaceId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
+
+    const space = await ctx.db.get(spaceId);
+    if (!space) throw appError('SPACE_NOT_FOUND', 'Space not found');
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
+      .first();
+    if (!user) throw appError('USER_NOT_FOUND', 'User not found');
+
+    const membership = await ctx.db
+      .query('projectMembers')
+      .withIndex('by_project_and_user', (q) =>
+        q.eq('projectId', space.projectId).eq('userId', user._id),
+      )
+      .first();
+    if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
+
+    // Load all docs in the space
+    const all = await ctx.db
+      .query('documents')
+      .withIndex('by_space', (q) => q.eq('spaceId', spaceId))
+      .collect();
+
+    // Group by parent with proper typing
+    const byParent = new Map<string | undefined, DocumentNode[]>();
+
+    for (const d of all) {
+      const key = d.parentId ? String(d.parentId) : undefined;
+      const arr = byParent.get(key) ?? [];
+
+      const node: DocumentNode = {
+        _id: d._id,
+        type: d.type,
+        title: d.title,
+        slug: d.slug,
+        order: d.order,
+        parentId: d.parentId,
+        isHidden: !!d.isHidden,
+        // For pages, we'll need the editor key later
+        pmsDocKey: d.pmsDocKey,
+      };
+
+      arr.push(node);
+      byParent.set(key, arr);
+    }
+
+    // Sort siblings by "order"
+    for (const [k, arr] of byParent) {
+      if (k === undefined) continue;
+      arr.sort((a, b) => a.order - b.order);
+    }
+
+    // Build nested tree with proper typing
+    function attach(node: DocumentNode): TreeNode {
+      const children = byParent.get(String(node._id)) ?? [];
+      return {
+        ...node,
+        children: children.map(attach),
+      };
+    }
+
+    const roots = (byParent.get(undefined) ?? []).map(attach);
+    return roots;
   },
 });

@@ -68,28 +68,28 @@ export default defineSchema({
     .index('by_project', ['projectId'])
     .index('by_slug', ['projectId', 'slug']),
 
-  // Documents are the actual pages/content
   documents: defineTable({
     spaceId: v.id('spaces'),
-    type: v.union(
-      v.literal('page'), // Rich text document
-      v.literal('group'), // Folder/section for organization
-    ),
+    type: v.union(v.literal('page'), v.literal('group')),
     title: v.string(),
     slug: v.string(),
 
-    // For tree structure
     parentId: v.optional(v.id('documents')),
-    order: v.number(),
+    order: v.number(), // sibling ordering key
 
-    // For page type - the key to access in prosemirror-sync
+    // For pages only (editor doc key)
     pmsDocKey: v.optional(v.string()),
+
+    // Visibility & lifecycle
+    isHidden: v.optional(v.boolean()), // default false
+    archivedAt: v.optional(v.number()),
 
     createdAt: v.number(),
     updatedAt: v.number(),
-    archivedAt: v.optional(v.number()),
   })
     .index('by_space', ['spaceId'])
     .index('by_space_parent', ['spaceId', 'parentId'])
-    .index('by_slug', ['spaceId', 'slug']),
+    .index('by_space_parent_order', ['spaceId', 'parentId', 'order']) // ← enables proper ordered queries
+    .index('by_space_parent_slug', ['spaceId', 'parentId', 'slug']) // ← uniqueness check scoped to siblings
+    .index('by_slug', ['spaceId', 'slug']), // keep if you still want space-wide slug lookups
 });
