@@ -55,4 +55,41 @@ export default defineSchema({
     .index('by_email_and_status', ['inviteeEmail', 'status'])
     .index('by_project', ['projectId'])
     .index('by_project_and_email', ['projectId', 'inviteeEmail']),
+
+  spaces: defineTable({
+    projectId: v.id('projects'),
+    name: v.string(),
+    slug: v.string(),
+    description: v.optional(v.string()),
+    iconEmoji: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_project', ['projectId'])
+    .index('by_slug', ['projectId', 'slug']),
+
+  // Documents are the actual pages/content
+  documents: defineTable({
+    spaceId: v.id('spaces'),
+    type: v.union(
+      v.literal('page'), // Rich text document
+      v.literal('group'), // Folder/section for organization
+    ),
+    title: v.string(),
+    slug: v.string(),
+
+    // For tree structure
+    parentId: v.optional(v.id('documents')),
+    order: v.number(),
+
+    // For page type - the key to access in prosemirror-sync
+    pmsDocKey: v.optional(v.string()),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    archivedAt: v.optional(v.number()),
+  })
+    .index('by_space', ['spaceId'])
+    .index('by_space_parent', ['spaceId', 'parentId'])
+    .index('by_slug', ['spaceId', 'slug']),
 });
