@@ -66,13 +66,6 @@ export function ProjectHeader({ collapsed, projectId, onToggleCollapsed }: Props
             >
               <PanelLeftOpen className="h-4 w-4" />
             </button>
-            {projectsQuery.isPending ? (
-              <Skeleton className="h-6 w-6 rounded-md" />
-            ) : (
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex size-6 items-center justify-center rounded-md text-xs font-semibold">
-                {(active?.name?.charAt(0) ?? 'P').toUpperCase()}
-              </div>
-            )}
           </>
         ) : (
           <>

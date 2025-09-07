@@ -139,7 +139,10 @@ export const getDocument = query({
 
     if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
 
-    return document;
+    const editableRoles = ['owner', 'admin', 'editor'];
+    const editable = editableRoles.includes(membership.role);
+
+    return { document, editable };
   },
 });
 

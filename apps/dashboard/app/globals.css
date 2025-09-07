@@ -118,3 +118,361 @@
     @apply bg-background text-foreground;
   }
 }
+
+.tiptap {
+  /* Layout and rhythm */
+  display: block;
+  min-height: 14rem; /* adjust per page */
+  line-height: 1.7;
+  color: var(--foreground);
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+
+  /* Selection color */
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 20%, transparent);
+    color: var(--primary);
+  }
+
+  /* Text blocks */
+  p {
+    margin-block: 0.85rem;
+  }
+
+  small {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+
+  /* Headings */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    color: var(--foreground);
+    text-wrap: pretty;
+    scroll-margin-top: 6rem;
+  }
+
+  h1 {
+    font-size: clamp(1.6rem, 2.5vw, 2rem);
+    margin: 2.25rem 0 1rem;
+  }
+  h2 {
+    font-size: clamp(1.35rem, 2vw, 1.6rem);
+    margin: 2rem 0 0.9rem;
+  }
+  h3 {
+    font-size: clamp(1.2rem, 1.5vw, 1.35rem);
+    margin: 1.6rem 0 0.6rem;
+  }
+  h4 {
+    font-size: 1.1rem;
+    margin: 1.2rem 0 0.4rem;
+  }
+  h5,
+  h6 {
+    font-size: 1rem;
+    margin: 1rem 0 0.3rem;
+  }
+
+  /* Horizontal rule */
+  hr {
+    height: 1px;
+    border: 0;
+    background: var(--border);
+    margin: 2rem 0;
+  }
+
+  /* Links */
+  a {
+    color: var(--primary);
+    text-decoration-color: color-mix(in oklch, var(--primary) 40%, transparent);
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1.5px;
+    transition:
+      color 150ms ease,
+      text-decoration-color 150ms ease;
+  }
+  a:hover {
+    color: color-mix(in oklch, var(--primary) 80%, var(--foreground));
+    text-decoration-color: currentColor;
+  }
+
+  /* Lists */
+  ul,
+  ol {
+    margin: 0.85rem 0;
+    padding-left: 1.4rem;
+  }
+  ul {
+    list-style: disc;
+  }
+  ol {
+    list-style: decimal;
+  }
+
+  li {
+    margin: 0.35rem 0;
+  }
+  li > p {
+    margin: 0.25rem 0;
+  }
+
+  /* Nested lists look lighter and tighter */
+  li ul,
+  li ol {
+    margin: 0.35rem 0;
+    padding-left: 1.2rem;
+  }
+
+  /* Task list */
+  ul[data-type='taskList'] {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.85rem 0;
+  }
+  ul[data-type='taskList'] li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    margin: 0.45rem 0;
+  }
+  ul[data-type='taskList'] li > label {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    cursor: pointer;
+    user-select: none;
+  }
+  ul[data-type='taskList'] li input[type='checkbox'] {
+    accent-color: var(--primary);
+    margin-top: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+  }
+  ul[data-type='taskList'] li[data-checked='true'] > div,
+  ul[data-type='taskList'] li[data-checked='true'] p {
+    color: color-mix(in oklch, var(--foreground) 65%, transparent);
+    text-decoration: line-through;
+  }
+
+  /* Blockquote - subtle card look */
+  blockquote {
+    position: relative;
+    margin: 1.4rem 0;
+    padding: 0.9rem 1rem 0.9rem 1.05rem;
+    background: color-mix(in oklch, var(--muted) 60%, var(--background));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  blockquote::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--primary);
+  }
+
+  /* Inline code */
+  code {
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'JetBrainsMono', 'Liberation Mono',
+      monospace;
+    font-size: 0.86em;
+    background: color-mix(in oklch, var(--muted) 80%, var(--background));
+    color: color-mix(in oklch, var(--foreground) 90%, black);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius-sm));
+    padding: 0.18em 0.4em;
+  }
+  /* Remove double-styling when inside pre */
+  pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* Code blocks */
+  pre {
+    position: relative;
+    margin: 1.2rem 0;
+    padding: 0.9rem 1rem 1rem;
+    background: color-mix(in oklch, var(--secondary) 80%, var(--background));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--foreground);
+    overflow: auto;
+  }
+  pre::-webkit-scrollbar {
+    height: 10px;
+  }
+  pre::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--border) 70%, var(--foreground));
+    border-radius: 999px;
+  }
+
+  /* Optional language label if using lowlight or add data-language on the node */
+  pre[data-language]::before {
+    content: attr(data-language);
+    position: absolute;
+    top: 0.55rem;
+    right: 0.7rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  /* Optional copy button - style will apply if you render one inside pre */
+  pre .code-copy {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.6rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: var(--radius);
+    background: color-mix(in oklch, var(--background) 60%, var(--muted));
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    opacity: 0;
+    transition:
+      opacity 120ms ease,
+      background 120ms ease;
+  }
+  pre:hover .code-copy {
+    opacity: 1;
+  }
+  pre .code-copy:hover {
+    background: color-mix(in oklch, var(--muted) 70%, var(--background));
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.2rem 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  thead {
+    background: color-mix(in oklch, var(--muted) 60%, var(--background));
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.65rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:last-child td {
+    border-bottom: 0;
+  }
+  tbody tr:nth-child(odd) {
+    background: color-mix(in oklch, var(--muted) 35%, var(--background));
+  }
+  tbody tr:hover {
+    background: color-mix(in oklch, var(--muted) 50%, var(--background));
+  }
+
+  /* Images and media */
+  img,
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-lg);
+    display: block;
+    margin: 1rem 0;
+    border: 1px solid var(--border);
+    background: var(--card);
+  }
+  figure {
+    margin: 1.2rem 0;
+  }
+  figcaption {
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+    text-align: center;
+    margin-top: 0.5rem;
+  }
+
+  /* KBD keys */
+  kbd {
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'JetBrainsMono', 'Liberation Mono',
+      monospace;
+    font-size: 0.8em;
+    background: color-mix(in oklch, var(--muted) 80%, var(--background));
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: calc(var(--radius-sm));
+    padding: 0.1em 0.4em;
+    color: var(--foreground);
+  }
+
+  /* Marks and highlights */
+  mark {
+    background: color-mix(in oklch, var(--chart-4) 40%, var(--background));
+    color: var(--foreground);
+    border-radius: 0.2rem;
+    padding: 0.05em 0.2em;
+    box-decoration-break: clone;
+  }
+
+  /* Mentions */
+  .mention {
+    background: color-mix(in oklch, var(--secondary) 70%, var(--background));
+    border: 1px solid var(--border);
+    border-radius: 0.4rem;
+    padding: 0.05rem 0.35rem;
+    white-space: nowrap;
+  }
+
+  /* Code or image selections via ProseMirror */
+  .ProseMirror-selectednode {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+    border-radius: var(--radius);
+  }
+
+  /* Placeholder support if you enable the Placeholder extension */
+  .is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  /* Tables and code responsiveness inside constrained parents */
+  .content-wrap {
+    overflow: hidden;
+  }
+  .content-wrap > table,
+  .content-wrap > pre {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Tighten first/last spacing */
+  > :first-child {
+    margin-top: 0;
+  }
+  > :last-child {
+    margin-bottom: 0;
+  }
+}

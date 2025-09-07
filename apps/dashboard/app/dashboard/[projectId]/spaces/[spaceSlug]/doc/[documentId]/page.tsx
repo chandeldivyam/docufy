@@ -15,21 +15,20 @@ export default function DocEditorPage() {
 
   if (doc.status === 'pending') return <div className="p-6">Loading…</div>;
   if (doc.status === 'error') return <div className="p-6">Error loading document</div>;
-  if (doc.data?.type === 'group')
+  if (doc.data?.document?.type === 'group')
     return <div className="p-6">Groups are headers and can’t be opened.</div>;
 
   // Safety: older rows may be missing pmsDocKey; backfill server-side if needed.
-  const docKey = doc.data?.pmsDocKey;
+  const docKey = doc.data?.document?.pmsDocKey;
   if (!docKey) return <div className="p-6">This page is missing an editor key.</div>;
 
   return (
     <div className="p-0">
       <div className="border-b p-6 pb-3">
-        <h1 className="mb-1 text-xl font-semibold">{doc.data?.title}</h1>
-        <p className="text-muted-foreground text-xs">Document ID: {params.documentId}</p>
+        <h1 className="mb-1 text-xl font-semibold">{doc.data?.document.title}</h1>
       </div>
       <div className="p-6">
-        <DocEditor docKey={docKey} />
+        <DocEditor docKey={docKey} editable={doc.data?.editable} />
       </div>
     </div>
   );
