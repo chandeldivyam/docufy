@@ -361,7 +361,7 @@ function SpaceSidebarInner({
   function onDragOver(e: DragOverEvent) {
     if (!activeId) return;
     setOverId(e.over ? String(e.over.id) : null);
-    setOffsetX((e)?.delta?.x ?? 0);
+    setOffsetX(e?.delta?.x ?? 0);
     const oid = e.over ? String(e.over.id) : null;
     if (oid) {
       const pl = decidePlacement(scrollRef.current, flat, oid, pointer);
@@ -465,7 +465,10 @@ function SpaceSidebarInner({
 
             <DragOverlay>
               {activeFlat ? (
-                <div className="bg-card rounded-md border px-2 py-1 text-sm" style={{ transform: `translateX(${offsetX}px)` }}>
+                <div
+                  className="bg-card rounded-md border px-2 py-1 text-sm"
+                  style={{ transform: `translateX(${offsetX}px)` }}
+                >
                   {activeFlat.ref.title}
                 </div>
               ) : null}
@@ -593,6 +596,7 @@ function TreeNodeRow({
   const isGroup = node.type === 'group';
   const hasChildren = node.children?.length > 0;
   const isExpanded = expanded.has(String(node._id));
+  const canNavigate = !isGroup && !editing && !isOptimisticId(node._id);
 
   function toggle() {
     if (!hasChildren) return;
@@ -630,19 +634,22 @@ function TreeNodeRow({
           active ? 'bg-muted/60' : 'hover:bg-muted/40',
           isDropInsideTarget && !invalidDrop ? 'ring-primary/60 bg-primary/5 ring-2' : '',
           isDropInsideTarget && invalidDrop ? 'ring-destructive/60 bg-destructive/5 ring-2' : '',
+          canNavigate ? 'cursor-pointer' : '',
         ].join(' ')}
+        onClick={() => {
+          if (!canNavigate) return;
+          router.push(`/dashboard/${projectId}/spaces/${spaceSlug}/doc/${node._id}`);
+        }}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <GripVertical
-            className="text-muted-foreground/70 h-3.5 w-3.5 shrink-0 cursor-grab"
-            {...sortable.listeners}
-          />
-
           {hasChildren ? (
             <button
               aria-label={isExpanded ? 'Collapse' : 'Expand'}
-              onClick={toggle}
-              className="grid h-5 w-5 place-items-center"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggle();
+              }}
+              className="grid h-5 w-5 shrink-0 place-items-center"
             >
               {isExpanded ? (
                 <ChevronDown className="text-muted-foreground h-4 w-4" />
@@ -651,14 +658,28 @@ function TreeNodeRow({
               )}
             </button>
           ) : (
-            <span className="w-4" />
+            <span className="w-4 shrink-0" />
           )}
 
-          {isGroup ? (
-            <Folder className="text-muted-foreground h-4 w-4" />
-          ) : (
-            <FileText className="text-muted-foreground h-4 w-4" />
-          )}
+          {/* Icon slot with hover drag-handle overlay */}
+          <span className="relative grid h-5 w-5 shrink-0 place-items-center">
+            <span className="transition-opacity duration-100 group-hover:opacity-0">
+              {isGroup ? (
+                <Folder className="text-muted-foreground h-4 w-4 shrink-0" />
+              ) : (
+                <FileText className="text-muted-foreground h-4 w-4 shrink-0" />
+              )}
+            </span>
+            <span
+              className="absolute inset-0 grid cursor-grab touch-none select-none place-items-center opacity-0 transition-opacity duration-100 active:cursor-grabbing group-hover:opacity-100"
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              {...sortable.listeners}
+            >
+              <GripVertical className="text-muted-foreground/70 h-3.5 w-3.5" />
+            </span>
+          </span>
 
           {editing ? (
             <Input
@@ -671,7 +692,14 @@ function TreeNodeRow({
             />
           ) : isGroup ? (
             <button
-              onClick={hasChildren ? toggle : undefined}
+              onClick={
+                hasChildren
+                  ? (e) => {
+                      e.stopPropagation();
+                      toggle();
+                    }
+                  : undefined
+              }
               className={[
                 'text-muted-foreground truncate text-xs font-semibold uppercase tracking-wide',
                 hasChildren ? 'hover:text-foreground cursor-pointer' : '',
@@ -699,7 +727,12 @@ function TreeNodeRow({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="invisible h-6 w-6 group-hover:visible">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="invisible h-6 w-6 group-hover:visible"
+              onClick={(e) => e.stopPropagation()}
+            >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -836,8 +869,8 @@ function isDescendant(tree: TreeNode[], parentId: string, childId: string): bool
 type DropPlacement = 'above' | 'below' | 'inside';
 
 function cssEscapeSafe(s: string) {
-  return (globalThis.CSS?.escape)
-    ? (globalThis.CSS.escape(s))
+  return globalThis.CSS?.escape
+    ? globalThis.CSS.escape(s)
     : s.replace(/([ !"#$%&'()*+,./:;<=>?@[\]^`{|}~\\])/g, '\\$1');
 }
 

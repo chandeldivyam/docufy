@@ -21,7 +21,6 @@ export default function DocEditorPage() {
     return <div className="p-6">Creating page…</div>;
   }
 
-
   if (doc.status === 'pending') return <div className="p-6">Loading…</div>;
   if (doc.status === 'error') return <div className="p-6">Error loading document</div>;
   if (doc.data?.document?.type === 'group')

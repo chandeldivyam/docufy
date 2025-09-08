@@ -320,9 +320,7 @@ async function collectSubtreeIds(
 
     const children = await ctx.db
       .query('documents')
-      .withIndex('by_space_parent_rank', (q) =>
-        q.eq('spaceId', spaceId).eq('parentId', current),
-      )
+      .withIndex('by_space_parent_rank', (q) => q.eq('spaceId', spaceId).eq('parentId', current))
       .collect();
 
     for (const child of children) {
