@@ -9,9 +9,18 @@ import { Id } from '@/convex/_generated/dataModel';
 
 export default function DocEditorPage() {
   const params = useParams<{ documentId: string }>();
+  const rawId = params.documentId as string;
+  const decodedId = decodeURIComponent(rawId);
+
   const doc = useQueryWithStatus(api.documents.getDocument, {
-    documentId: params.documentId as Id<'documents'>,
+    documentId: decodedId as unknown as Id<'documents'>,
   });
+
+  // If navigating to an optimistic placeholder ID, avoid calling Convex
+  if (decodedId.startsWith('optimistic:')) {
+    return <div className="p-6">Creating page…</div>;
+  }
+
 
   if (doc.status === 'pending') return <div className="p-6">Loading…</div>;
   if (doc.status === 'error') return <div className="p-6">Error loading document</div>;

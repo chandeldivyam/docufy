@@ -51,7 +51,7 @@ export const create = mutation({
       type: 'group',
       title: 'Getting Started',
       slug: 'getting-started',
-      order: 0,
+      rank: 'a',
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });

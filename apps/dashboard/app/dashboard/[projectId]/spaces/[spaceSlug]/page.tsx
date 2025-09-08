@@ -12,7 +12,7 @@ export interface DocumentTreeNode {
   type: 'page' | 'group';
   title: string;
   slug: string;
-  order: number;
+  rank: string;
   parentId?: Id<'documents'>;
   isHidden: boolean;
   pmsDocKey?: string;
@@ -37,8 +37,10 @@ export default function SpaceLanding() {
   useEffect(() => {
     if (!space || !tree?.data) return;
     // Find first visible page in reading order
+    const isOptimisticId = (id: unknown) => String(id).startsWith('optimistic:');
     const dfs = (nodes: DocumentTreeNode[]): DocumentTreeNode | null => {
       for (const n of nodes) {
+        if (isOptimisticId(n._id)) continue; // skip optimistic placeholder nodes
         if (n.type === 'page' && !n.isHidden) return n;
         const childHit = n.children?.length ? dfs(n.children) : null;
         if (childHit) return childHit;

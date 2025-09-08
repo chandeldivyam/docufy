@@ -2,7 +2,10 @@ import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { appError } from './_utils/errors';
 import { Id } from './_generated/dataModel';
+import { GenericMutationCtx } from 'convex/server';
+import { DataModel } from './_generated/dataModel';
 
+/* ---------- Slug helpers ---------- */
 function slugify(s: string) {
   return s
     .trim()
@@ -12,15 +15,97 @@ function slugify(s: string) {
     .slice(0, 80);
 }
 
-// Create a new document in your database
+function randomSlug(len = 10) {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let out = '';
+  for (let i = 0; i < len; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return out;
+}
+
+async function ensureUniqueSlug(
+  ctx: GenericMutationCtx<DataModel>,
+  spaceId: Id<'spaces'>,
+  parentId: Id<'documents'> | undefined,
+  base: string,
+) {
+  let attempt = base;
+  for (let i = 0; i < 5; i++) {
+    const existing = await ctx.db
+      .query('documents')
+      .withIndex('by_space_parent_slug', (q) =>
+        q
+          .eq('spaceId', spaceId)
+          .eq('parentId', parentId ?? undefined)
+          .eq('slug', attempt),
+      )
+      .first();
+    if (!existing) return attempt;
+    attempt = randomSlug();
+  }
+  return `${base}-${Date.now().toString(36)}`;
+}
+
+/* ---------- Lexicographic rank helpers (fractional indexing) ---------- */
+/**
+ * We generate totally ordered, dense keys over the alphabet below.
+ * You can always generate a key strictly between two keys, and keys
+ * can grow in length when needed to maintain density.
+ */
+const RANK_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const MIN_CHAR = RANK_ALPHABET[0];
+const MAX_CHAR = RANK_ALPHABET[RANK_ALPHABET.length - 1];
+
+function rankBetween(a?: string, b?: string): string {
+  if (a !== undefined && b !== undefined && a >= b) {
+    throw appError('INVALID_RANK_RANGE', 'Left bound must be < right bound');
+  }
+  let i = 0;
+  let prefix = '';
+  // At each position, take characters of a and b, defaulting to MIN for a and MAX for b.
+  // If there is "space" between them, pick the mid character. Otherwise, carry and go deeper.
+  // This always terminates with some finite-length key.
+  // Example: between 'a' and 'b' -> 'aV' (given our alphabet).
+  while (true) {
+    const ca = (a && a[i]) ?? MIN_CHAR;
+    const cb = (b && b[i]) ?? MAX_CHAR;
+
+    if (ca === cb) {
+      prefix += ca;
+      i++;
+      continue;
+    }
+
+    if (!ca || !cb) {
+      throw appError('INVALID_RANK_RANGE', 'Left bound must be < right bound');
+    }
+
+    const ia = RANK_ALPHABET.indexOf(ca);
+    const ib = RANK_ALPHABET.indexOf(cb);
+
+    if (ib - ia > 1) {
+      const mid = Math.floor((ia + ib) / 2);
+      return prefix + RANK_ALPHABET[mid];
+    }
+
+    // No room at this digit. Fix it to ca and go deeper.
+    prefix += ca;
+    i++;
+  }
+}
+
+const rankAfter = (a?: string) => rankBetween(a, undefined);
+const rankBefore = (b?: string) => rankBetween(undefined, b);
+
+/* ---------- Mutations & Queries ---------- */
+
+// Create a new document
 export const createDocument = mutation({
   args: {
     spaceId: v.id('spaces'),
     title: v.string(),
-    slug: v.string(), // client may pass; we’ll normalize
+    slug: v.optional(v.string()),
     type: v.union(v.literal('page'), v.literal('group')),
     parentId: v.optional(v.id('documents')),
-    order: v.optional(v.number()),
     isHidden: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
@@ -61,31 +146,19 @@ export const createDocument = mutation({
       if (parent.archivedAt) throw appError('PARENT_ARCHIVED', 'Cannot add under archived parent');
     }
 
-    const slug = slugify(args.slug || args.title);
-    // we need to ensure that the slug is unique
-    const existing = await ctx.db
-      .query('documents')
-      .withIndex('by_space_parent_slug', (q) =>
-        q
-          .eq('spaceId', args.spaceId)
-          .eq('parentId', args.parentId ?? undefined)
-          .eq('slug', slug),
-      )
-      .first();
-    if (existing) throw appError('SLUG_EXISTS', 'A document with this slug already exists here');
+    const base = args.slug ? slugify(args.slug) : randomSlug();
+    const slug = await ensureUniqueSlug(ctx, args.spaceId, args.parentId ?? undefined, base);
 
-    // Determine order (last sibling + 1) using "by_space_parent_order"
-    let order = args.order;
-    if (order === undefined) {
-      const last = await ctx.db
-        .query('documents')
-        .withIndex('by_space_parent_order', (q) =>
-          q.eq('spaceId', args.spaceId).eq('parentId', args.parentId ?? undefined),
-        )
-        .order('desc')
-        .first();
-      order = last ? last.order + 1 : 0;
-    }
+    // Determine rank: append to end under target parent
+    const last = await ctx.db
+      .query('documents')
+      .withIndex('by_space_parent_rank', (q) =>
+        q.eq('spaceId', args.spaceId).eq('parentId', args.parentId ?? undefined),
+      )
+      .order('desc')
+      .first();
+
+    const rank = last ? rankAfter(last.rank) : rankBetween(undefined, undefined);
 
     const now = Date.now();
     const docId = await ctx.db.insert('documents', {
@@ -94,7 +167,7 @@ export const createDocument = mutation({
       title: args.title,
       slug,
       parentId: args.parentId,
-      order,
+      rank,
       isHidden: args.isHidden ?? false,
       createdAt: now,
       updatedAt: now,
@@ -146,7 +219,7 @@ export const getDocument = query({
   },
 });
 
-// Get documents in a space
+// Get documents in a space (siblings ordered by rank)
 export const getDocumentsInSpace = query({
   args: { spaceId: v.id('spaces'), parentId: v.optional(v.id('documents')) },
   handler: async (ctx, args) => {
@@ -172,7 +245,7 @@ export const getDocumentsInSpace = query({
 
     return await ctx.db
       .query('documents')
-      .withIndex('by_space_parent_order', (q) =>
+      .withIndex('by_space_parent_rank', (q) =>
         q.eq('spaceId', args.spaceId).eq('parentId', args.parentId ?? undefined),
       )
       .order('asc')
@@ -180,13 +253,13 @@ export const getDocumentsInSpace = query({
   },
 });
 
-// Update document
+// Update document (title/slug/rank)
 export const updateDocument = mutation({
   args: {
     documentId: v.id('documents'),
     title: v.optional(v.string()),
     slug: v.optional(v.string()),
-    order: v.optional(v.number()),
+    rank: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -220,20 +293,48 @@ export const updateDocument = mutation({
       throw appError('WRITE_ACCESS_DENIED', 'Insufficient permissions');
     }
 
-    // Update the document
-    const updates: { updatedAt: number } & { title?: string; slug?: string; order?: number } = {
+    const updates: { updatedAt: number } & { title?: string; slug?: string; rank?: string } = {
       updatedAt: Date.now(),
     };
     if (args.title !== undefined) updates.title = args.title;
-    if (args.slug !== undefined) updates.slug = args.slug;
-    if (args.order !== undefined) updates.order = args.order;
+    if (args.slug !== undefined) updates.slug = slugify(args.slug);
+    if (args.rank !== undefined) updates.rank = args.rank;
 
     await ctx.db.patch(args.documentId, updates);
     return await ctx.db.get(args.documentId);
   },
 });
 
-// Delete document
+/* ---------- Delete document and descendants ---------- */
+
+async function collectSubtreeIds(
+  ctx: GenericMutationCtx<DataModel>,
+  spaceId: Id<'spaces'>,
+  rootId: Id<'documents'>,
+): Promise<Id<'documents'>[]> {
+  const stack: Id<'documents'>[] = [rootId];
+  const ordered: Id<'documents'>[] = [];
+
+  while (stack.length) {
+    const current = stack.pop() as Id<'documents'>;
+
+    const children = await ctx.db
+      .query('documents')
+      .withIndex('by_space_parent_rank', (q) =>
+        q.eq('spaceId', spaceId).eq('parentId', current),
+      )
+      .collect();
+
+    for (const child of children) {
+      stack.push(child._id);
+    }
+    ordered.push(current);
+  }
+
+  ordered.reverse();
+  return ordered;
+}
+
 export const deleteDocument = mutation({
   args: { documentId: v.id('documents') },
   handler: async (ctx, args) => {
@@ -250,17 +351,14 @@ export const deleteDocument = mutation({
       .query('users')
       .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
       .first();
-
     if (!user) throw appError('USER_NOT_FOUND', 'User not found');
 
-    // Check membership and permissions
     const membership = await ctx.db
       .query('projectMembers')
       .withIndex('by_project_and_user', (q) =>
         q.eq('projectId', space.projectId).eq('userId', user._id),
       )
       .first();
-
     if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
 
     const allowedRoles = ['owner', 'admin', 'editor'];
@@ -268,36 +366,36 @@ export const deleteDocument = mutation({
       throw appError('WRITE_ACCESS_DENIED', 'Insufficient permissions');
     }
 
-    // Mark as archived instead of deleting
-    await ctx.db.patch(args.documentId, {
-      archivedAt: Date.now(),
-      updatedAt: Date.now(),
-    });
+    const toDelete = await collectSubtreeIds(
+      ctx,
+      document.spaceId as Id<'spaces'>,
+      args.documentId,
+    );
+    for (const id of toDelete) await ctx.db.delete(id);
 
-    return { success: true };
+    return { success: true, deletedCount: toDelete.length };
   },
 });
+
+/* ---------- Types & tree query ---------- */
 
 type DocumentNode = {
   _id: Id<'documents'>;
   type: 'page' | 'group';
   title: string;
   slug: string;
-  order: number;
+  rank: string;
   parentId?: Id<'documents'>;
   isHidden: boolean;
   pmsDocKey?: string;
 };
 
-// Define the tree node type (document node with children)
 type TreeNode = DocumentNode & {
   children: TreeNode[];
 };
 
-// Export these types so the frontend can use them
 export type { DocumentNode, TreeNode };
 
-// Updated getTreeForSpace query with proper types
 export const getTreeForSpace = query({
   args: { spaceId: v.id('spaces') },
   handler: async (ctx, { spaceId }) => {
@@ -321,13 +419,11 @@ export const getTreeForSpace = query({
       .first();
     if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
 
-    // Load all docs in the space
     const all = await ctx.db
       .query('documents')
       .withIndex('by_space', (q) => q.eq('spaceId', spaceId))
       .collect();
 
-    // Group by parent with proper typing
     const byParent = new Map<string | undefined, DocumentNode[]>();
 
     for (const d of all) {
@@ -339,10 +435,9 @@ export const getTreeForSpace = query({
         type: d.type,
         title: d.title,
         slug: d.slug,
-        order: d.order,
+        rank: d.rank,
         parentId: d.parentId,
         isHidden: !!d.isHidden,
-        // For pages, we'll need the editor key later
         pmsDocKey: d.pmsDocKey,
       };
 
@@ -350,22 +445,104 @@ export const getTreeForSpace = query({
       byParent.set(key, arr);
     }
 
-    // Sort siblings by "order"
-    for (const [k, arr] of byParent) {
-      if (k === undefined) continue;
-      arr.sort((a, b) => a.order - b.order);
+    // Sort siblings by rank
+    for (const [, arr] of byParent) {
+      arr.sort((a, b) => a.rank.localeCompare(b.rank));
     }
 
-    // Build nested tree with proper typing
     function attach(node: DocumentNode): TreeNode {
       const children = byParent.get(String(node._id)) ?? [];
-      return {
-        ...node,
-        children: children.map(attach),
-      };
+      return { ...node, children: children.map(attach) };
     }
 
     const roots = (byParent.get(undefined) ?? []).map(attach);
     return roots;
+  },
+});
+
+/* ---------- Move with lexicographic ranks ---------- */
+
+export const moveDocument = mutation({
+  args: {
+    documentId: v.id('documents'),
+    parentId: v.optional(v.id('documents')), // undefined = root
+    index: v.number(), // 0-based index within new parent
+  },
+  handler: async (ctx, { documentId, parentId, index }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
+
+    const doc = await ctx.db.get(documentId);
+    if (!doc) throw appError('DOCUMENT_NOT_FOUND', 'Document not found');
+
+    const space = await ctx.db.get(doc.spaceId);
+    if (!space) throw appError('SPACE_NOT_FOUND', 'Space not found');
+
+    if (parentId && String(parentId) === String(documentId)) {
+      throw appError('INVALID_PARENT', 'A document cannot be its own parent');
+    }
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
+      .first();
+    if (!user) throw appError('USER_NOT_FOUND', 'User not found');
+
+    const membership = await ctx.db
+      .query('projectMembers')
+      .withIndex('by_project_and_user', (q) =>
+        q.eq('projectId', space.projectId).eq('userId', user._id),
+      )
+      .first();
+    if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
+
+    const allowedRoles = ['owner', 'admin', 'editor'];
+    if (!allowedRoles.includes(membership.role)) {
+      throw appError('WRITE_ACCESS_DENIED', 'Insufficient permissions');
+    }
+
+    // Rule: groups must stay at root
+    if (doc.type === 'group' && parentId) {
+      throw appError('INVALID_PARENT', 'Groups can only exist at top level');
+    }
+
+    if (parentId) {
+      const parent = await ctx.db.get(parentId);
+      if (!parent) throw appError('PARENT_NOT_FOUND', 'Parent not found');
+      if (parent.archivedAt) throw appError('PARENT_ARCHIVED', 'Cannot move under archived parent');
+      if (doc.type === 'page' && !['group', 'page'].includes(parent.type)) {
+        throw appError('INVALID_PARENT', 'Invalid parent type');
+      }
+    }
+
+    // Siblings in target parent (ordered by rank)
+    const siblings = await ctx.db
+      .query('documents')
+      .withIndex('by_space_parent_rank', (q) =>
+        q.eq('spaceId', doc.spaceId).eq('parentId', parentId ?? undefined),
+      )
+      .order('asc')
+      .collect();
+
+    // Exclude the moving doc if it is already in this list
+    const filtered = siblings.filter((s) => String(s._id) !== String(doc._id));
+    const clampedIndex = Math.max(0, Math.min(index, filtered.length));
+
+    const prev = filtered[clampedIndex - 1];
+    const next = filtered[clampedIndex];
+
+    let newRank: string;
+    if (prev && next) newRank = rankBetween(prev.rank, next.rank);
+    else if (!prev && next) newRank = rankBefore(next.rank);
+    else if (prev && !next) newRank = rankAfter(prev.rank);
+    else newRank = rankBetween(undefined, undefined);
+
+    await ctx.db.patch(doc._id, {
+      parentId: parentId ?? undefined,
+      rank: newRank,
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(doc._id);
   },
 });

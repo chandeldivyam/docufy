@@ -75,7 +75,7 @@ export default defineSchema({
     slug: v.string(),
 
     parentId: v.optional(v.id('documents')),
-    order: v.number(), // sibling ordering key
+    rank: v.string(), // sibling ordering key
 
     // For pages only (editor doc key)
     pmsDocKey: v.optional(v.string()),
@@ -89,7 +89,7 @@ export default defineSchema({
   })
     .index('by_space', ['spaceId'])
     .index('by_space_parent', ['spaceId', 'parentId'])
-    .index('by_space_parent_order', ['spaceId', 'parentId', 'order']) // ← enables proper ordered queries
-    .index('by_space_parent_slug', ['spaceId', 'parentId', 'slug']) // ← uniqueness check scoped to siblings
-    .index('by_slug', ['spaceId', 'slug']), // keep if you still want space-wide slug lookups
+    .index('by_space_parent_rank', ['spaceId', 'parentId', 'rank'])
+    .index('by_space_parent_slug', ['spaceId', 'parentId', 'slug'])
+    .index('by_slug', ['spaceId', 'slug']),
 });
