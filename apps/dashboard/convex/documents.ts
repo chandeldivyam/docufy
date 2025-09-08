@@ -260,6 +260,7 @@ export const updateDocument = mutation({
     title: v.optional(v.string()),
     slug: v.optional(v.string()),
     rank: v.optional(v.string()),
+    iconName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -293,12 +294,18 @@ export const updateDocument = mutation({
       throw appError('WRITE_ACCESS_DENIED', 'Insufficient permissions');
     }
 
-    const updates: { updatedAt: number } & { title?: string; slug?: string; rank?: string } = {
+    const updates: { updatedAt: number } & {
+      title?: string;
+      slug?: string;
+      rank?: string;
+      iconName?: string;
+    } = {
       updatedAt: Date.now(),
     };
     if (args.title !== undefined) updates.title = args.title;
     if (args.slug !== undefined) updates.slug = slugify(args.slug);
     if (args.rank !== undefined) updates.rank = args.rank;
+    if (args.iconName !== undefined) updates.iconName = args.iconName;
 
     await ctx.db.patch(args.documentId, updates);
     return await ctx.db.get(args.documentId);
@@ -386,6 +393,7 @@ type DocumentNode = {
   parentId?: Id<'documents'>;
   isHidden: boolean;
   pmsDocKey?: string;
+  iconName?: string;
 };
 
 type TreeNode = DocumentNode & {
@@ -437,6 +445,7 @@ export const getTreeForSpace = query({
         parentId: d.parentId,
         isHidden: !!d.isHidden,
         pmsDocKey: d.pmsDocKey,
+        iconName: d.iconName,
       };
 
       arr.push(node);

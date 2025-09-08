@@ -1,21 +1,27 @@
+'use client';
 import { ConvexClientProvider } from '@/components/ConvexClientProvider';
 import { ConvexQueryCacheProvider } from 'convex-helpers/react/cache/provider';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Toaster } from '@/components/ui/sonner';
-
+import { Authenticated, Unauthenticated } from 'convex/react';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <ConvexClientProvider>
       <ConvexQueryCacheProvider>
         <div className="bg-background flex h-screen overflow-hidden">
-          <Sidebar />
+          <Authenticated>
+            <Sidebar />
 
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <main className="flex-1 overflow-y-auto">
-              <div className="container mr-auto h-full p-6">{children}</div>
-            </main>
-          </div>
-          <Toaster position="bottom-right" />
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <main className="flex-1 overflow-y-auto">
+                <div className="container mr-auto h-full p-6">{children}</div>
+              </main>
+            </div>
+            <Toaster position="bottom-right" />
+          </Authenticated>
+          <Unauthenticated>
+            <></>
+          </Unauthenticated>
         </div>
       </ConvexQueryCacheProvider>
     </ConvexClientProvider>

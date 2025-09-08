@@ -61,7 +61,7 @@ export default defineSchema({
     name: v.string(),
     slug: v.string(),
     description: v.optional(v.string()),
-    iconEmoji: v.optional(v.string()),
+    iconName: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -73,6 +73,7 @@ export default defineSchema({
     type: v.union(v.literal('page'), v.literal('group')),
     title: v.string(),
     slug: v.string(),
+    iconName: v.optional(v.string()),
 
     parentId: v.optional(v.id('documents')),
     rank: v.string(), // sibling ordering key

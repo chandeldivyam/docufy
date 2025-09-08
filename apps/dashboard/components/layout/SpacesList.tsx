@@ -18,7 +18,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from '@/components/ui/dropdown-menu';
 import { Plus, AlertCircle, RefreshCw, Hash } from 'lucide-react';
+import { IconPickerGrid, getIconComponent } from '@/components/icons/iconOptions';
 import { cn } from '@/lib/utils';
 import type { Id } from '@/convex/_generated/dataModel';
 import { toast } from 'sonner';
@@ -54,7 +60,7 @@ export function SpacesList({ projectId, collapsed }: SpacesListProps) {
 
   // Mutations
   const createSpace = useMutation(api.spaces.create).withOptimisticUpdate(
-    (store, { projectId, name, description, iconEmoji }) => {
+    (store, { projectId, name, description, iconName }) => {
       const list = store.getQuery(api.spaces.list, { projectId });
       if (!list) return;
       const now = Date.now();
@@ -71,7 +77,7 @@ export function SpacesList({ projectId, collapsed }: SpacesListProps) {
             .replace(/[^a-z0-9]+/g, '-')
             .slice(0, 50),
           description,
-          iconEmoji,
+          iconName,
           createdAt: now,
           updatedAt: now,
         },
@@ -83,7 +89,7 @@ export function SpacesList({ projectId, collapsed }: SpacesListProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState('');
   const [newSpaceDescription, setNewSpaceDescription] = useState('');
-  const [newSpaceIcon, setNewSpaceIcon] = useState('📄');
+  const [newSpaceIconName, setNewSpaceIconName] = useState('FileText');
 
   async function handleCreateSpace(e: React.FormEvent) {
     e.preventDefault();
@@ -94,12 +100,12 @@ export function SpacesList({ projectId, collapsed }: SpacesListProps) {
         projectId,
         name: newSpaceName.trim(),
         description: newSpaceDescription.trim() || undefined,
-        iconEmoji: newSpaceIcon,
+        iconName: newSpaceIconName,
       });
       toast.success('Space created successfully');
       setNewSpaceName('');
       setNewSpaceDescription('');
-      setNewSpaceIcon('📄');
+      setNewSpaceIconName('FileText');
       setShowCreateForm(false);
     } catch (error) {
       const { message, code } = parseConvexError(error);
@@ -189,13 +195,19 @@ export function SpacesList({ projectId, collapsed }: SpacesListProps) {
                   <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
                     <div className="space-y-2">
                       <Label htmlFor="icon">Icon</Label>
-                      <Input
-                        id="icon"
-                        value={newSpaceIcon}
-                        onChange={(e) => setNewSpaceIcon(e.target.value)}
-                        className="w-16 text-center"
-                        maxLength={2}
-                      />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" type="button" className="w-16 justify-center">
+                            {(() => {
+                              const Icon = getIconComponent(newSpaceIconName);
+                              return <Icon className="h-5 w-5" />;
+                            })()}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-auto p-1">
+                          <IconPickerGrid onSelect={(name) => setNewSpaceIconName(name)} />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="name">Name</Label>
@@ -272,7 +284,10 @@ export function SpacesList({ projectId, collapsed }: SpacesListProps) {
                 )}
               >
                 <span className="text-base" title={space.name}>
-                  {space.iconEmoji || '📄'}
+                  {(() => {
+                    const Icon = getIconComponent(space.iconName);
+                    return <Icon className="h-4 w-4" />;
+                  })()}
                 </span>
                 {!collapsed && (
                   <span className="truncate" title={space.name}>

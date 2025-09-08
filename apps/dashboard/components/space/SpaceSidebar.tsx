@@ -16,8 +16,6 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  FileText,
-  Folder,
   MoreHorizontal,
   Plus,
   Pencil,
@@ -26,7 +24,16 @@ import {
   ChevronRight,
   ChevronDown,
   GripVertical,
+  Smile,
 } from 'lucide-react';
+import { getIconComponent, IconPickerGrid } from '@/components/icons/iconOptions';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 import { useQueryWithStatus } from '@/lib/convexHooks';
@@ -57,6 +64,7 @@ type BaseDocumentNode = {
   parentId?: Id<'documents'>;
   isHidden: boolean;
   pmsDocKey?: string;
+  iconName?: string;
 };
 
 type DocumentNode = BaseDocumentNode & { _id: Id<'documents'> };
@@ -187,6 +195,7 @@ function SpaceSidebarInner({
         rank: '~', // placeholder, server will return the real rank
         parentId,
         isHidden: false,
+        iconName: undefined,
         children: [],
       };
 
@@ -215,13 +224,20 @@ function SpaceSidebarInner({
   );
 
   const updateDoc = useMutation(api.documents.updateDocument).withOptimisticUpdate(
-    (store, { documentId, title, slug }) => {
+    (store, { documentId, title, slug, iconName }) => {
       const current = store.getQuery(api.documents.getTreeForSpace, { spaceId }) as
         | TreeNode[]
         | undefined;
       if (!current) return;
       const next = mapNodes(current, (n) =>
-        n._id === documentId ? { ...n, title: title ?? n.title, slug: slug ?? n.slug } : n,
+        n._id === documentId
+          ? {
+              ...n,
+              title: title ?? n.title,
+              slug: slug ?? n.slug,
+              iconName: iconName ?? n.iconName,
+            }
+          : n,
       );
       store.setQuery(api.documents.getTreeForSpace, { spaceId }, next);
     },
@@ -460,6 +476,13 @@ function SpaceSidebarInner({
                     toast.error(getErrorMessage(e));
                   }
                 }}
+                onChangeIcon={async (id, iconName) => {
+                  try {
+                    await updateDoc({ documentId: id, iconName });
+                  } catch (e) {
+                    toast.error(getErrorMessage(e));
+                  }
+                }}
               />
             </SortableContext>
 
@@ -526,6 +549,7 @@ function Tree({
   onCreateChild,
   onRename,
   onDelete,
+  onChangeIcon,
 }: {
   nodes: TreeNode[];
   projectId: Id<'projects'>;
@@ -537,6 +561,7 @@ function Tree({
   onCreateChild: (parentId: Id<'documents'>) => Promise<void>;
   onRename: (id: Id<'documents'>, nextTitle: string) => Promise<void>;
   onDelete: (id: Id<'documents'>) => Promise<void>;
+  onChangeIcon: (id: Id<'documents'>, iconName: string) => Promise<void>;
 }) {
   return (
     <div>
@@ -553,6 +578,7 @@ function Tree({
           onCreateChild={onCreateChild}
           onRename={onRename}
           onDelete={onDelete}
+          onChangeIcon={onChangeIcon}
         />
       ))}
     </div>
@@ -570,6 +596,7 @@ function TreeNodeRow({
   onCreateChild,
   onRename,
   onDelete,
+  onChangeIcon,
 }: {
   node: TreeNode;
   projectId: Id<'projects'>;
@@ -581,6 +608,7 @@ function TreeNodeRow({
   onCreateChild: (parentId: Id<'documents'>) => Promise<void>;
   onRename: (id: Id<'documents'>, nextTitle: string) => Promise<void>;
   onDelete: (id: Id<'documents'>) => Promise<void>;
+  onChangeIcon: (id: Id<'documents'>, iconName: string) => Promise<void>;
 }) {
   const sortable = useSortable({ id: String(node._id), disabled: isOptimisticId(node._id) });
   const style = {
@@ -592,8 +620,11 @@ function TreeNodeRow({
   const active = params?.documentId && String(params.documentId) === String(node._id);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(node.title);
-
+  const [iconDialogOpen, setIconDialogOpen] = useState(false);
   const isGroup = node.type === 'group';
+  const customIconName = node.iconName ? node.iconName : undefined;
+  const CustomIcon = customIconName ? getIconComponent(customIconName) : null;
+
   const hasChildren = node.children?.length > 0;
   const isExpanded = expanded.has(String(node._id));
   const canNavigate = !isGroup && !editing && !isOptimisticId(node._id);
@@ -631,7 +662,7 @@ function TreeNodeRow({
         data-parent-id={node.parentId ? String(node.parentId) : ''}
         className={[
           'group flex items-center justify-between rounded-md px-2 py-1',
-          active ? 'bg-muted/60' : 'hover:bg-muted/40',
+          active ? 'bg-muted/100' : 'hover:bg-muted/40',
           isDropInsideTarget && !invalidDrop ? 'ring-primary/60 bg-primary/5 ring-2' : '',
           isDropInsideTarget && invalidDrop ? 'ring-destructive/60 bg-destructive/5 ring-2' : '',
           canNavigate ? 'cursor-pointer' : '',
@@ -664,11 +695,9 @@ function TreeNodeRow({
           {/* Icon slot with hover drag-handle overlay */}
           <span className="relative grid h-5 w-5 shrink-0 place-items-center">
             <span className="transition-opacity duration-100 group-hover:opacity-0">
-              {isGroup ? (
-                <Folder className="text-muted-foreground h-4 w-4 shrink-0" />
-              ) : (
-                <FileText className="text-muted-foreground h-4 w-4 shrink-0" />
-              )}
+              {CustomIcon ? (
+                <CustomIcon className="text-muted-foreground h-4 w-4 shrink-0" />
+              ) : null}
             </span>
             <span
               className="absolute inset-0 grid cursor-grab touch-none select-none place-items-center opacity-0 transition-opacity duration-100 active:cursor-grabbing group-hover:opacity-100"
@@ -741,6 +770,15 @@ function TreeNodeRow({
               <Plus className="mr-2 h-4 w-4" /> Add child page
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setIconDialogOpen(true);
+              }}
+            >
+              <Smile className="mr-2 h-4 w-4" /> {customIconName ? 'Change icon' : 'Set icon'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setEditing(true)}>
               <Pencil className="mr-2 h-4 w-4" /> Rename
             </DropdownMenuItem>
@@ -761,6 +799,32 @@ function TreeNodeRow({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <Dialog open={iconDialogOpen} onOpenChange={setIconDialogOpen}>
+          <DialogContent className="sm:max-w-[520px]">
+            <DialogHeader>
+              <DialogTitle>Document icon</DialogTitle>
+              <DialogDescription>Choose an icon or remove it.</DialogDescription>
+            </DialogHeader>
+            <IconPickerGrid
+              onSelect={async (name) => {
+                await onChangeIcon(node._id as Id<'documents'>, name);
+                setIconDialogOpen(false);
+              }}
+            />
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  await onChangeIcon(node._id as Id<'documents'>, '');
+                  setIconDialogOpen(false);
+                }}
+              >
+                Remove icon
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {node.children?.length && isExpanded ? (
@@ -773,6 +837,7 @@ function TreeNodeRow({
               spaceSlug={spaceSlug}
               expanded={expanded}
               setExpanded={setExpanded}
+              onChangeIcon={onChangeIcon}
               isDropInsideTarget={
                 isDropInsideTarget && String(c._id) === String(node._id) ? true : isDropInsideTarget
               }

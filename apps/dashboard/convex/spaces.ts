@@ -16,7 +16,7 @@ export const create = mutation({
     projectId: v.id('projects'),
     name: v.string(),
     description: v.optional(v.string()),
-    iconEmoji: v.optional(v.string()),
+    iconName: v.optional(v.string()),
   },
   returns: v.id('spaces'),
   handler: async (ctx, args) => {
@@ -40,7 +40,7 @@ export const create = mutation({
       name: args.name,
       slug,
       description: args.description,
-      iconEmoji: args.iconEmoji,
+      iconName: args.iconName,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -96,7 +96,7 @@ export const update = mutation({
     spaceId: v.id('spaces'),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
-    iconEmoji: v.optional(v.string()),
+    iconName: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -111,7 +111,7 @@ export const update = mutation({
       name?: string;
       slug?: string;
       description?: string;
-      iconEmoji?: string;
+      iconName?: string;
     } = {
       updatedAt: Date.now(),
     };
@@ -125,8 +125,8 @@ export const update = mutation({
       updates.description = args.description;
     }
 
-    if (args.iconEmoji !== undefined) {
-      updates.iconEmoji = args.iconEmoji;
+    if (args.iconName !== undefined) {
+      updates.iconName = args.iconName;
     }
 
     await ctx.db.patch(args.spaceId, updates);
