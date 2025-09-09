@@ -533,3 +533,40 @@
 .ProseMirror-dropcursor {
   border-left: 4px solid var(--primary);
 }
+
+/* Upload placeholder spinner */
+.img-placeholder {
+  position: relative;
+}
+.img-placeholder::before {
+  content: '';
+  box-sizing: border-box;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--foreground);
+  transform: translate(-50%, -50%);
+  animation: spinning 0.6s linear infinite;
+}
+@keyframes spinning {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Visual affordances for images */
+.ProseMirror img {
+  transition: filter 0.1s ease-in-out;
+}
+.ProseMirror img:hover {
+  cursor: pointer;
+  filter: brightness(92%);
+}
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid var(--ring);
+  filter: brightness(92%);
+}

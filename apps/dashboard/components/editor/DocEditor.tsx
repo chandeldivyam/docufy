@@ -1,18 +1,31 @@
-// apps/dashboard/components/editor/DocEditor.tsx
 'use client';
 
-import { useEffect, useImperativeHandle, useState, forwardRef } from 'react';
+import { useEffect, useImperativeHandle, useState, forwardRef, useMemo, useRef } from 'react';
 
-import { EditorProvider, EditorContent, useCurrentEditor } from '@tiptap/react';
+import { EditorProvider, useCurrentEditor } from '@tiptap/react';
 import type { Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useTiptapSync } from '@convex-dev/prosemirror-sync/tiptap';
 import { api } from '@/convex/_generated/api';
 import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
 import AutoJoiner from 'tiptap-extension-auto-joiner';
+import type { AnyExtension } from '@tiptap/core';
+
+import { ResizableImage } from './extensions/resizableImage';
+import ImageResizer from './ImageResizer';
+
+import {
+  createImageUpload,
+  handleImageDrop,
+  handleImagePaste,
+  type UploadFn,
+} from './plugins/uploadImages';
+import { useMutation } from 'convex/react';
+import { toast } from 'sonner';
+import { Id } from '@/convex/_generated/dataModel';
 
 type Props = {
-  docKey: string; // e.g. "space/<spaceId>/doc/<documentId>"
+  docKey: string;
   className?: string;
   editable?: boolean;
 };
@@ -31,96 +44,137 @@ function EditorBridge({ onReady }: { onReady: (editor: Editor | null) => void })
   return null;
 }
 
-/**
- * Collaborative TipTap editor backed by Convex ProseMirror Sync.
- * - Loads initial snapshot if it exists.
- * - If no snapshot exists yet, offers a "Create" action with an empty doc.
- * - Syncs local changes as steps; server periodically stores snapshots.
- */
 const DocEditor = forwardRef<DocEditorHandle, Props>(function DocEditor(
   { docKey, className, editable }: Props,
   ref,
 ) {
-  // Snapshot debounce reduces snapshot writes when users pause typing.
+  // Always call hooks in the same order
   const sync = useTiptapSync(api.editor, docKey, { snapshotDebounceMs: 1200 });
+  const { isLoading, initialContent, create } = sync;
   const [editor, setEditor] = useState<Editor | null>(null);
 
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  const storeFile = useMutation(api.files.store);
+
+  // Only call create() once per docKey when we know there isn't a snapshot
+  const createdRef = useRef(false);
   useEffect(() => {
-    if (sync.initialContent === null) {
-      // Create with a minimal valid document structure - at least one paragraph
-      sync.create({
+    if (createdRef.current) return;
+    if (isLoading) return;
+
+    if (initialContent === null) {
+      createdRef.current = true;
+      // Use a stable, explicit empty paragraph
+      create({
         type: 'doc',
-        content: [
-          {
-            type: 'paragraph',
-            content: [],
-          },
-        ],
+        content: [{ type: 'paragraph', content: [] }],
       });
     }
-  }, [sync, sync.initialContent, sync.create]);
+  }, [isLoading, initialContent, create]);
 
   useImperativeHandle(
     ref,
     () => ({
-      focus: () => {
-        editor?.chain().focus().run();
-      },
-      focusAtStart: () => {
-        editor?.chain().focus('start').run();
-      },
-      focusAtEnd: () => {
-        editor?.chain().focus('end').run();
-      },
+      focus: () => editor?.chain().focus().run(),
+      focusAtStart: () => editor?.chain().focus('start').run(),
+      focusAtEnd: () => editor?.chain().focus('end').run(),
     }),
     [editor],
   );
 
-  // No document created yet in the sync tables for this docKey
-  if (sync.initialContent === null) {
-    return <></>;
-  }
+  // Build UploadFn (keep hooks above any return)
+  const uploadFn: UploadFn = useMemo(() => {
+    const onUpload = async (file: File): Promise<string> => {
+      const inner = (async () => {
+        const uploadUrl = await generateUploadUrl({});
+        const res = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': file.type },
+          body: file,
+        });
+        if (!res.ok) throw new Error('Upload failed');
+        const { storageId } = (await res.json()) as { storageId: string };
 
-  // Configure extensions - matching Novel's approach
-  const extensions = [
-    StarterKit.configure({
-      // Configure dropcursor for better drag feedback
-      dropcursor: {
-        color: '#DBEAFE',
-        width: 4,
-      },
-      // Disable gapcursor as Novel does
-      gapcursor: false,
-    }),
-    sync.extension,
-    AutoJoiner,
-  ];
+        const { url } = await storeFile({
+          storageId: storageId as unknown as Id<'_storage'>,
+          contentType: file.type,
+          name: file.name,
+          size: file.size,
+        });
+        return url as string;
+      })();
 
-  // Only add GlobalDragHandle for editable mode
-  // This matches how Novel conditionally adds features
-  if (editable) {
-    extensions.push(GlobalDragHandle);
-  }
+      void toast.promise(inner, {
+        loading: 'Uploading image...',
+        success: 'Image uploaded',
+        error: 'Upload failed',
+      });
+
+      return await inner;
+    };
+
+    const validateFn = (file: File) => {
+      const okType = file.type.startsWith('image/');
+      const okSize = file.size / 1024 / 1024 <= 20;
+      if (!okType) toast.error('File type not supported');
+      if (!okSize) toast.error('File size too big (max 20MB)');
+      return okType && okSize;
+    };
+
+    return createImageUpload({ validateFn, onUpload });
+  }, [generateUploadUrl, storeFile]);
+
+  const extensions: AnyExtension[] = useMemo(() => {
+    const arr: (AnyExtension | null)[] = [
+      StarterKit.configure({
+        dropcursor: { color: '#DBEAFE', width: 4 },
+        gapcursor: false,
+      }),
+      ResizableImage,
+      sync.extension as AnyExtension | null, // may be null early
+      AutoJoiner,
+      editable ? (GlobalDragHandle as AnyExtension) : null,
+    ];
+
+    // Type predicate ensures the array is narrowed to AnyExtension[]
+    return arr.filter((e): e is AnyExtension => e !== null);
+  }, [editable, sync.extension]);
+
+  // Render - no early return before hooks. Use conditional JSX instead.
+  const notReady = sync.initialContent === null && !createdRef.current;
 
   return (
-    <EditorProvider
-      content={sync.initialContent}
-      extensions={extensions}
-      editorProps={{
-        attributes: {
-          class:
-            'prose prose-sm sm:prose-base dark:prose-invert max-w-none h-full focus:outline-none',
-        },
-      }}
-      editable={editable}
-      autofocus
-      immediatelyRender={false}
-    >
-      <div className={className}>
-        <EditorContent editor={null} />
-        <EditorBridge onReady={setEditor} />
-      </div>
-    </EditorProvider>
+    <div className={className}>
+      {notReady ? (
+        <div className="text-muted-foreground p-2 text-sm">Creating page…</div>
+      ) : (
+        <EditorProvider
+          content={
+            sync.initialContent ?? { type: 'doc', content: [{ type: 'paragraph', content: [] }] }
+          }
+          extensions={extensions}
+          editable={editable}
+          autofocus
+          immediatelyRender={false}
+          editorProps={{
+            handlePaste: (view, event) => handleImagePaste(view, event as ClipboardEvent, uploadFn),
+            handleDrop: (view, event, _slice, moved) =>
+              handleImageDrop(view, event as DragEvent, moved, uploadFn),
+            attributes: {
+              class:
+                'tiptap prose prose-sm sm:prose-base dark:prose-invert max-w-none h-full focus:outline-none',
+            },
+          }}
+          // EditorProvider renders the editor content internally in v3
+          slotAfter={
+            <>
+              <ImageResizer />
+              <EditorBridge onReady={setEditor} />
+            </>
+          }
+        />
+      )}
+    </div>
   );
 });
 
