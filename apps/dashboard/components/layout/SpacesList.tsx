@@ -23,13 +23,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
 } from '@/components/ui/dropdown-menu';
-import { Plus, AlertCircle, RefreshCw, Hash } from 'lucide-react';
+import { Plus, AlertCircle, RefreshCw, Hash, MoreHorizontal, Pencil } from 'lucide-react';
 import { IconPickerGrid, getIconComponent } from '@/components/icons/iconOptions';
 import { cn } from '@/lib/utils';
 import type { Id } from '@/convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { parseConvexError, getErrorMessage, isAuthError } from '@/lib/errors';
 import { useQueryWithStatus } from '@/lib/convexHooks';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 interface SpacesListProps {
   projectId: Id<'projects'>;
@@ -85,11 +86,55 @@ export function SpacesList({ projectId, collapsed }: SpacesListProps) {
     },
   );
 
+  // Update mutation with optimistic list update
+  const updateSpace = useMutation(api.spaces.update).withOptimisticUpdate(
+    (store, { spaceId, name, iconName, description }) => {
+      const list = store.getQuery(api.spaces.list, { projectId });
+      if (!list) return;
+      const slugFromName = (n: string) =>
+        n
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+          .slice(0, 50);
+      store.setQuery(
+        api.spaces.list,
+        { projectId },
+        list.map((s) =>
+          s._id === spaceId
+            ? {
+                ...s,
+                name: name ?? s.name,
+                slug: name ? slugFromName(name) : s.slug,
+                description: description ?? s.description,
+                iconName: iconName !== undefined ? iconName : s.iconName,
+                updatedAt: Date.now(),
+              }
+            : s,
+        ),
+      );
+    },
+  );
+
   // Form state
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState('');
   const [newSpaceDescription, setNewSpaceDescription] = useState('');
   const [newSpaceIconName, setNewSpaceIconName] = useState('FileText');
+
+  // Edit state
+  const [editOpen, setEditOpen] = useState(false);
+  const [iconOpen, setIconOpen] = useState(false);
+  const [editSpaceId, setEditSpaceId] = useState<Id<'spaces'> | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editIconName, setEditIconName] = useState<string | undefined>(undefined);
+
+  function openEdit(spaceId: Id<'spaces'>, name: string, iconName?: string) {
+    setEditSpaceId(spaceId);
+    setEditName(name);
+    setEditIconName(iconName);
+    setEditOpen(true);
+  }
 
   async function handleCreateSpace(e: React.FormEvent) {
     e.preventDefault();
@@ -273,32 +318,222 @@ export function SpacesList({ projectId, collapsed }: SpacesListProps) {
             const isActive = pathname.startsWith(href);
 
             return (
-              <Link
-                key={space._id}
-                href={href}
-                className={cn(
-                  'flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  collapsed ? 'mx-1 justify-center' : 'mx-2 gap-3',
-                  'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                  isActive && 'bg-sidebar-accent text-sidebar-accent-foreground',
-                )}
-              >
-                <span className="text-base" title={space.name}>
-                  {(() => {
-                    const Icon = getIconComponent(space.iconName);
-                    return <Icon className="h-4 w-4" />;
-                  })()}
-                </span>
-                {!collapsed && (
-                  <span className="truncate" title={space.name}>
-                    {space.name}
+              <div key={space._id} className="relative">
+                <Link
+                  href={href}
+                  className={cn(
+                    'group/link flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    collapsed ? 'mx-1 justify-center' : 'mx-2 gap-3',
+                    'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                    isActive && 'bg-sidebar-accent text-sidebar-accent-foreground',
+                  )}
+                >
+                  <span className="text-base" title={space.name}>
+                    {(() => {
+                      const Icon = getIconComponent(space.iconName);
+                      return <Icon className="h-4 w-4" />;
+                    })()}
                   </span>
-                )}
-              </Link>
+                  {!collapsed && (
+                    <span className="truncate" title={space.name}>
+                      {space.name}
+                    </span>
+                  )}
+                  {!collapsed && canCreateSpace && (
+                    <div className="ml-auto">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground invisible size-6 shrink-0 group-hover/link:visible"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          >
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              openEdit(space._id, space.name, space.iconName);
+                            }}
+                          >
+                            <Pencil className="size-4" /> Edit
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
+                </Link>
+              </div>
             );
           })
         )}
       </div>
+
+      {/* Edit space dialog */}
+      <EditSpaceDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        name={editName}
+        setName={setEditName}
+        iconName={editIconName}
+        setIconName={setEditIconName}
+        onSave={async () => {
+          if (!editSpaceId) return;
+          try {
+            await updateSpace({
+              spaceId: editSpaceId,
+              name: editName.trim(),
+              iconName: editIconName,
+            });
+            setEditOpen(false);
+          } catch (error) {
+            const { message, code } = parseConvexError(error);
+            toast.error(message ?? code ?? 'Failed to update space');
+          }
+        }}
+      />
+
+      {/* Icon-only picker dialog */}
+      <IconOnlyDialog
+        open={iconOpen}
+        onOpenChange={setIconOpen}
+        setIconName={setEditIconName}
+        onApply={async () => {
+          if (!editSpaceId) return;
+          try {
+            await updateSpace({ spaceId: editSpaceId, iconName: editIconName });
+            setIconOpen(false);
+          } catch (error) {
+            const { message, code } = parseConvexError(error);
+            toast.error(message ?? code ?? 'Failed to update icon');
+          }
+        }}
+        onRemove={async () => {
+          if (!editSpaceId) return;
+          try {
+            await updateSpace({ spaceId: editSpaceId, iconName: '' });
+            setIconOpen(false);
+          } catch (error) {
+            const { message, code } = parseConvexError(error);
+            toast.error(message ?? code ?? 'Failed to remove icon');
+          }
+        }}
+      />
     </div>
+  );
+}
+
+// Dialog components
+function EditSpaceDialog({
+  open,
+  onOpenChange,
+  name,
+  setName,
+  iconName,
+  setIconName,
+  onSave,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  name: string;
+  setName: (v: string) => void;
+  iconName?: string;
+  setIconName: (v?: string) => void;
+  onSave: () => Promise<void> | void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>Edit space</DialogTitle>
+          <DialogDescription>Update the name and icon.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
+          <div className="space-y-2">
+            <Label htmlFor="edit-space-icon">Icon</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" type="button" className="w-16 justify-center">
+                  {(() => {
+                    const Icon = getIconComponent(iconName);
+                    return <Icon className="h-5 w-5" />;
+                  })()}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[420px] p-1">
+                <IconPickerGrid
+                  onSelect={(name) => setIconName(name)}
+                  onRemove={() => setIconName('')}
+                />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-space-name">Name</Label>
+            <Input
+              id="edit-space-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Space name"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && name.trim()) {
+                  e.preventDefault();
+                  onSave();
+                }
+              }}
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={() => onSave()} disabled={!name.trim()}>
+            Save changes
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function IconOnlyDialog({
+  open,
+  onOpenChange,
+  setIconName,
+  onApply,
+  onRemove,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  setIconName: (v?: string) => void;
+  onApply: () => Promise<void> | void;
+  onRemove: () => Promise<void> | void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[640px]">
+        <DialogHeader>
+          <DialogTitle>Space icon</DialogTitle>
+          <DialogDescription>Choose an icon or remove it.</DialogDescription>
+        </DialogHeader>
+        <IconPickerGrid onSelect={(name) => setIconName(name)} onRemove={onRemove} />
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+          <Button type="button" onClick={() => onApply()}>
+            Apply
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

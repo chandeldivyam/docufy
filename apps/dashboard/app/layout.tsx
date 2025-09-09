@@ -5,8 +5,11 @@ import { ThemeProvider } from '@/components/theme/NextThemeProvider';
 import { AuthKitProvider } from '@workos-inc/authkit-nextjs/components';
 
 export const metadata: Metadata = {
-  title: 'Docufy Dashboard',
-  description: 'Admin dashboard for Docufy',
+  title: 'Docufy',
+  description: 'Docufy - Documentation made easy!',
+  icons: {
+    icon: [{ url: '/favicon.ico' }],
+  },
 };
 
 export default function RootLayout({

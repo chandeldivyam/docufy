@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useQueryWithStatus } from '@/lib/convexHooks';
 import { api } from '@/convex/_generated/api';
@@ -57,25 +58,32 @@ export function ProjectHeader({ collapsed, projectId, onToggleCollapsed }: Props
       <div className={cn('flex items-center gap-2', collapsed && 'justify-between')}>
         {collapsed ? (
           <>
-            {/* Collapsed: just show toggle button and a tiny skeleton dot while loading */}
+            {/* Collapsed: show logo with hover overlay to uncollapse */}
             <button
               type="button"
               aria-label="Expand sidebar"
-              className="hover:bg-sidebar-accent inline-flex h-8 w-8 items-center justify-center rounded-md"
+              className="group relative inline-flex h-8 w-8 items-center justify-center rounded-md"
               onClick={onToggleCollapsed}
             >
-              <PanelLeftOpen className="h-4 w-4" />
+              {/* Logo always visible */}
+              <span className="relative z-0 block h-6 w-6 transition-opacity duration-150 group-hover:opacity-0">
+                <Image src="/logo.svg" alt="Logo" fill className="object-contain" />
+              </span>
+              {/* Hover overlay icon */}
+              <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                <PanelLeftOpen className="h-4 w-4" />
+              </span>
             </button>
           </>
         ) : (
           <>
-            {/* Project avatar or skeleton */}
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
+            {/* Logo replaces the single alphabet avatar */}
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg">
               {projectsQuery.isPending ? (
                 <Skeleton className="h-5 w-5 rounded" />
               ) : (
-                <span className="text-sm font-semibold">
-                  {(active?.name?.charAt(0) ?? 'P').toUpperCase()}
+                <span className="relative block h-6 w-6">
+                  <Image src="/logo.svg" alt="Logo" fill className="object-contain" />
                 </span>
               )}
             </div>

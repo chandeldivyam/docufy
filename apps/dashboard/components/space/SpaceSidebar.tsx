@@ -801,7 +801,7 @@ function TreeNodeRow({
         </DropdownMenu>
 
         <Dialog open={iconDialogOpen} onOpenChange={setIconDialogOpen}>
-          <DialogContent className="sm:max-w-[520px]">
+          <DialogContent className="sm:max-w-[640px]">
             <DialogHeader>
               <DialogTitle>Document icon</DialogTitle>
               <DialogDescription>Choose an icon or remove it.</DialogDescription>
@@ -811,18 +811,11 @@ function TreeNodeRow({
                 await onChangeIcon(node._id as Id<'documents'>, name);
                 setIconDialogOpen(false);
               }}
+              onRemove={async () => {
+                await onChangeIcon(node._id as Id<'documents'>, '');
+                setIconDialogOpen(false);
+              }}
             />
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  await onChangeIcon(node._id as Id<'documents'>, '');
-                  setIconDialogOpen(false);
-                }}
-              >
-                Remove icon
-              </Button>
-            </div>
           </DialogContent>
         </Dialog>
       </div>
