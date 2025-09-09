@@ -55,4 +55,42 @@ export default defineSchema({
     .index('by_email_and_status', ['inviteeEmail', 'status'])
     .index('by_project', ['projectId'])
     .index('by_project_and_email', ['projectId', 'inviteeEmail']),
+
+  spaces: defineTable({
+    projectId: v.id('projects'),
+    name: v.string(),
+    slug: v.string(),
+    description: v.optional(v.string()),
+    iconName: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_project', ['projectId'])
+    .index('by_slug', ['projectId', 'slug']),
+
+  documents: defineTable({
+    spaceId: v.id('spaces'),
+    type: v.union(v.literal('page'), v.literal('group')),
+    title: v.string(),
+    slug: v.string(),
+    iconName: v.optional(v.string()),
+
+    parentId: v.optional(v.id('documents')),
+    rank: v.string(), // sibling ordering key
+
+    // For pages only (editor doc key)
+    pmsDocKey: v.optional(v.string()),
+
+    // Visibility & lifecycle
+    isHidden: v.optional(v.boolean()), // default false
+    archivedAt: v.optional(v.number()),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_space', ['spaceId'])
+    .index('by_space_parent', ['spaceId', 'parentId'])
+    .index('by_space_parent_rank', ['spaceId', 'parentId', 'rank'])
+    .index('by_space_parent_slug', ['spaceId', 'parentId', 'slug'])
+    .index('by_slug', ['spaceId', 'slug']),
 });

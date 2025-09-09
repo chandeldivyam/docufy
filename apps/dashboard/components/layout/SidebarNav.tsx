@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import type { NavItem, IconKey } from '@/lib/nav';
-import { LayoutDashboard, FileText, Settings as SettingsIcon, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Settings as SettingsIcon, type LucideIcon } from 'lucide-react';
 
 export function SidebarNav({
   items,
@@ -16,7 +16,6 @@ export function SidebarNav({
   const pathname = usePathname();
   const iconMap: Record<IconKey, LucideIcon> = {
     dashboard: LayoutDashboard,
-    editor: FileText,
     settings: SettingsIcon,
   };
 
