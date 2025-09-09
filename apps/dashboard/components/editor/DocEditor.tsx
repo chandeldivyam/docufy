@@ -1,5 +1,4 @@
 // apps/dashboard/components/editor/DocEditor.tsx
-// apps/dashboard/components/editor/DocEditor.tsx
 'use client';
 
 import { useEffect, useImperativeHandle, useState, forwardRef } from 'react';
@@ -9,6 +8,8 @@ import type { Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useTiptapSync } from '@convex-dev/prosemirror-sync/tiptap';
 import { api } from '@/convex/_generated/api';
+import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
+import AutoJoiner from 'tiptap-extension-auto-joiner';
 
 type Props = {
   docKey: string; // e.g. "space/<spaceId>/doc/<documentId>"
@@ -80,11 +81,31 @@ const DocEditor = forwardRef<DocEditorHandle, Props>(function DocEditor(
     return <></>;
   }
 
+  // Configure extensions - matching Novel's approach
+  const extensions = [
+    StarterKit.configure({
+      // Configure dropcursor for better drag feedback
+      dropcursor: {
+        color: '#DBEAFE',
+        width: 4,
+      },
+      // Disable gapcursor as Novel does
+      gapcursor: false,
+    }),
+    sync.extension,
+    AutoJoiner,
+  ];
+
+  // Only add GlobalDragHandle for editable mode
+  // This matches how Novel conditionally adds features
+  if (editable) {
+    extensions.push(GlobalDragHandle);
+  }
+
   return (
     <EditorProvider
       content={sync.initialContent}
-      // Important: include the sync extension alongside your TipTap extensions
-      extensions={[StarterKit, sync.extension]}
+      extensions={extensions}
       editorProps={{
         attributes: {
           class:

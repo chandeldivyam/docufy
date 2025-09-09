@@ -18,7 +18,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { IconPickerGrid, getIconComponent } from '@/components/icons/iconOptions';
+import { getIconComponent } from '@/components/icons/iconOptions';
+import dynamic from 'next/dynamic';
+const IconPickerGrid = dynamic(
+  () => import('@/components/icons/IconPicker').then((m) => m.IconPickerGrid),
+  { ssr: false },
+);
 
 export default function DocEditorPage() {
   const params = useParams<{ documentId: string }>();
