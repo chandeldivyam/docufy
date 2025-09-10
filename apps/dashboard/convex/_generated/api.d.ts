@@ -12,6 +12,7 @@ import type * as _utils_auth from "../_utils/auth.js";
 import type * as _utils_errors from "../_utils/errors.js";
 import type * as documents from "../documents.js";
 import type * as editor from "../editor.js";
+import type * as files from "../files.js";
 import type * as http from "../http.js";
 import type * as projectInvites from "../projectInvites.js";
 import type * as projectMembers from "../projectMembers.js";
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   "_utils/errors": typeof _utils_errors;
   documents: typeof documents;
   editor: typeof editor;
+  files: typeof files;
   http: typeof http;
   projectInvites: typeof projectInvites;
   projectMembers: typeof projectMembers;

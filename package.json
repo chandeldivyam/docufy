@@ -42,5 +42,10 @@
     "format:check": "prettier --check .",
     "ci:verify": "pnpm -s lint && pnpm -s typecheck && pnpm -s build",
     "prepare": "husky"
+  },
+  "pnpm": {
+    "overrides": {
+      "@convex-dev/prosemirror-sync": "github:chandeldivyam/prosemirror-sync"
+    }
   }
 }

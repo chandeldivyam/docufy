@@ -7,9 +7,6 @@ import { AuthKitProvider } from '@workos-inc/authkit-nextjs/components';
 export const metadata: Metadata = {
   title: 'Docufy',
   description: 'Docufy - Documentation made easy!',
-  icons: {
-    icon: [{ url: '/favicon.ico' }],
-  },
 };
 
 export default function RootLayout({

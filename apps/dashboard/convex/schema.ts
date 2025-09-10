@@ -93,4 +93,13 @@ export default defineSchema({
     .index('by_space_parent_rank', ['spaceId', 'parentId', 'rank'])
     .index('by_space_parent_slug', ['spaceId', 'parentId', 'slug'])
     .index('by_slug', ['spaceId', 'slug']),
+
+  files: defineTable({
+    storageId: v.id('_storage'),
+    contentType: v.string(),
+    name: v.string(),
+    size: v.number(),
+    ownerId: v.optional(v.id('users')),
+    createdAt: v.number(),
+  }).index('by_owner', ['ownerId']),
 });

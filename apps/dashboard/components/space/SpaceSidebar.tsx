@@ -26,7 +26,12 @@ import {
   GripVertical,
   Smile,
 } from 'lucide-react';
-import { getIconComponent, IconPickerGrid } from '@/components/icons/iconOptions';
+import { getIconComponent } from '@/components/icons/iconOptions';
+import dynamic from 'next/dynamic';
+const IconPickerGrid = dynamic(
+  () => import('@/components/icons/IconPicker').then((m) => m.IconPickerGrid),
+  { ssr: false },
+);
 import {
   Dialog,
   DialogContent,

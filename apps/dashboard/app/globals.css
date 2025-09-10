@@ -74,6 +74,16 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --syntax-base: oklch(0.3 0 0);
+  --syntax-comment: oklch(0.52 0 0);
+  --syntax-keyword: oklch(0.55 0.12 250);
+  --syntax-string: oklch(0.55 0.12 145);
+  --syntax-number: oklch(0.55 0.11 75);
+  --syntax-title: oklch(0.45 0.1 200);
+  --syntax-attr: oklch(0.45 0.12 30);
+  --syntax-meta: oklch(0.45 0.07 260);
+  --syntax-emph: var(--syntax-base);
+  --syntax-strong: var(--syntax-base);
 }
 
 .dark {
@@ -108,6 +118,16 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --syntax-base: oklch(0.9 0 0);
+  --syntax-comment: oklch(0.7 0 0);
+  --syntax-keyword: oklch(0.8 0.12 230); /* cyan/blue */
+  --syntax-string: oklch(0.86 0.11 145); /* green */
+  --syntax-number: oklch(0.82 0.12 80); /* amber */
+  --syntax-title: oklch(0.95 0.12 105); /* yellow */
+  --syntax-attr: oklch(0.78 0.2 25); /* pink/red */
+  --syntax-meta: oklch(0.78 0.08 260); /* subtle blue */
+  --syntax-emph: var(--syntax-base);
+  --syntax-strong: var(--syntax-base);
 }
 
 @layer base {
@@ -323,41 +343,6 @@
     border-radius: 999px;
   }
 
-  /* Optional language label if using lowlight or add data-language on the node */
-  pre[data-language]::before {
-    content: attr(data-language);
-    position: absolute;
-    top: 0.55rem;
-    right: 0.7rem;
-    font-size: 0.75rem;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--muted-foreground);
-  }
-
-  /* Optional copy button - style will apply if you render one inside pre */
-  pre .code-copy {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.6rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    border-radius: var(--radius);
-    background: color-mix(in oklch, var(--background) 60%, var(--muted));
-    border: 1px solid var(--border);
-    color: var(--foreground);
-    opacity: 0;
-    transition:
-      opacity 120ms ease,
-      background 120ms ease;
-  }
-  pre:hover .code-copy {
-    opacity: 1;
-  }
-  pre .code-copy:hover {
-    background: color-mix(in oklch, var(--muted) 70%, var(--background));
-  }
-
   /* Tables */
   table {
     width: 100%;
@@ -475,4 +460,237 @@
   > :last-child {
     margin-bottom: 0;
   }
+}
+
+.drag-handle {
+  position: fixed;
+  opacity: 1;
+  transition: opacity ease-in 0.2s;
+  border-radius: 0.25rem;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' style='fill: rgba(0, 0, 0, 0.5)'%3E%3Cpath d='M3,2 C2.44771525,2 2,1.55228475 2,1 C2,0.44771525 2.44771525,0 3,0 C3.55228475,0 4,0.44771525 4,1 C4,1.55228475 3.55228475,2 3,2 Z M3,6 C2.44771525,6 2,5.55228475 2,5 C2,4.44771525 2.44771525,4 3,4 C3.55228475,4 4,4.44771525 4,5 C4,5.55228475 3.55228475,6 3,6 Z M3,10 C2.44771525,10 2,9.55228475 2,9 C2,8.44771525 2.44771525,8 3,8 C3.55228475,8 4,8.44771525 4,9 C4,9.55228475 3.55228475,10 3,10 Z M7,2 C6.44771525,2 6,1.55228475 6,1 C6,0.44771525 6.44771525,0 7,0 C7.55228475,0 8,0.44771525 8,1 C8,1.55228475 7.55228475,2 7,2 Z M7,6 C6.44771525,6 6,5.55228475 6,5 C6,4.44771525 6.44771525,4 7,4 C7.55228475,4 8,4.44771525 8,5 C8,5.55228475 7.55228475,6 7,6 Z M7,10 C6.44771525,10 6,9.55228475 6,9 C6,8.44771525 6.44771525,8 7,8 C7.55228475,8 8,8.44771525 8,9 C8,9.55228475 7.55228475,10 7,10 Z'%3E%3C/path%3E%3C/svg%3E");
+  background-size: calc(0.5em + 0.375rem) calc(0.5em + 0.375rem);
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 1.2rem;
+  height: 1.5rem;
+  z-index: 50;
+  cursor: grab;
+}
+
+.drag-handle:hover {
+  background-color: color-mix(in oklch, var(--muted) 40%, transparent);
+  transition: background-color 0.2s;
+}
+
+.drag-handle:active {
+  background-color: color-mix(in oklch, var(--muted) 60%, transparent);
+  transition: background-color 0.2s;
+  cursor: grabbing;
+}
+
+.drag-handle.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Dark mode drag handle */
+.dark .drag-handle {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' style='fill: rgba(255, 255, 255, 0.5)'%3E%3Cpath d='M3,2 C2.44771525,2 2,1.55228475 2,1 C2,0.44771525 2.44771525,0 3,0 C3.55228475,0 4,0.44771525 4,1 C4,1.55228475 3.55228475,2 3,2 Z M3,6 C2.44771525,6 2,5.55228475 2,5 C2,4.44771525 2.44771525,4 3,4 C3.55228475,4 4,4.44771525 4,5 C4,5.55228475 3.55228475,6 3,6 Z M3,10 C2.44771525,10 2,9.55228475 2,9 C2,8.44771525 2.44771525,8 3,8 C3.55228475,8 4,8.44771525 4,9 C4,9.55228475 3.55228475,10 3,10 Z M7,2 C6.44771525,2 6,1.55228475 6,1 C6,0.44771525 6.44771525,0 7,0 C7.55228475,0 8,0.44771525 8,1 C8,1.55228475 7.55228475,2 7,2 Z M7,6 C6.44771525,6 6,5.55228475 6,5 C6,4.44771525 6.44771525,4 7,4 C7.55228475,4 8,4.44771525 8,5 C8,5.55228475 7.55228475,6 7,6 Z M7,10 C6.44771525,10 6,9.55228475 6,9 C6,8.44771525 6.44771525,8 7,8 C7.55228475,8 8,8.44771525 8,9 C8,9.55228475 7.55228475,10 7,10 Z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+/* Hide on mobile - matching Novel's approach */
+@media screen and (max-width: 600px) {
+  .drag-handle {
+    display: none;
+    pointer-events: none;
+  }
+}
+
+/* Additional ProseMirror styles for better drag behavior */
+.tiptap:not(.dragging) .ProseMirror-selectednode {
+  outline: none !important;
+  background-color: color-mix(in oklch, var(--primary) 10%, transparent);
+  transition: background-color 0.2s;
+  box-shadow: none;
+}
+
+.ProseMirror-dropcursor {
+  border-left: 4px solid var(--primary);
+}
+
+/* Upload placeholder spinner */
+.img-placeholder {
+  position: relative;
+}
+.img-placeholder::before {
+  content: '';
+  box-sizing: border-box;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--foreground);
+  transform: translate(-50%, -50%);
+  animation: spinning 0.6s linear infinite;
+}
+@keyframes spinning {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Visual affordances for images */
+.ProseMirror img {
+  transition: filter 0.1s ease-in-out;
+}
+.ProseMirror img:hover {
+  cursor: pointer;
+  filter: brightness(92%);
+}
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.tiptap.prose a {
+  color: var(--primary) !important;
+  text-decoration: underline !important;
+  text-decoration-color: color-mix(in oklch, var(--primary) 60%, transparent) !important;
+  text-underline-offset: 2px !important;
+  text-decoration-thickness: 1.5px !important;
+  cursor: pointer !important;
+}
+
+.tiptap.prose a:hover {
+  color: color-mix(in oklch, var(--primary) 80%, var(--foreground)) !important;
+  text-decoration-color: currentColor !important;
+}
+
+.tiptap pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  line-height: 1.6;
+  background: transparent;
+  padding: 0;
+  color: var(--syntax-base);
+  tab-size: 2;
+}
+
+/* Comments & quotes */
+.tiptap pre .hljs-comment,
+.tiptap pre .hljs-quote {
+  color: var(--syntax-comment);
+}
+
+/* Keywords & selector tags */
+.tiptap pre .hljs-keyword,
+.tiptap pre .hljs-selector-tag {
+  color: var(--syntax-keyword);
+}
+
+/* Strings, symbols, bullets */
+.tiptap pre .hljs-string,
+.tiptap pre .hljs-symbol,
+.tiptap pre .hljs-bullet {
+  color: var(--syntax-string);
+}
+
+/* Numbers, literals, builtins, params */
+.tiptap pre .hljs-number,
+.tiptap pre .hljs-literal,
+.tiptap pre .hljs-built_in,
+.tiptap pre .hljs-builtin-name,
+.tiptap pre .hljs-params {
+  color: var(--syntax-number);
+}
+
+/* Titles & sections (fn/class names) */
+.tiptap pre .hljs-title,
+.tiptap pre .hljs-section {
+  color: var(--syntax-title);
+}
+
+/* Variables, attributes, tags, names, regex, links, selectors */
+.tiptap pre .hljs-variable,
+.tiptap pre .hljs-template-variable,
+.tiptap pre .hljs-attribute,
+.tiptap pre .hljs-tag,
+.tiptap pre .hljs-name,
+.tiptap pre .hljs-selector-id,
+.tiptap pre .hljs-selector-class,
+.tiptap pre .hljs-regexp,
+.tiptap pre .hljs-link {
+  color: var(--syntax-attr);
+}
+
+/* Meta/annotations */
+.tiptap pre .hljs-meta {
+  color: var(--syntax-meta);
+}
+
+/* Emphasis & strong */
+.tiptap pre .hljs-emphasis {
+  font-style: italic;
+  color: var(--syntax-emph);
+}
+.tiptap pre .hljs-strong {
+  font-weight: 700;
+  color: var(--syntax-strong);
+}
+
+:root .tiptap pre {
+  background: color-mix(in oklch, var(--secondary) 88%, var(--background));
+}
+
+/* Code block "card" with header */
+.tiptap .tt-codeblock-group {
+  margin: 1.2rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  overflow: hidden; /* header radius clips */
+}
+
+.tiptap .tt-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: color-mix(in oklch, var(--muted) 60%, var(--background));
+  border-bottom: 1px solid var(--border);
+}
+
+.tiptap .tt-codeblock-select {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.tiptap .tt-codeblock-copy {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.875rem;
+  background: color-mix(in oklch, var(--muted) 35%, var(--background));
+  color: var(--foreground);
+}
+.tiptap .tt-codeblock-copy:hover {
+  background: color-mix(in oklch, var(--muted) 55%, var(--background));
+}
+
+.tiptap .tt-codeblock-pre {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
 }

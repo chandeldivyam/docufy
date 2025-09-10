@@ -24,7 +24,12 @@ import {
   DropdownMenuContent,
 } from '@/components/ui/dropdown-menu';
 import { Plus, AlertCircle, RefreshCw, Hash, MoreHorizontal, Pencil } from 'lucide-react';
-import { IconPickerGrid, getIconComponent } from '@/components/icons/iconOptions';
+import { getIconComponent } from '@/components/icons/iconOptions';
+import dynamic from 'next/dynamic';
+const IconPickerGrid = dynamic(
+  () => import('@/components/icons/IconPicker').then((m) => m.IconPickerGrid),
+  { ssr: false },
+);
 import { cn } from '@/lib/utils';
 import type { Id } from '@/convex/_generated/dataModel';
 import { toast } from 'sonner';
