@@ -645,3 +645,52 @@
 :root .tiptap pre {
   background: color-mix(in oklch, var(--secondary) 88%, var(--background));
 }
+
+/* Code block "card" with header */
+.tiptap .tt-codeblock-group {
+  margin: 1.2rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  overflow: hidden; /* header radius clips */
+}
+
+.tiptap .tt-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: color-mix(in oklch, var(--muted) 60%, var(--background));
+  border-bottom: 1px solid var(--border);
+}
+
+.tiptap .tt-codeblock-select {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.tiptap .tt-codeblock-copy {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.875rem;
+  background: color-mix(in oklch, var(--muted) 35%, var(--background));
+  color: var(--foreground);
+}
+.tiptap .tt-codeblock-copy:hover {
+  background: color-mix(in oklch, var(--muted) 55%, var(--background));
+}
+
+.tiptap .tt-codeblock-pre {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}

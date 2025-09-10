@@ -119,6 +119,9 @@ importers:
       '@tiptap/extension-color':
         specifier: ^3.4.2
         version: 3.4.2(@tiptap/extension-text-style@3.4.2(@tiptap/core@3.4.2(@tiptap/pm@3.4.2)))
+      '@tiptap/extension-floating-menu':
+        specifier: ^3.4.2
+        version: 3.4.2(@floating-ui/dom@1.7.4)(@tiptap/core@3.4.2(@tiptap/pm@3.4.2))(@tiptap/pm@3.4.2)
       '@tiptap/extension-highlight':
         specifier: ^3.4.2
         version: 3.4.2(@tiptap/core@3.4.2(@tiptap/pm@3.4.2))
@@ -170,6 +173,9 @@ importers:
       convex-helpers:
         specifier: ^0.1.104
         version: 0.1.104(convex@1.27.0(react@19.1.1))(react@19.1.1)(typescript@5.9.2)(zod@4.1.5)
+      highlight.js:
+        specifier: ^11.11.1
+        version: 11.11.1
       lowlight:
         specifier: ^3.3.0
         version: 3.3.0
@@ -5615,7 +5621,6 @@ snapshots:
       '@floating-ui/dom': 1.7.4
       '@tiptap/core': 3.4.2(@tiptap/pm@3.4.2)
       '@tiptap/pm': 3.4.2
-    optional: true
 
   '@tiptap/extension-gapcursor@3.4.2(@tiptap/extensions@3.4.2(@tiptap/core@3.4.2(@tiptap/pm@3.4.2))(@tiptap/pm@3.4.2))':
     dependencies:
