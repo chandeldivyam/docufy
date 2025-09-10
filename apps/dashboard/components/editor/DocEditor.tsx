@@ -52,6 +52,7 @@ const DocEditor = forwardRef<DocEditorHandle, Props>(function DocEditor(
   const sync = useTiptapSync(api.editor, docKey, { snapshotDebounceMs: 1200 });
   const { isLoading, initialContent, create } = sync;
   const [editor, setEditor] = useState<Editor | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const storeFile = useMutation(api.files.store);
@@ -148,31 +149,37 @@ const DocEditor = forwardRef<DocEditorHandle, Props>(function DocEditor(
       {notReady ? (
         <div className="text-muted-foreground p-2 text-sm">Creating page…</div>
       ) : (
-        <EditorProvider
-          content={
-            sync.initialContent ?? { type: 'doc', content: [{ type: 'paragraph', content: [] }] }
-          }
-          extensions={extensions}
-          editable={editable}
-          autofocus
-          immediatelyRender={false}
-          editorProps={{
-            handlePaste: (view, event) => handleImagePaste(view, event as ClipboardEvent, uploadFn),
-            handleDrop: (view, event, _slice, moved) =>
-              handleImageDrop(view, event as DragEvent, moved, uploadFn),
-            attributes: {
-              class:
-                'tiptap prose prose-sm sm:prose-base dark:prose-invert max-w-none h-full focus:outline-none',
-            },
-          }}
-          // EditorProvider renders the editor content internally in v3
-          slotAfter={
-            <>
-              <ImageResizer />
-              <EditorBridge onReady={setEditor} />
-            </>
-          }
-        />
+        <div
+          ref={scrollRef}
+          className={['relative h-full overflow-auto', className].filter(Boolean).join(' ')}
+        >
+          <EditorProvider
+            content={
+              sync.initialContent ?? { type: 'doc', content: [{ type: 'paragraph', content: [] }] }
+            }
+            extensions={extensions}
+            editable={editable}
+            autofocus
+            immediatelyRender={false}
+            editorProps={{
+              handlePaste: (view, event) =>
+                handleImagePaste(view, event as ClipboardEvent, uploadFn),
+              handleDrop: (view, event, _slice, moved) =>
+                handleImageDrop(view, event as DragEvent, moved, uploadFn),
+              attributes: {
+                class:
+                  'tiptap prose prose-sm sm:prose-base dark:prose-invert max-w-none h-full focus:outline-none',
+              },
+            }}
+            // EditorProvider renders the editor content internally in v3
+            slotAfter={
+              <>
+                <ImageResizer />
+                <EditorBridge onReady={setEditor} />
+              </>
+            }
+          />
+        </div>
       )}
     </div>
   );

@@ -568,5 +568,5 @@
 }
 .ProseMirror img.ProseMirror-selectednode {
   outline: 2px solid var(--ring);
-  filter: brightness(92%);
+  outline-offset: 1px;
 }
