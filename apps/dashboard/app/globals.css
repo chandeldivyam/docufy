@@ -74,6 +74,16 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --syntax-base: oklch(0.3 0 0);
+  --syntax-comment: oklch(0.52 0 0);
+  --syntax-keyword: oklch(0.55 0.12 250);
+  --syntax-string: oklch(0.55 0.12 145);
+  --syntax-number: oklch(0.55 0.11 75);
+  --syntax-title: oklch(0.45 0.1 200);
+  --syntax-attr: oklch(0.45 0.12 30);
+  --syntax-meta: oklch(0.45 0.07 260);
+  --syntax-emph: var(--syntax-base);
+  --syntax-strong: var(--syntax-base);
 }
 
 .dark {
@@ -108,6 +118,16 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --syntax-base: oklch(0.9 0 0);
+  --syntax-comment: oklch(0.7 0 0);
+  --syntax-keyword: oklch(0.8 0.12 230); /* cyan/blue */
+  --syntax-string: oklch(0.86 0.11 145); /* green */
+  --syntax-number: oklch(0.82 0.12 80); /* amber */
+  --syntax-title: oklch(0.95 0.12 105); /* yellow */
+  --syntax-attr: oklch(0.78 0.2 25); /* pink/red */
+  --syntax-meta: oklch(0.78 0.08 260); /* subtle blue */
+  --syntax-emph: var(--syntax-base);
+  --syntax-strong: var(--syntax-base);
 }
 
 @layer base {
@@ -323,41 +343,6 @@
     border-radius: 999px;
   }
 
-  /* Optional language label if using lowlight or add data-language on the node */
-  pre[data-language]::before {
-    content: attr(data-language);
-    position: absolute;
-    top: 0.55rem;
-    right: 0.7rem;
-    font-size: 0.75rem;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--muted-foreground);
-  }
-
-  /* Optional copy button - style will apply if you render one inside pre */
-  pre .code-copy {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.6rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    border-radius: var(--radius);
-    background: color-mix(in oklch, var(--background) 60%, var(--muted));
-    border: 1px solid var(--border);
-    color: var(--foreground);
-    opacity: 0;
-    transition:
-      opacity 120ms ease,
-      background 120ms ease;
-  }
-  pre:hover .code-copy {
-    opacity: 1;
-  }
-  pre .code-copy:hover {
-    background: color-mix(in oklch, var(--muted) 70%, var(--background));
-  }
-
   /* Tables */
   table {
     width: 100%;
@@ -569,4 +554,94 @@
 .ProseMirror img.ProseMirror-selectednode {
   outline: 2px solid var(--ring);
   outline-offset: 1px;
+}
+
+.tiptap.prose a {
+  color: var(--primary) !important;
+  text-decoration: underline !important;
+  text-decoration-color: color-mix(in oklch, var(--primary) 60%, transparent) !important;
+  text-underline-offset: 2px !important;
+  text-decoration-thickness: 1.5px !important;
+  cursor: pointer !important;
+}
+
+.tiptap.prose a:hover {
+  color: color-mix(in oklch, var(--primary) 80%, var(--foreground)) !important;
+  text-decoration-color: currentColor !important;
+}
+
+.tiptap pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  line-height: 1.6;
+  background: transparent;
+  padding: 0;
+  color: var(--syntax-base);
+  tab-size: 2;
+}
+
+/* Comments & quotes */
+.tiptap pre .hljs-comment,
+.tiptap pre .hljs-quote {
+  color: var(--syntax-comment);
+}
+
+/* Keywords & selector tags */
+.tiptap pre .hljs-keyword,
+.tiptap pre .hljs-selector-tag {
+  color: var(--syntax-keyword);
+}
+
+/* Strings, symbols, bullets */
+.tiptap pre .hljs-string,
+.tiptap pre .hljs-symbol,
+.tiptap pre .hljs-bullet {
+  color: var(--syntax-string);
+}
+
+/* Numbers, literals, builtins, params */
+.tiptap pre .hljs-number,
+.tiptap pre .hljs-literal,
+.tiptap pre .hljs-built_in,
+.tiptap pre .hljs-builtin-name,
+.tiptap pre .hljs-params {
+  color: var(--syntax-number);
+}
+
+/* Titles & sections (fn/class names) */
+.tiptap pre .hljs-title,
+.tiptap pre .hljs-section {
+  color: var(--syntax-title);
+}
+
+/* Variables, attributes, tags, names, regex, links, selectors */
+.tiptap pre .hljs-variable,
+.tiptap pre .hljs-template-variable,
+.tiptap pre .hljs-attribute,
+.tiptap pre .hljs-tag,
+.tiptap pre .hljs-name,
+.tiptap pre .hljs-selector-id,
+.tiptap pre .hljs-selector-class,
+.tiptap pre .hljs-regexp,
+.tiptap pre .hljs-link {
+  color: var(--syntax-attr);
+}
+
+/* Meta/annotations */
+.tiptap pre .hljs-meta {
+  color: var(--syntax-meta);
+}
+
+/* Emphasis & strong */
+.tiptap pre .hljs-emphasis {
+  font-style: italic;
+  color: var(--syntax-emph);
+}
+.tiptap pre .hljs-strong {
+  font-weight: 700;
+  color: var(--syntax-strong);
+}
+
+:root .tiptap pre {
+  background: color-mix(in oklch, var(--secondary) 88%, var(--background));
 }

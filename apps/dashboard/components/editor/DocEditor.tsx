@@ -10,6 +10,8 @@ import { api } from '@/convex/_generated/api';
 import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
 import AutoJoiner from 'tiptap-extension-auto-joiner';
 import type { AnyExtension } from '@tiptap/core';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { all, createLowlight } from 'lowlight';
 
 import { ResizableImage } from './extensions/resizableImage';
 import ImageResizer from './ImageResizer';
@@ -53,6 +55,7 @@ const DocEditor = forwardRef<DocEditorHandle, Props>(function DocEditor(
   const { isLoading, initialContent, create } = sync;
   const [editor, setEditor] = useState<Editor | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lowlight = createLowlight(all);
 
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const storeFile = useMutation(api.files.store);
@@ -134,12 +137,17 @@ const DocEditor = forwardRef<DocEditorHandle, Props>(function DocEditor(
       ResizableImage,
       sync.extension as AnyExtension | null, // may be null early
       AutoJoiner,
+      CodeBlockLowlight.configure({
+        lowlight,
+        enableTabIndentation: true,
+        tabSize: 2,
+      }),
       editable ? (GlobalDragHandle as AnyExtension) : null,
     ];
 
     // Type predicate ensures the array is narrowed to AnyExtension[]
     return arr.filter((e): e is AnyExtension => e !== null);
-  }, [editable, sync.extension]);
+  }, [editable, sync.extension, lowlight]);
 
   // Render - no early return before hooks. Use conditional JSX instead.
   const notReady = sync.initialContent === null && !createdRef.current;
