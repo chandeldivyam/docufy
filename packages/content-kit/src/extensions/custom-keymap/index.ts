@@ -3,9 +3,7 @@ import { Extension } from '@tiptap/core';
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     customkeymap: {
-      /**
-       * Select text between node boundaries
-       */
+      /** Select text between node boundaries */
       selectTextWithinNodeBoundaries: () => ReturnType;
     };
   }
@@ -23,10 +21,7 @@ const CustomKeymap = Extension.create({
           const { tr } = state;
           const startNodePos = tr.selection.$from.start();
           const endNodePos = tr.selection.$to.end();
-          return commands.setTextSelection({
-            from: startNodePos,
-            to: endNodePos,
-          });
+          return commands.setTextSelection({ from: startNodePos, to: endNodePos });
         },
     };
   },
@@ -40,9 +35,9 @@ const CustomKeymap = Extension.create({
         const endSelectionPos = tr.selection.to;
         const startNodePos = tr.selection.$from.start();
         const endNodePos = tr.selection.$to.end();
-        const isCurrentTextSelectionNotExtendedToNodeBoundaries =
+        const notExtendedToBoundaries =
           startSelectionPos > startNodePos || endSelectionPos < endNodePos;
-        if (isCurrentTextSelectionNotExtendedToNodeBoundaries) {
+        if (notExtendedToBoundaries) {
           editor.chain().selectTextWithinNodeBoundaries().run();
           return true;
         }

@@ -8,7 +8,6 @@ import type { AnyExtension } from '@tiptap/core';
 import { useTiptapSync } from '@convex-dev/prosemirror-sync/tiptap';
 import { api } from '@/convex/_generated/api';
 import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
-import CustomKeymap from './extensions/customKeymap';
 import ImageResizer from './ImageResizer';
 
 import { getExtensions } from '@docufy/content-kit/preset';
@@ -128,7 +127,6 @@ const DocEditor = forwardRef<DocEditorHandle, Props>(function DocEditor(
   const extensions: AnyExtension[] = useMemo(() => {
     const extra: (AnyExtension | null)[] = [
       sync.extension as AnyExtension | null,
-      CustomKeymap,
       editable ? (GlobalDragHandle as AnyExtension) : null,
     ];
     return getExtensions('editor', {

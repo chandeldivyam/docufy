@@ -30,6 +30,10 @@
       "types": "./dist/extensions/image/index.d.ts",
       "import": "./dist/extensions/image/index.js"
     },
+    "./extensions/custom-keymap": {
+      "types": "./dist/extensions/custom-keymap/index.d.ts",
+      "import": "./dist/extensions/custom-keymap/index.js"
+    },
     "./plugins/upload-images": {
       "types": "./dist/plugins/upload-images.d.ts",
       "import": "./dist/plugins/upload-images.js"

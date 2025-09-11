@@ -5,6 +5,7 @@ import type { AnyExtension } from '@tiptap/core';
 import { lowlight } from '../lowlight/index.js';
 import { createCodeBlock, StaticCodeBlock } from '../extensions/code-block/index.js';
 import { ResizableImage, StaticImage } from '../extensions/image/index.js';
+import CustomKeymap from '../extensions/custom-keymap/index.js';
 
 type Mode = 'editor' | 'static';
 
@@ -31,6 +32,7 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       ...base,
       createCodeBlock({ lowlight, header: true, enableTabIndentation: true }),
       ResizableImage,
+      CustomKeymap,
       ...extra,
     ];
   }
