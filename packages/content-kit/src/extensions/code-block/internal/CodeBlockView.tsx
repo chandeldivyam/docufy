@@ -36,10 +36,24 @@ export function CodeBlockView(props: any) {
     [extension.options?.lowlight],
   );
 
+  // Avoid calling TipTap's updateAttributes directly inside React lifecycle
+  // because TipTap internally uses React.flushSync, which triggers
+  // "flushSync was called from inside a lifecycle method" in React 18.
+  // Defer the attribute update to a microtask so React has finished the
+  // current render/effect before TipTap flushes.
   React.useEffect(() => {
     if (current && !languages.includes(current)) {
-      updateAttributes({ language: null });
+      let cancelled = false;
+      queueMicrotask(() => {
+        if (!cancelled && !editor?.isDestroyed) {
+          updateAttributes({ language: null });
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
     }
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, languages.join('|')]);
 

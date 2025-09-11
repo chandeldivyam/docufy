@@ -302,7 +302,10 @@ export const updateDocument = mutation({
     } = {
       updatedAt: Date.now(),
     };
-    if (args.title !== undefined) updates.title = args.title;
+    if (args.title !== undefined) {
+      updates.title = args.title;
+      updates.slug = slugify(args.title);
+    }
     if (args.slug !== undefined) updates.slug = slugify(args.slug);
     if (args.rank !== undefined) updates.rank = args.rank;
     if (args.iconName !== undefined) updates.iconName = args.iconName;
