@@ -4,20 +4,13 @@ import { v } from 'convex/values';
 
 export default defineSchema({
   users: defineTable({
-    // WorkOS user ID (their unique identifier)
     workosUserId: v.string(),
-
-    // Basic user info
     email: v.string(),
     emailVerified: v.boolean(),
     firstName: v.optional(v.string()),
     lastName: v.optional(v.string()),
     profilePictureUrl: v.optional(v.string()),
-
-    // Timestamps
     createdAt: v.number(),
-
-    // Default project to use for redirects when no cookie is set
     defaultProjectId: v.optional(v.id('projects')),
   })
     .index('by_workos_user_id', ['workosUserId'])
@@ -74,17 +67,11 @@ export default defineSchema({
     title: v.string(),
     slug: v.string(),
     iconName: v.optional(v.string()),
-
     parentId: v.optional(v.id('documents')),
-    rank: v.string(), // sibling ordering key
-
-    // For pages only (editor doc key)
+    rank: v.string(),
     pmsDocKey: v.optional(v.string()),
-
-    // Visibility & lifecycle
-    isHidden: v.optional(v.boolean()), // default false
+    isHidden: v.optional(v.boolean()),
     archivedAt: v.optional(v.number()),
-
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -105,7 +92,7 @@ export default defineSchema({
 
   sites: defineTable({
     projectId: v.id('projects'),
-    storeId: v.string(), // "store_LztAdwncingvUuTn"
+    storeId: v.string(), // "store_..."
     baseUrl: v.string(), // "https://...public.blob.vercel-storage.com"
     selectedSpaceIds: v.array(v.id('spaces')),
     createdAt: v.number(),
@@ -136,5 +123,21 @@ export default defineSchema({
     selectedSpaceIdsSnapshot: v.array(v.id('spaces')),
     targetBuildId: v.optional(v.string()),
     notes: v.optional(v.string()),
-  }).index('by_site', ['siteId']),
+  })
+    .index('by_site', ['siteId'])
+    .index('by_build_id', ['buildId']),
+
+  // NEW: Dedup content blobs by hash per project
+  siteContentBlobs: defineTable({
+    projectId: v.id('projects'),
+    hash: v.string(), // sha256 hex of the page bundle JSON
+    key: v.string(), // blob key, e.g. "sites/<projectId>/blobs/<hash>.json"
+    size: v.number(), // bytes
+    createdAt: v.number(),
+    lastUsedAt: v.number(),
+    // Optional: we could keep a simple ref count if desired later
+    refCount: v.optional(v.number()),
+  })
+    .index('by_project', ['projectId'])
+    .index('by_project_hash', ['projectId', 'hash']),
 });

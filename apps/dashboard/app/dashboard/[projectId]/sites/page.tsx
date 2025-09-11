@@ -30,7 +30,7 @@ export default function SitesPage() {
     site.data?._id ? { siteId: site.data._id } : 'skip',
   );
 
-  // Mutations with optimism
+  // Mutations
   const updateSelection = useMutation(api.sites.updateSelection).withOptimisticUpdate(
     (store, { siteId, selectedSpaceIds }) => {
       const s = store.getQuery(api.sites.getByProject, { projectId });
@@ -38,11 +38,7 @@ export default function SitesPage() {
       store.setQuery(
         api.sites.getByProject,
         { projectId },
-        {
-          ...s,
-          selectedSpaceIds,
-          updatedAt: Date.now(),
-        },
+        { ...s, selectedSpaceIds, updatedAt: Date.now() },
       );
     },
   );
@@ -81,11 +77,8 @@ export default function SitesPage() {
 
   function toggleSpace(sid: string) {
     const current = selected.length > 0 ? new Set(selected) : selectedSpaceIds;
-    if (current.has(sid)) {
-      current.delete(sid);
-    } else {
-      current.add(sid);
-    }
+    if (current.has(sid)) current.delete(sid);
+    else current.add(sid);
     setSelected(Array.from(current));
   }
 
@@ -127,14 +120,13 @@ export default function SitesPage() {
     if (!site.data) return;
     setIsPublishing(true);
     try {
-      // Save selection if changed
       const current = new Set<string>(
         selected.length > 0 ? selected : Array.from(selectedSpaceIds),
       );
       const server = new Set<string>((site.data.selectedSpaceIds ?? []).map(String));
-      let changed = false;
-      if (current.size !== server.size) changed = true;
-      else
+
+      let changed = current.size !== server.size;
+      if (!changed)
         for (const id of current)
           if (!server.has(id)) {
             changed = true;
@@ -173,10 +165,10 @@ export default function SitesPage() {
     }
   }
 
-  // Helpers for URLs
-  function latestTreeUrl() {
+  // Helpers
+  function latestPointerUrl() {
     if (!site.data) return '';
-    return `${site.data.baseUrl}/sites/${projectId}/latest/tree.json`;
+    return `${site.data.baseUrl}/sites/${projectId}/latest.json`;
   }
   function buildTreeUrl(buildId: string) {
     if (!site.data) return '';
@@ -196,17 +188,17 @@ export default function SitesPage() {
             <Button
               variant="outline"
               onClick={() => {
-                navigator.clipboard.writeText(latestTreeUrl());
-                toast.success('Latest tree URL copied');
+                navigator.clipboard.writeText(latestPointerUrl());
+                toast.success('Latest pointer URL copied');
               }}
             >
               <Copy className="mr-2 h-4 w-4" />
-              Copy latest tree URL
+              Copy latest pointer URL
             </Button>
-            <a href={latestTreeUrl()} target="_blank" rel="noreferrer" className="inline-flex">
+            <a href={latestPointerUrl()} target="_blank" rel="noreferrer" className="inline-flex">
               <Button variant="outline">
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Open latest
+                Open latest.json
               </Button>
             </a>
           </div>
@@ -311,7 +303,8 @@ export default function SitesPage() {
                     }
                   />
                   <div className="text-muted-foreground text-xs">
-                    {currentBuild.itemsDone} of {currentBuild.itemsTotal} pages
+                    {currentBuild.itemsDone} of {currentBuild.itemsTotal}{' '}
+                    {currentBuild.operation === 'publish' ? 'pages' : 'items'}
                   </div>
                 </div>
               ) : latestBuild ? (
@@ -348,14 +341,20 @@ export default function SitesPage() {
                           >
                             {b.status}
                           </Badge>
-                          <Badge variant="outline">{b.operation}</Badge>
+                          <Badge variant="outline">
+                            {b.operation === 'revert'
+                              ? `revert → ${b.targetBuildId?.slice(-6) ?? ''}`
+                              : 'publish'}
+                          </Badge>
                         </div>
                         <div className="text-muted-foreground mt-1 text-xs">
                           Started {new Date(b.startedAt).toLocaleString()}
                           {b.finishedAt
                             ? ` • Finished ${new Date(b.finishedAt).toLocaleString()}`
                             : ''}
-                          {b.itemsTotal ? ` • Pages ${b.itemsDone}/${b.itemsTotal}` : ''}
+                          {b.itemsTotal
+                            ? ` • ${b.operation === 'publish' ? 'Pages' : 'Items'} ${b.itemsDone}/${b.itemsTotal}`
+                            : ''}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -374,7 +373,10 @@ export default function SitesPage() {
                           variant="ghost"
                           size="sm"
                           disabled={
-                            b.status !== 'success' || isReverting === b.buildId || !!currentBuild
+                            b.status !== 'success' ||
+                            b.operation === 'revert' ||
+                            isReverting === b.buildId ||
+                            !!currentBuild
                           }
                           onClick={() => handleRevert(b.buildId)}
                         >
