@@ -1,5 +1,6 @@
 import { Plugin, PluginKey, type EditorState, type Transaction } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
+import { Extension } from '@tiptap/core';
 
 const uploadKey = new PluginKey('upload-image');
 
@@ -92,6 +93,21 @@ export const handleImagePaste = (view: EditorView, event: ClipboardEvent, upload
   }
   return false;
 };
+
+export interface UploadImagesExtensionOptions {
+  imageClass?: string;
+}
+
+// Tiptap extension wrapper to install the ProseMirror plugin
+export const UploadImagesExtension = Extension.create<UploadImagesExtensionOptions>({
+  name: 'UploadImages',
+  addOptions() {
+    return { imageClass: '' };
+  },
+  addProseMirrorPlugins() {
+    return [UploadImagesPlugin({ imageClass: this.options.imageClass ?? '' })];
+  },
+});
 
 export const handleImageDrop = (
   view: EditorView,
