@@ -1,0 +1,52 @@
+import { createLowlight } from 'lowlight';
+
+// languages - keep this the one source of truth
+import ts from 'highlight.js/lib/languages/typescript';
+import js from 'highlight.js/lib/languages/javascript';
+import json from 'highlight.js/lib/languages/json';
+import bash from 'highlight.js/lib/languages/bash';
+import xml from 'highlight.js/lib/languages/xml';
+import css from 'highlight.js/lib/languages/css';
+import python from 'highlight.js/lib/languages/python';
+import go from 'highlight.js/lib/languages/go';
+import java from 'highlight.js/lib/languages/java';
+import ruby from 'highlight.js/lib/languages/ruby';
+import php from 'highlight.js/lib/languages/php';
+import c from 'highlight.js/lib/languages/c';
+import cpp from 'highlight.js/lib/languages/cpp';
+import rust from 'highlight.js/lib/languages/rust';
+import sql from 'highlight.js/lib/languages/sql';
+import yaml from 'highlight.js/lib/languages/yaml';
+import markdown from 'highlight.js/lib/languages/markdown';
+
+export const lowlight = (() => {
+  const l = createLowlight();
+  l.register('typescript', ts);
+  l.register('ts', ts);
+  l.register('javascript', js);
+  l.register('js', js);
+  l.register('json', json);
+  l.register('bash', bash);
+  l.register('shell', bash);
+  l.register('sh', bash);
+  l.register('xml', xml);
+  l.register('html', xml);
+  l.register('css', css);
+  l.register('python', python);
+  l.register('py', python);
+  l.register('go', go);
+  l.register('java', java);
+  l.register('ruby', ruby);
+  l.register('rb', ruby);
+  l.register('php', php);
+  l.register('c', c);
+  l.register('cpp', cpp);
+  l.register('rust', rust);
+  l.register('rs', rust);
+  l.register('sql', sql);
+  l.register('yaml', yaml);
+  l.register('yml', yaml);
+  l.register('markdown', markdown);
+  l.register('md', markdown);
+  return l;
+})();

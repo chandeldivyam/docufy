@@ -1,0 +1,65 @@
+/* Shared styles for content-kit */
+
+/* Code block */
+.tt-codeblock-group {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid hsl(0 0% 90%);
+}
+.tt-codeblock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: hsl(0 0% 97%);
+  border-bottom: 1px solid hsl(0 0% 90%);
+}
+.tt-codeblock-left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.tt-codeblock-select {
+  font-size: 12px;
+  padding: 2px 6px;
+  background: white;
+  border: 1px solid hsl(0 0% 85%);
+  border-radius: 4px;
+}
+.tt-codeblock-right {
+  display: flex;
+  gap: 8px;
+}
+.tt-codeblock-copy {
+  font-size: 12px;
+  padding: 2px 6px;
+  background: white;
+  border: 1px solid hsl(0 0% 85%);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tt-codeblock-pre {
+  margin: 0;
+  padding: 12px;
+  background: hsl(0, 0%, 99%);
+  overflow: auto;
+}
+
+/* Dark mode hint - inheriting apps may override */
+.dark .tt-codeblock-group {
+  border-color: hsl(0 0% 22%);
+}
+.dark .tt-codeblock-header {
+  background: hsl(0 0% 11%);
+  border-bottom-color: hsl(0 0% 22%);
+}
+.dark .tt-codeblock-select,
+.dark .tt-codeblock-copy {
+  background: hsl(0 0% 13%);
+  color: hsl(0 0% 95%);
+  border-color: hsl(0 0% 22%);
+}
+.dark .tt-codeblock-pre {
+  background: hsl(0 0% 9%);
+}

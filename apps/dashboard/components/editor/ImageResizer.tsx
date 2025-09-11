@@ -74,7 +74,7 @@ const ImageResizer: FC = () => {
       throttleResize={0}
       minWidth={MIN_WIDTH}
       minHeight={MIN_HEIGHT}
-      renderDirections={['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se']}
+      renderDirections={['e', 'w']}
       onResize={({ target, width, height, delta }) => {
         const constrainedWidth = Math.max(width, MIN_WIDTH);
         const constrainedHeight = Math.max(height, MIN_HEIGHT);

@@ -1,11 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import type { NodeViewProps } from '@tiptap/react';
 import { NodeViewWrapper, NodeViewContent } from '@tiptap/react';
-import { toast } from 'sonner';
 
-// These are the only languages we register with Lowlight (see DocEditor)
 const SUPPORTED = [
   'typescript',
   'javascript',
@@ -26,11 +23,11 @@ const SUPPORTED = [
   'markdown',
 ] as const;
 
-export function CodeBlockView(props: NodeViewProps) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function CodeBlockView(props: any) {
   const { node, extension, updateAttributes, editor } = props;
-  const current = (node.attrs.language as string | null) ?? null;
+  const current = (node.attrs?.language as string | null) ?? null;
 
-  // get the language list directly from the configured lowlight instance
   const languages: string[] = React.useMemo(
     () =>
       extension.options?.lowlight?.listLanguages?.()
@@ -39,7 +36,6 @@ export function CodeBlockView(props: NodeViewProps) {
     [extension.options?.lowlight],
   );
 
-  // If the document contains an old/unsupported language, reset to auto-detect
   React.useEffect(() => {
     if (current && !languages.includes(current)) {
       updateAttributes({ language: null });
@@ -51,7 +47,6 @@ export function CodeBlockView(props: NodeViewProps) {
 
   const supported = React.useMemo(() => {
     const set = new Set(languages);
-    // only show languages that are actually registered
     return SUPPORTED.filter((l) => set.has(l));
   }, [languages]);
 
@@ -66,10 +61,9 @@ export function CodeBlockView(props: NodeViewProps) {
     try {
       await navigator.clipboard.writeText(codeText);
       setCopied(true);
-      toast.success('Code copied');
       setTimeout(() => setCopied(false), 900);
     } catch {
-      toast.error('Copy failed');
+      // no-op
     }
   };
 
@@ -112,7 +106,6 @@ export function CodeBlockView(props: NodeViewProps) {
       </div>
 
       <pre className="tt-codeblock-pre">
-        {/* contentDOMElementTag is set to 'code' in the NodeView renderer */}
         <NodeViewContent className={codeClass} />
       </pre>
     </NodeViewWrapper>

@@ -17,6 +17,8 @@ import type * as http from "../http.js";
 import type * as projectInvites from "../projectInvites.js";
 import type * as projectMembers from "../projectMembers.js";
 import type * as projects from "../projects.js";
+import type * as sites from "../sites.js";
+import type * as sitesNode from "../sitesNode.js";
 import type * as spaces from "../spaces.js";
 import type * as userInvites from "../userInvites.js";
 import type * as users from "../users.js";
@@ -46,6 +48,8 @@ declare const fullApi: ApiFromModules<{
   projectInvites: typeof projectInvites;
   projectMembers: typeof projectMembers;
   projects: typeof projects;
+  sites: typeof sites;
+  sitesNode: typeof sitesNode;
   spaces: typeof spaces;
   userInvites: typeof userInvites;
   users: typeof users;
