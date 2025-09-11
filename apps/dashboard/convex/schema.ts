@@ -102,4 +102,34 @@ export default defineSchema({
     ownerId: v.optional(v.id('users')),
     createdAt: v.number(),
   }).index('by_owner', ['ownerId']),
+
+  sites: defineTable({
+    projectId: v.id('projects'),
+    storeId: v.string(), // "store_LztAdwncingvUuTn"
+    baseUrl: v.string(), // "https://...public.blob.vercel-storage.com"
+    selectedSpaceIds: v.array(v.id('spaces')),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastBuildId: v.optional(v.string()),
+    lastPublishedAt: v.optional(v.number()),
+  }).index('by_project', ['projectId']),
+
+  siteBuilds: defineTable({
+    siteId: v.id('sites'),
+    buildId: v.string(), // e.g. Date.now().toString(36)
+    status: v.union(
+      v.literal('queued'),
+      v.literal('running'),
+      v.literal('success'),
+      v.literal('failed'),
+    ),
+    startedAt: v.number(),
+    finishedAt: v.optional(v.number()),
+    error: v.optional(v.string()),
+    itemsTotal: v.number(), // total docs to write
+    itemsDone: v.number(), // docs written
+    // Optional counters:
+    pagesWritten: v.number(),
+    bytesWritten: v.number(),
+  }).index('by_site', ['siteId']),
 });

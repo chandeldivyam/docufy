@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as _publish_serialize from "../_publish/serialize.js";
 import type * as _utils_auth from "../_utils/auth.js";
 import type * as _utils_errors from "../_utils/errors.js";
 import type * as documents from "../documents.js";
@@ -17,6 +18,7 @@ import type * as http from "../http.js";
 import type * as projectInvites from "../projectInvites.js";
 import type * as projectMembers from "../projectMembers.js";
 import type * as projects from "../projects.js";
+import type * as sites from "../sites.js";
 import type * as spaces from "../spaces.js";
 import type * as userInvites from "../userInvites.js";
 import type * as users from "../users.js";
@@ -37,6 +39,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "_publish/serialize": typeof _publish_serialize;
   "_utils/auth": typeof _utils_auth;
   "_utils/errors": typeof _utils_errors;
   documents: typeof documents;
@@ -46,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   projectInvites: typeof projectInvites;
   projectMembers: typeof projectMembers;
   projects: typeof projects;
+  sites: typeof sites;
   spaces: typeof spaces;
   userInvites: typeof userInvites;
   users: typeof users;
