@@ -4,43 +4,22 @@ import { useEffect, useImperativeHandle, useState, forwardRef, useMemo, useRef }
 
 import { EditorProvider, useCurrentEditor } from '@tiptap/react';
 import type { Editor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
+import type { AnyExtension } from '@tiptap/core';
 import { useTiptapSync } from '@convex-dev/prosemirror-sync/tiptap';
 import { api } from '@/convex/_generated/api';
 import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
-import AutoJoiner from 'tiptap-extension-auto-joiner';
-import type { AnyExtension } from '@tiptap/core';
 import CustomKeymap from './extensions/customKeymap';
-// import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { createLowlight } from 'lowlight';
-// Import only the languages we want to support to keep bundle size small
-import ts from 'highlight.js/lib/languages/typescript';
-import json from 'highlight.js/lib/languages/json';
-import bash from 'highlight.js/lib/languages/bash';
-import xml from 'highlight.js/lib/languages/xml';
-import css from 'highlight.js/lib/languages/css';
-import python from 'highlight.js/lib/languages/python';
-import go from 'highlight.js/lib/languages/go';
-import java from 'highlight.js/lib/languages/java';
-import ruby from 'highlight.js/lib/languages/ruby';
-import php from 'highlight.js/lib/languages/php';
-import c from 'highlight.js/lib/languages/c';
-import cpp from 'highlight.js/lib/languages/cpp';
-import rust from 'highlight.js/lib/languages/rust';
-import sql from 'highlight.js/lib/languages/sql';
-import yaml from 'highlight.js/lib/languages/yaml';
-import markdown from 'highlight.js/lib/languages/markdown';
-import { CodeBlockWithHeader } from './extensions/codeBlockWithHeader';
-
-import { ResizableImage } from './extensions/resizableImage';
 import ImageResizer from './ImageResizer';
 
+import { getExtensions } from '@docufy/content-kit/preset';
 import {
   createImageUpload,
   handleImageDrop,
   handleImagePaste,
   type UploadFn,
-} from './plugins/uploadImages';
+} from '@docufy/content-kit/plugins/upload-images';
+import '@docufy/content-kit/styles.css';
+
 import { useMutation } from 'convex/react';
 import { toast } from 'sonner';
 import { Id } from '@/convex/_generated/dataModel';
@@ -74,42 +53,6 @@ const DocEditor = forwardRef<DocEditorHandle, Props>(function DocEditor(
   const { isLoading, initialContent, create } = sync;
   const [editor, setEditor] = useState<Editor | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  // Create a Lowlight instance with only selected languages
-  const lowlight = useMemo(() => {
-    const l = createLowlight();
-
-    l.register('typescript', ts);
-    l.register('ts', ts);
-    l.register('json', json);
-
-    l.register('bash', bash);
-    l.register('shell', bash);
-    l.register('sh', bash);
-
-    // HTML via the xml grammar; register both keys to support "html"
-    l.register('xml', xml);
-    l.register('html', xml);
-
-    l.register('css', css);
-    l.register('python', python);
-    l.register('py', python);
-    l.register('go', go);
-    l.register('java', java);
-    l.register('ruby', ruby);
-    l.register('rb', ruby);
-    l.register('php', php);
-    l.register('c', c);
-    l.register('cpp', cpp);
-    l.register('rust', rust);
-    l.register('rs', rust);
-    l.register('sql', sql);
-    l.register('yaml', yaml);
-    l.register('yml', yaml);
-    l.register('markdown', markdown);
-    l.register('md', markdown);
-
-    return l;
-  }, []);
 
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const storeFile = useMutation(api.files.store);
@@ -183,30 +126,17 @@ const DocEditor = forwardRef<DocEditorHandle, Props>(function DocEditor(
   }, [generateUploadUrl, storeFile]);
 
   const extensions: AnyExtension[] = useMemo(() => {
-    const arr: (AnyExtension | null)[] = [
-      StarterKit.configure({
-        dropcursor: { color: '#DBEAFE', width: 4 },
-        gapcursor: false,
-        // Use our CodeBlockWithHeader instead of StarterKit's codeBlock
-        codeBlock: false,
-      }),
-      ResizableImage,
-      sync.extension as AnyExtension | null, // may be null early
-      AutoJoiner,
+    const extra: (AnyExtension | null)[] = [
+      sync.extension as AnyExtension | null,
       CustomKeymap,
-      CodeBlockWithHeader.configure({
-        lowlight,
-        enableTabIndentation: true,
-        tabSize: 2,
-        languageClassPrefix: 'language-',
-        defaultLanguage: null,
-      }),
       editable ? (GlobalDragHandle as AnyExtension) : null,
     ];
-
-    // Type predicate ensures the array is narrowed to AnyExtension[]
-    return arr.filter((e): e is AnyExtension => e !== null);
-  }, [editable, sync.extension, lowlight]);
+    return getExtensions('editor', {
+      dropcursor: { color: '#DBEAFE', width: 4 },
+      editable,
+      extra: extra.filter((e): e is AnyExtension => !!e),
+    });
+  }, [editable, sync.extension]);
 
   // Render - no early return before hooks. Use conditional JSX instead.
   const notReady = sync.initialContent === null && !createdRef.current;

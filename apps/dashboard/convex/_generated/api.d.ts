@@ -8,7 +8,6 @@
  * @module
  */
 
-import type * as _publish_serialize from "../_publish/serialize.js";
 import type * as _utils_auth from "../_utils/auth.js";
 import type * as _utils_errors from "../_utils/errors.js";
 import type * as documents from "../documents.js";
@@ -39,7 +38,6 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  "_publish/serialize": typeof _publish_serialize;
   "_utils/auth": typeof _utils_auth;
   "_utils/errors": typeof _utils_errors;
   documents: typeof documents;

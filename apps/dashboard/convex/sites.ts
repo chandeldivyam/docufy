@@ -6,7 +6,7 @@ import { appError } from './_utils/errors';
 import type { Id } from './_generated/dataModel';
 import { put } from '@vercel/blob';
 import { api, internal } from './_generated/api';
-import { serializeWithTiptap } from './_publish/serialize';
+import { serialize as serializeContent } from '@docufy/content-kit/renderer';
 import { JSONContent } from '@tiptap/core';
 
 // Define proper types for document tree structure
@@ -355,7 +355,7 @@ export const _doPublish = internalAction({
         addRandomSuffix: false,
       });
 
-      const { html, toc } = serializeWithTiptap(pmDoc ?? {});
+      const { html, toc } = serializeContent(pmDoc ?? {});
       const htmlKey = `sites/${site.projectId}/${buildId}/docs/${p.id}.html`;
       await put(htmlKey, html, {
         access: 'public',

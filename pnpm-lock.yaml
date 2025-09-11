@@ -86,6 +86,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.1.1)
+      '@docufy/content-kit':
+        specifier: workspace:*
+        version: link:../../packages/content-kit
       '@docufy/mdx-components':
         specifier: workspace:*
         version: link:../../packages/mdx-components
@@ -286,6 +289,52 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.0
         version: 19.1.9(@types/react@19.1.12)
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.2
+
+  packages/content-kit:
+    dependencies:
+      highlight.js:
+        specifier: ^11.11.1
+        version: 11.11.1
+      lowlight:
+        specifier: ^3.3.0
+        version: 3.3.0
+      react:
+        specifier: ^18 || ^19
+        version: 19.1.1
+      tiptap-extension-auto-joiner:
+        specifier: ^0.1.3
+        version: 0.1.3
+      tiptap-extension-global-drag-handle:
+        specifier: ^0.1.18
+        version: 0.1.18
+    devDependencies:
+      '@docufy/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@tiptap/core':
+        specifier: ^3.4.0
+        version: 3.4.2(@tiptap/pm@3.4.2)
+      '@tiptap/extension-code-block-lowlight':
+        specifier: ^3.4.0
+        version: 3.4.2(@tiptap/core@3.4.2(@tiptap/pm@3.4.2))(@tiptap/extension-code-block@3.4.2(@tiptap/core@3.4.2(@tiptap/pm@3.4.2))(@tiptap/pm@3.4.2))(@tiptap/pm@3.4.2)(highlight.js@11.11.1)(lowlight@3.3.0)
+      '@tiptap/extension-image':
+        specifier: ^3.4.0
+        version: 3.4.2(@tiptap/core@3.4.2(@tiptap/pm@3.4.2))
+      '@tiptap/pm':
+        specifier: ^3.4.0
+        version: 3.4.2
+      '@tiptap/react':
+        specifier: ^3.4.0
+        version: 3.4.2(@floating-ui/dom@1.7.4)(@tiptap/core@3.4.2(@tiptap/pm@3.4.2))(@tiptap/pm@3.4.2)(@types/react-dom@19.1.9(@types/react@19.1.12))(@types/react@19.1.12)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@tiptap/starter-kit':
+        specifier: ^3.4.0
+        version: 3.4.2
+      '@tiptap/static-renderer':
+        specifier: ^3.4.0
+        version: 3.4.2(@tiptap/core@3.4.2(@tiptap/pm@3.4.2))(@tiptap/pm@3.4.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       typescript:
         specifier: ^5.6.0
         version: 5.9.2

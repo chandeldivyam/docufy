@@ -1,0 +1,22 @@
+{
+  "extends": "../../packages/tsconfig/base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "jsx": "react-jsx",
+    "target": "ES2022",
+    "types": ["node", "react"],
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@tiptap/*": ["../../node_modules/@tiptap/*"],
+      "lowlight": ["../../node_modules/lowlight"],
+      "lowlight/*": ["../../node_modules/lowlight/*"]
+    }
+  },
+  "include": ["src"]
+}
