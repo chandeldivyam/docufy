@@ -30,6 +30,112 @@ interface SpaceWithTree {
   tree: DocumentTreeNode[];
 }
 
+// JSON representations (for parsed data from tree.json)
+interface DocumentTreeNodeJson {
+  _id: string;
+  type: 'page' | 'group';
+  title: string;
+  slug: string;
+  iconName?: string;
+  children?: DocumentTreeNodeJson[];
+}
+
+interface SpaceWithTreeJson {
+  space: {
+    _id: string;
+    name: string;
+    slug: string;
+    iconName?: string;
+  };
+  tree: DocumentTreeNodeJson[];
+}
+
+interface TreeJsonStructure {
+  projectId: string;
+  buildId: string;
+  publishedAt: number;
+  spaces: SpaceWithTreeJson[];
+}
+
+// Helper to write artifacts to both the versioned build folder and the hot latest/ folder
+async function writeBoth({
+  projectId,
+  buildId,
+  key,
+  content,
+  contentType,
+}: {
+  projectId: Id<'projects'>;
+  buildId: string;
+  key: string; // e.g. 'tree.json' or 'docs/<id>.html'
+  content: string;
+  contentType: string;
+}) {
+  const versionedKey = `sites/${projectId}/${buildId}/${key}`;
+  const latestKey = `sites/${projectId}/latest/${key}`;
+  // Long-lived cache for immutable versioned files
+  await put(versionedKey, content, {
+    access: 'public',
+    contentType,
+    cacheControlMaxAge: 31536000,
+    addRandomSuffix: false,
+    // versioned path is immutable across builds; safe default is to not overwrite
+  });
+  // Hot path for latest/ should be effectively uncached and overwritable
+  await put(latestKey, content, {
+    access: 'public',
+    contentType,
+    cacheControlMaxAge: 0,
+    addRandomSuffix: false,
+    allowOverwrite: true,
+  });
+}
+
+// Helper to write only to latest/ (no versioned copy)
+async function writeLatest({
+  projectId,
+  key,
+  content,
+  contentType,
+}: {
+  projectId: Id<'projects'>;
+  key: string;
+  content: string;
+  contentType: string;
+}) {
+  const latestKey = `sites/${projectId}/latest/${key}`;
+  await put(latestKey, content, {
+    access: 'public',
+    contentType,
+    cacheControlMaxAge: 0,
+    addRandomSuffix: false,
+    allowOverwrite: true,
+  });
+}
+
+// Helper to write only to the versioned build path
+async function writeVersioned({
+  projectId,
+  buildId,
+  key,
+  content,
+  contentType,
+}: {
+  projectId: Id<'projects'>;
+  buildId: string;
+  key: string;
+  content: string;
+  contentType: string;
+}) {
+  const versionedKey = `sites/${projectId}/${buildId}/${key}`;
+  await put(versionedKey, content, {
+    access: 'public',
+    contentType,
+    cacheControlMaxAge: 31536000,
+    addRandomSuffix: false,
+  });
+}
+
 export const create = mutation({
   args: {
     projectId: v.id('projects'),
@@ -136,8 +242,20 @@ export const publish = action({
     if (!site) throw appError('SITE_NOT_FOUND');
     await ctx.runQuery(api.sites.assertProjectAccess, { siteId });
 
+    // Actor for history
+    const me = await ctx.runQuery(api.users.getCurrentUser, {});
+    if (!me) throw appError('UNAUTHORIZED');
+
     const buildId = Date.now().toString(36);
-    await ctx.runMutation(api.sites._startBuild, { siteId, buildId });
+    // snapshot the selection at enqueue
+    await ctx.runMutation(api.sites._startBuild, {
+      siteId,
+      buildId,
+      operation: 'publish',
+      actorUserId: me._id,
+      selectedSpaceIdsSnapshot: site.selectedSpaceIds,
+      targetBuildId: undefined,
+    });
 
     try {
       await ctx.runAction(internal.sites._doPublish, { siteId, buildId });
@@ -170,8 +288,18 @@ export const assertProjectAccess = query({
 });
 
 export const _startBuild = mutation({
-  args: { siteId: v.id('sites'), buildId: v.string() },
-  handler: async (ctx, { siteId, buildId }) => {
+  args: {
+    siteId: v.id('sites'),
+    buildId: v.string(),
+    operation: v.union(v.literal('publish'), v.literal('revert')),
+    actorUserId: v.id('users'),
+    selectedSpaceIdsSnapshot: v.array(v.id('spaces')),
+    targetBuildId: v.optional(v.string()),
+  },
+  handler: async (
+    ctx,
+    { siteId, buildId, operation, actorUserId, selectedSpaceIdsSnapshot, targetBuildId },
+  ) => {
     const id = await ctx.db.insert('siteBuilds', {
       siteId,
       buildId,
@@ -181,6 +309,10 @@ export const _startBuild = mutation({
       itemsDone: 0,
       pagesWritten: 0,
       bytesWritten: 0,
+      operation,
+      actorUserId,
+      selectedSpaceIdsSnapshot,
+      targetBuildId,
     });
     return id;
   },
@@ -196,12 +328,12 @@ export const _updateProgress = mutation({
     itemsTotal: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    // Update the intended build explicitly by buildId to avoid races
     const build = await ctx.db
       .query('siteBuilds')
-      .withIndex('by_site', (q) => q.eq('siteId', args.siteId))
-      .order('desc')
+      .filter((q) => q.eq(q.field('buildId'), args.buildId))
       .first();
-    if (!build || build.buildId !== args.buildId) return;
+    if (!build) return;
 
     await ctx.db.patch(build._id, {
       itemsDone: build.itemsDone + args.deltaItems,
@@ -301,12 +433,12 @@ export const _doPublish = internalAction({
       publishedAt: Date.now(),
       spaces: trees.map(({ space, tree }) => ({ space, tree })),
     };
-    const treeKey = `sites/${site.projectId}/${buildId}/tree.json`;
-    await put(treeKey, JSON.stringify(treePayload), {
-      access: 'public',
+    await writeBoth({
+      projectId: site.projectId,
+      buildId,
+      key: 'tree.json',
+      content: JSON.stringify(treePayload),
       contentType: 'application/json',
-      cacheControlMaxAge: 31536000,
-      addRandomSuffix: false,
     });
 
     // 4) Export each page's ProseMirror snapshot and text
@@ -337,39 +469,39 @@ export const _doPublish = internalAction({
         version: latest ?? 0,
       });
 
-      const pmKey = `sites/${site.projectId}/${buildId}/docs/${p.id}.pm.json`;
-      await put(pmKey, pmJson, {
-        access: 'public',
+      await writeBoth({
+        projectId: site.projectId,
+        buildId,
+        key: `docs/${p.id}.pm.json`,
+        content: pmJson,
         contentType: 'application/json',
-        cacheControlMaxAge: 31536000,
-        addRandomSuffix: false,
       });
 
       // Plain text for search bootstrap (quick heuristic)
       const plain = extractPlainTextFromPm(pmDoc);
-      const txtKey = `sites/${site.projectId}/${buildId}/docs/${p.id}.txt`;
-      await put(txtKey, plain, {
-        access: 'public',
+      await writeBoth({
+        projectId: site.projectId,
+        buildId,
+        key: `docs/${p.id}.txt`,
+        content: plain,
         contentType: 'text/plain',
-        cacheControlMaxAge: 31536000,
-        addRandomSuffix: false,
       });
 
       const { html, toc } = serializeContent(pmDoc ?? {});
-      const htmlKey = `sites/${site.projectId}/${buildId}/docs/${p.id}.html`;
-      await put(htmlKey, html, {
-        access: 'public',
+      await writeBoth({
+        projectId: site.projectId,
+        buildId,
+        key: `docs/${p.id}.html`,
+        content: html,
         contentType: 'text/html',
-        cacheControlMaxAge: 31536000,
-        addRandomSuffix: false,
       });
 
-      const tocKey = `sites/${site.projectId}/${buildId}/docs/${p.id}.toc.json`;
-      await put(tocKey, JSON.stringify(toc), {
-        access: 'public',
+      await writeBoth({
+        projectId: site.projectId,
+        buildId,
+        key: `docs/${p.id}.toc.json`,
+        content: JSON.stringify(toc),
         contentType: 'application/json',
-        cacheControlMaxAge: 31536000,
-        addRandomSuffix: false,
       });
 
       await ctx.runMutation(api.sites._updateProgress, {
@@ -391,11 +523,12 @@ export const _doPublish = internalAction({
       spacesPublished: selected.map((s) => ({ _id: s._id, slug: s.slug, name: s.name })),
       contentVersion: 'pm-v1',
     };
-    await put(`sites/${site.projectId}/${buildId}/manifest.json`, JSON.stringify(manifest), {
-      access: 'public',
+    await writeBoth({
+      projectId: site.projectId,
+      buildId,
+      key: 'manifest.json',
+      content: JSON.stringify(manifest),
       contentType: 'application/json',
-      cacheControlMaxAge: 31536000,
-      addRandomSuffix: false,
     });
 
     // 6) Update "latest.json" pointer (no-cache)
@@ -403,8 +536,8 @@ export const _doPublish = internalAction({
       `sites/${site.projectId}/latest.json`,
       JSON.stringify({
         buildId,
-        treeUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/tree.json`,
-        manifestUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/manifest.json`,
+        treeUrl: `${site.baseUrl}/sites/${site.projectId}/latest/tree.json`,
+        manifestUrl: `${site.baseUrl}/sites/${site.projectId}/latest/manifest.json`,
       }),
       {
         access: 'public',
@@ -430,3 +563,165 @@ function extractPlainTextFromPm(pm: JSONContent | null): string {
   walk(pm);
   return parts.join(' ');
 }
+
+// Revert: copy a previous build's artifacts into latest/ and update pointer
+export const revertToBuild = action({
+  args: { siteId: v.id('sites'), targetBuildId: v.string() },
+  handler: async (ctx, { siteId, targetBuildId }) => {
+    const site = await ctx.runQuery(api.sites.getSite, { siteId });
+    if (!site) throw appError('SITE_NOT_FOUND');
+    await ctx.runQuery(api.sites.assertProjectAccess, { siteId });
+
+    const me = await ctx.runQuery(api.users.getCurrentUser, {});
+    if (!me) throw appError('UNAUTHORIZED');
+
+    // Treat revert as a fresh build id for clearer history
+    const buildId = Date.now().toString(36);
+    await ctx.runMutation(api.sites._startBuild, {
+      siteId,
+      buildId,
+      operation: 'revert',
+      actorUserId: me._id,
+      selectedSpaceIdsSnapshot: site.selectedSpaceIds,
+      targetBuildId: targetBuildId,
+    });
+
+    try {
+      const projectId = site.projectId as Id<'projects'>;
+      const baseUrl = site.baseUrl as string;
+      const base = `${baseUrl}/sites/${projectId}/${targetBuildId}`;
+
+      const treeRes = await fetch(`${base}/tree.json`);
+      if (!treeRes.ok) throw new Error(`Missing tree.json for build ${targetBuildId}`);
+      const treeText = await treeRes.text();
+
+      const manifestRes = await fetch(`${base}/manifest.json`);
+      if (!manifestRes.ok) throw new Error(`Missing manifest.json for build ${targetBuildId}`);
+      const manifestText = await manifestRes.text();
+
+      // Write tree & manifest to versioned (new buildId). We'll write latest at the end for atomicity.
+      await writeVersioned({
+        projectId,
+        buildId,
+        key: 'tree.json',
+        content: treeText,
+        contentType: 'application/json',
+      });
+      await writeVersioned({
+        projectId,
+        buildId,
+        key: 'manifest.json',
+        content: manifestText,
+        contentType: 'application/json',
+      });
+
+      // Parse list of doc IDs from the tree to copy page artifacts
+      const tree: TreeJsonStructure = JSON.parse(treeText);
+      const docIds: string[] = [];
+
+      function walk(node: DocumentTreeNodeJson) {
+        if (node?.type === 'page' && node._id) docIds.push(String(node._id));
+        for (const c of node?.children ?? []) walk(c);
+      }
+
+      for (const root of tree.spaces?.flatMap((s) => s.tree) ?? []) walk(root);
+
+      // Initialize progress totals for correct UI (X of Y pages)
+      await ctx.runMutation(api.sites._updateProgress, {
+        siteId,
+        buildId,
+        deltaItems: 0,
+        deltaPages: 0,
+        deltaBytes: 0,
+        itemsTotal: docIds.length,
+      });
+      // Linear (sequential) copy to avoid concurrent mutation conflicts
+      for (const id of docIds) {
+        const [pm, txt, html, toc] = await Promise.all([
+          fetch(`${base}/docs/${id}.pm.json`).then((r) => r.text()),
+          fetch(`${base}/docs/${id}.txt`).then((r) => r.text()),
+          fetch(`${base}/docs/${id}.html`).then((r) => r.text()),
+          fetch(`${base}/docs/${id}.toc.json`).then((r) => r.text()),
+        ]);
+        await Promise.all([
+          writeBoth({
+            projectId,
+            buildId,
+            key: `docs/${id}.pm.json`,
+            content: pm,
+            contentType: 'application/json',
+          }),
+          writeBoth({
+            projectId,
+            buildId,
+            key: `docs/${id}.txt`,
+            content: txt,
+            contentType: 'text/plain',
+          }),
+          writeBoth({
+            projectId,
+            buildId,
+            key: `docs/${id}.html`,
+            content: html,
+            contentType: 'text/html',
+          }),
+          writeBoth({
+            projectId,
+            buildId,
+            key: `docs/${id}.toc.json`,
+            content: toc,
+            contentType: 'application/json',
+          }),
+        ]);
+        await ctx.runMutation(api.sites._updateProgress, {
+          siteId,
+          buildId,
+          deltaItems: 1,
+          deltaPages: 1,
+          deltaBytes: pm.length + txt.length + html.length + toc.length,
+        });
+      }
+
+      // Now that all docs are present, write latest tree & manifest, then update lightweight pointer
+      await writeLatest({
+        projectId,
+        key: 'tree.json',
+        content: treeText,
+        contentType: 'application/json',
+      });
+      await writeLatest({
+        projectId,
+        key: 'manifest.json',
+        content: manifestText,
+        contentType: 'application/json',
+      });
+      // Update latest.json pointer to use latest/
+      await put(
+        `sites/${projectId}/latest.json`,
+        JSON.stringify({
+          buildId,
+          treeUrl: `${baseUrl}/sites/${projectId}/latest/tree.json`,
+          manifestUrl: `${baseUrl}/sites/${projectId}/latest/manifest.json`,
+        }),
+        {
+          access: 'public',
+          contentType: 'application/json',
+          cacheControlMaxAge: 0,
+          addRandomSuffix: false,
+          allowOverwrite: true,
+        },
+      );
+
+      await ctx.runMutation(api.sites._finishBuild, { buildId, status: 'success' });
+    } catch (e) {
+      await ctx.runMutation(api.sites._finishBuild, {
+        buildId,
+        status: 'failed',
+        error: e instanceof Error ? e.message : 'Unknown error',
+      });
+      throw e;
+    }
+
+    return { buildId, revertedTo: targetBuildId };
+  },
+});

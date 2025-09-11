@@ -126,10 +126,15 @@ export default defineSchema({
     startedAt: v.number(),
     finishedAt: v.optional(v.number()),
     error: v.optional(v.string()),
-    itemsTotal: v.number(), // total docs to write
-    itemsDone: v.number(), // docs written
-    // Optional counters:
+    itemsTotal: v.number(),
+    itemsDone: v.number(),
     pagesWritten: v.number(),
     bytesWritten: v.number(),
+
+    operation: v.union(v.literal('publish'), v.literal('revert')),
+    actorUserId: v.id('users'),
+    selectedSpaceIdsSnapshot: v.array(v.id('spaces')),
+    targetBuildId: v.optional(v.string()),
+    notes: v.optional(v.string()),
   }).index('by_site', ['siteId']),
 });

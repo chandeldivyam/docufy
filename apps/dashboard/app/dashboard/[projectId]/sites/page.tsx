@@ -12,14 +12,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, RotateCcw, ExternalLink, Copy } from 'lucide-react';
 
 export default function SitesPage() {
   const params = useParams();
   const projectId = params.projectId as Id<'projects'>;
 
-  // Just get the site (no auto-creation)
+  // Queries
   const site = useQueryWithStatus(api.sites.getByProject, { projectId });
-
   const spaces = useQueryWithStatus(api.spaces.list, { projectId });
 
   const builds = useQueryWithStatus(
@@ -27,101 +30,190 @@ export default function SitesPage() {
     site.data?._id ? { siteId: site.data._id } : 'skip',
   );
 
-  const createSite = useMutation(api.sites.create);
-  const updateSelection = useMutation(api.sites.updateSelection);
-  const publish = useAction(api.sites.publish);
+  // Mutations with optimism
+  const updateSelection = useMutation(api.sites.updateSelection).withOptimisticUpdate(
+    (store, { siteId, selectedSpaceIds }) => {
+      const s = store.getQuery(api.sites.getByProject, { projectId });
+      if (!s || s._id !== siteId) return;
+      store.setQuery(
+        api.sites.getByProject,
+        { projectId },
+        {
+          ...s,
+          selectedSpaceIds,
+          updatedAt: Date.now(),
+        },
+      );
+    },
+  );
 
+  const createSite = useMutation(api.sites.create).withOptimisticUpdate((store, args) => {
+    const now = Date.now();
+    const optimistic = {
+      _id: 'optimistic:site' as Id<'sites'>,
+      _creationTime: now,
+      projectId: args.projectId,
+      storeId: args.storeId,
+      baseUrl: args.baseUrl,
+      selectedSpaceIds: [] as Id<'spaces'>[],
+      createdAt: now,
+      updatedAt: now,
+      lastBuildId: undefined,
+      lastPublishedAt: undefined,
+    };
+    store.setQuery(api.sites.getByProject, { projectId }, optimistic);
+  });
+
+  const publish = useAction(api.sites.publish);
+  const revert = useAction(api.sites.revertToBuild);
+
+  // Local UI state
   const [selected, setSelected] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isReverting, setIsReverting] = useState<string | null>(null);
 
-  // Get the latest build (first in array since ordered desc)
-  const latestBuild = useMemo(() => {
-    return builds.data?.[0] || null;
-  }, [builds.data]);
-
-  // Check if there's a currently running build
-  const currentBuild = useMemo(() => {
-    const b = builds.data?.[0];
-    return b && b.status !== 'success' && b.status !== 'failed' ? b : null;
-  }, [builds.data]);
-
-  // Synchronize selection when both site and spaces are loaded
+  // Derive selection from server when local is empty
   const selectedSpaceIds = useMemo(() => {
     if (!site.data) return new Set<string>();
     return new Set<string>(site.data.selectedSpaceIds?.map(String) ?? []);
   }, [site.data]);
 
-  function toggle(sid: string) {
-    // Use current selection state, fallback to saved state
-    const currentSelection = selected.length > 0 ? new Set(selected) : selectedSpaceIds;
-
-    if (currentSelection.has(sid)) {
-      currentSelection.delete(sid);
+  function toggleSpace(sid: string) {
+    const current = selected.length > 0 ? new Set(selected) : selectedSpaceIds;
+    if (current.has(sid)) {
+      current.delete(sid);
     } else {
-      currentSelection.add(sid);
+      current.add(sid);
     }
-    setSelected(Array.from(currentSelection));
+    setSelected(Array.from(current));
   }
+
+  function selectAll() {
+    const all = (spaces.data ?? []).map((s) => String(s._id));
+    setSelected(all);
+  }
+  function clearAll() {
+    setSelected([]);
+  }
+
+  const currentBuild = useMemo(() => {
+    const b = builds.data?.[0];
+    return b && b.status !== 'success' && b.status !== 'failed' ? b : null;
+  }, [builds.data]);
+
+  const latestBuild = useMemo(() => builds.data?.[0] || null, [builds.data]);
 
   async function handleCreateSite() {
     setIsCreating(true);
     try {
-      // TODO: Replace these with your actual store configuration
-      // These should come from environment variables or project settings
       const storeId = process.env.NEXT_PUBLIC_VERCEL_BLOB_STORE_ID;
       const baseUrl = process.env.NEXT_PUBLIC_VERCEL_BLOB_BASE_URL;
-
       if (!storeId || !baseUrl) {
         toast.error('Missing storeId or baseUrl');
         return;
       }
-
-      await createSite({
-        projectId,
-        storeId,
-        baseUrl,
-      });
-      toast.success('Site created successfully');
+      await createSite({ projectId, storeId, baseUrl });
+      toast.success('Site created');
     } catch (e) {
       console.error(e);
-      toast.error(`Failed to create site:`);
+      toast.error('Failed to create site');
     } finally {
       setIsCreating(false);
     }
   }
 
-  async function handleSaveSelection() {
-    if (!site.data) return;
-    try {
-      await updateSelection({
-        siteId: site.data._id,
-        selectedSpaceIds: (selected.length
-          ? selected
-          : Array.from(selectedSpaceIds)) as Id<'spaces'>[],
-      });
-      toast.success('Selection saved');
-    } catch (e) {
-      console.error(e);
-      toast.error('Failed to save selection');
-    }
-  }
-
   async function handlePublish() {
     if (!site.data) return;
+    setIsPublishing(true);
     try {
+      // Save selection if changed
+      const current = new Set<string>(
+        selected.length > 0 ? selected : Array.from(selectedSpaceIds),
+      );
+      const server = new Set<string>((site.data.selectedSpaceIds ?? []).map(String));
+      let changed = false;
+      if (current.size !== server.size) changed = true;
+      else
+        for (const id of current)
+          if (!server.has(id)) {
+            changed = true;
+            break;
+          }
+
+      if (changed) {
+        await updateSelection({
+          siteId: site.data._id,
+          selectedSpaceIds: Array.from(current) as Id<'spaces'>[],
+        });
+      }
+
       await publish({ siteId: site.data._id });
       toast.success('Publish started');
     } catch (e) {
       console.error(e);
-      toast.error('Failed to start publish');
+      toast.error('Failed to publish');
+    } finally {
+      setIsPublishing(false);
+      setSelected([]);
     }
+  }
+
+  async function handleRevert(targetBuildId: string) {
+    if (!site.data) return;
+    setIsReverting(targetBuildId);
+    try {
+      await revert({ siteId: site.data._id, targetBuildId });
+      toast.success(`Reverted to ${targetBuildId}`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to revert');
+    } finally {
+      setIsReverting(null);
+    }
+  }
+
+  // Helpers for URLs
+  function latestTreeUrl() {
+    if (!site.data) return '';
+    return `${site.data.baseUrl}/sites/${projectId}/latest/tree.json`;
+  }
+  function buildTreeUrl(buildId: string) {
+    if (!site.data) return '';
+    return `${site.data.baseUrl}/sites/${projectId}/${buildId}/tree.json`;
+  }
+  function buildManifestUrl(buildId: string) {
+    if (!site.data) return '';
+    return `${site.data.baseUrl}/sites/${projectId}/${buildId}/manifest.json`;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Site Publishing</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Site Publishing</h1>
+        {site.data && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(latestTreeUrl());
+                toast.success('Latest tree URL copied');
+              }}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Copy latest tree URL
+            </Button>
+            <a href={latestTreeUrl()} target="_blank" rel="noreferrer" className="inline-flex">
+              <Button variant="outline">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Open latest
+              </Button>
+            </a>
+          </div>
+        )}
+      </div>
 
-      {/* Show create site card if no site exists */}
+      {/* Create site */}
       {site.status === 'success' && !site.data && (
         <Card>
           <CardHeader>
@@ -129,103 +221,187 @@ export default function SitesPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              You need to create a site before you can publish your content.
+              Create a site, then choose which spaces to include and click Publish.
             </p>
           </CardContent>
           <CardFooter>
             <Button onClick={handleCreateSite} disabled={isCreating}>
-              {isCreating ? 'Creating...' : 'Create Site'}
+              {isCreating ? 'Creating...' : 'Create site'}
             </Button>
           </CardFooter>
         </Card>
       )}
 
-      {/* Show main interface only if site exists */}
+      {/* Main interface */}
       {site.data && (
         <>
-          {/* Site configuration */}
           <Card>
             <CardHeader>
               <CardTitle>Spaces to publish</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {spaces.isPending ? (
-                <div>Loading spaces…</div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-72" />
+                  <Skeleton className="h-4 w-52" />
+                </div>
               ) : spaces.isError ? (
-                <div className="text-red-500">Failed to load spaces</div>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="mt-2">Failed to load spaces</AlertDescription>
+                </Alert>
+              ) : (spaces.data?.length ?? 0) === 0 ? (
+                <div className="text-muted-foreground text-sm">No spaces yet</div>
               ) : (
-                spaces.data?.map((s) => {
-                  const checked =
-                    selected.length > 0
-                      ? selected.includes(String(s._id))
-                      : selectedSpaceIds.has(String(s._id));
-                  return (
-                    <label key={String(s._id)} className="flex items-center gap-2">
-                      <Checkbox checked={checked} onCheckedChange={() => toggle(String(s._id))} />
-                      <span>{s.name}</span>
-                    </label>
-                  );
-                })
+                <>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={selectAll}>
+                      Select all
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={clearAll}>
+                      Clear all
+                    </Button>
+                  </div>
+                  {(spaces.data ?? []).map((s) => {
+                    const checked =
+                      selected.length > 0
+                        ? selected.includes(String(s._id))
+                        : selectedSpaceIds.has(String(s._id));
+                    return (
+                      <label key={String(s._id)} className="flex items-center gap-2">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => toggleSpace(String(s._id))}
+                        />
+                        <span>{s.name}</span>
+                      </label>
+                    );
+                  })}
+                </>
               )}
             </CardContent>
             <CardFooter className="flex gap-2">
-              <Button variant="outline" onClick={handleSaveSelection}>
-                Save selection
-              </Button>
-              <Button onClick={handlePublish} disabled={!!currentBuild}>
-                Publish
+              <Button onClick={handlePublish} disabled={!!currentBuild || isPublishing}>
+                {isPublishing ? 'Publishing…' : 'Publish'}
               </Button>
             </CardFooter>
           </Card>
 
-          {/* Build status */}
+          {/* Live build status */}
           <Card>
             <CardHeader>
-              <CardTitle>Latest publish</CardTitle>
+              <CardTitle>Build status</CardTitle>
             </CardHeader>
             <CardContent>
-              {latestBuild ? (
+              {builds.isPending ? (
+                <div className="text-muted-foreground text-sm">Loading builds…</div>
+              ) : builds.isError ? (
+                <div className="text-red-500">Failed to load builds</div>
+              ) : currentBuild ? (
                 <div className="space-y-2">
                   <div className="text-sm">
-                    Status: <strong>{latestBuild.status}</strong>
+                    Status: <strong>{currentBuild.status}</strong> • Build {currentBuild.buildId}
                   </div>
-                  {latestBuild.status === 'running' && (
-                    <>
-                      <Progress
-                        value={
-                          latestBuild.itemsTotal > 0
-                            ? Math.floor((latestBuild.itemsDone / latestBuild.itemsTotal) * 100)
-                            : 2
-                        }
-                      />
-                      <div className="text-muted-foreground text-xs">
-                        {latestBuild.itemsDone} / {latestBuild.itemsTotal} pages
-                      </div>
-                    </>
-                  )}
-                  {latestBuild.status === 'success' && (
-                    <div className="text-sm text-green-700">
-                      Published build {latestBuild.buildId} at{' '}
-                      {new Date(latestBuild.finishedAt!).toLocaleString()}
-                    </div>
-                  )}
-                  {latestBuild.status === 'failed' && (
-                    <div className="text-sm text-red-600">
-                      Failed: {latestBuild.error ?? 'Unknown error'}
-                    </div>
-                  )}
+                  <Progress
+                    value={
+                      currentBuild.itemsTotal > 0
+                        ? Math.floor((currentBuild.itemsDone / currentBuild.itemsTotal) * 100)
+                        : 2
+                    }
+                  />
+                  <div className="text-muted-foreground text-xs">
+                    {currentBuild.itemsDone} of {currentBuild.itemsTotal} pages
+                  </div>
+                </div>
+              ) : latestBuild ? (
+                <div className="text-sm">
+                  Latest build {latestBuild.buildId} - <strong>{latestBuild.status}</strong>
                 </div>
               ) : (
                 <div className="text-muted-foreground text-sm">No publishes yet</div>
               )}
             </CardContent>
           </Card>
+
+          {/* History - all builds */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Publish history</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {builds.data && builds.data.length > 0 ? (
+                <div className="divide-y">
+                  {builds.data.map((b) => (
+                    <div key={b.buildId} className="flex items-center justify-between py-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs">{b.buildId}</code>
+                          <Badge
+                            variant={
+                              b.status === 'success'
+                                ? 'secondary'
+                                : b.status === 'failed'
+                                  ? 'destructive'
+                                  : 'default'
+                            }
+                          >
+                            {b.status}
+                          </Badge>
+                          <Badge variant="outline">{b.operation}</Badge>
+                        </div>
+                        <div className="text-muted-foreground mt-1 text-xs">
+                          Started {new Date(b.startedAt).toLocaleString()}
+                          {b.finishedAt
+                            ? ` • Finished ${new Date(b.finishedAt).toLocaleString()}`
+                            : ''}
+                          {b.itemsTotal ? ` • Pages ${b.itemsDone}/${b.itemsTotal}` : ''}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <a href={buildTreeUrl(b.buildId)} target="_blank" rel="noreferrer">
+                          <Button variant="outline" size="sm">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Tree
+                          </Button>
+                        </a>
+                        <a href={buildManifestUrl(b.buildId)} target="_blank" rel="noreferrer">
+                          <Button variant="outline" size="sm">
+                            Manifest
+                          </Button>
+                        </a>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={
+                            b.status !== 'success' || isReverting === b.buildId || !!currentBuild
+                          }
+                          onClick={() => handleRevert(b.buildId)}
+                        >
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          {isReverting === b.buildId ? 'Reverting…' : 'Revert to this'}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-sm">No history yet</div>
+              )}
+            </CardContent>
+          </Card>
+
+          {site.isPending && <div>Loading site configuration…</div>}
+          {site.isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="mt-2">
+                Failed to load site configuration
+              </AlertDescription>
+            </Alert>
+          )}
         </>
       )}
-
-      {/* Loading and error states */}
-      {site.isPending && <div>Loading site configuration…</div>}
-      {site.isError && <div className="text-red-500">Failed to load site configuration</div>}
     </div>
   );
 }
