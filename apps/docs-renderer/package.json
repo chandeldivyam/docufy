@@ -5,10 +5,11 @@
   "type": "module",
   "description": "Public documentation renderer (Next.js app)",
   "dependencies": {
+    "@docufy/mdx-components": "workspace:*",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@docufy/mdx-components": "workspace:*"
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@docufy/tsconfig": "workspace:*",

@@ -16,3 +16,230 @@ body {
     'Apple Color Emoji',
     'Segoe UI Emoji';
 }
+
+main,
+article {
+  max-width: 980px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 28px;
+  margin: 16px 0;
+}
+h2 {
+  font-size: 22px;
+  margin: 16px 0;
+}
+h3 {
+  font-size: 18px;
+  margin: 12px 0;
+}
+p {
+  line-height: 1.7;
+  color: #222;
+}
+pre {
+  background: #0e1111;
+  color: #e6edf3;
+  padding: 12px;
+  border-radius: 8px;
+  overflow: auto;
+}
+code {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+}
+a {
+  color: #0070f3;
+}
+
+/* Layout styles moved from styled-jsx to global CSS for Server Component compatibility */
+.dfy-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.dfy-header {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-bottom: 1px solid #eee;
+}
+.dfy-brand {
+  font-weight: 600;
+}
+.dfy-main {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+.dfy-sidebar {
+  width: 280px;
+  overflow: auto;
+  border-right: 1px solid #eee;
+  padding: 12px;
+}
+.dfy-content {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+}
+.dfy-space {
+  margin-bottom: 16px;
+}
+.dfy-space-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  margin: 8px 0;
+}
+.dfy-tree {
+  display: block;
+}
+.dfy-tree a {
+  display: block;
+  padding: 4px 6px;
+  color: #111;
+  text-decoration: none;
+  border-radius: 6px;
+}
+.dfy-tree a:hover {
+  background: #f5f5f5;
+}
+.dfy-tree a.active {
+  background: #111;
+  color: #fff;
+}
+.dfy-group {
+  font-weight: 600;
+  margin-top: 8px;
+}
+.dfy-children {
+  margin-left: 10px;
+  border-left: 1px dashed #e5e5e5;
+  padding-left: 10px;
+}
+
+/* Typography-like defaults for article content (no Tailwind dep) */
+.dfy-article {
+  color: #1f2328;
+}
+.dfy-article h1,
+.dfy-article h2,
+.dfy-article h3,
+.dfy-article h4 {
+  scroll-margin-top: 72px;
+}
+.dfy-article p {
+  margin: 12px 0;
+  line-height: 1.75;
+}
+.dfy-article ul,
+.dfy-article ol {
+  margin: 12px 0 12px 20px;
+  padding: 0;
+}
+.dfy-article li {
+  margin: 6px 0;
+}
+.dfy-article blockquote {
+  margin: 16px 0;
+  padding-left: 12px;
+  border-left: 3px solid #e5e7eb;
+  color: #4b5563;
+}
+.dfy-article hr {
+  border: 0;
+  height: 1px;
+  background: #eee;
+  margin: 24px 0;
+}
+.dfy-article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 14px;
+}
+.dfy-article th,
+.dfy-article td {
+  border: 1px solid #e5e7eb;
+  padding: 8px 10px;
+  text-align: left;
+}
+.dfy-article img {
+  max-width: 100%;
+  height: auto;
+}
+.dfy-article pre {
+  margin: 16px 0;
+}
+.dfy-article code {
+  font-size: 0.95em;
+}
+
+.dfy-tabs {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.dfy-tabs a {
+  padding: 6px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #111;
+}
+.dfy-tabs a.active {
+  background: #111;
+  color: #fff;
+}
+
+.dfy-dropdown summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+.dfy-dropdown ul {
+  margin: 8px 0 0 0;
+  padding: 6px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #fff;
+  position: absolute;
+}
+
+.dfy-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dfy-disclosure {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+.dfy-disclosure::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-left: 2px solid #888;
+  border-bottom: 2px solid #888;
+  transform: rotate(-45deg);
+  transition: transform 0.12s;
+}
+.dfy-disclosure[aria-expanded='true']::before {
+  transform: rotate(45deg);
+}
+.dfy-leaf {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+}

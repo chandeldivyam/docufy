@@ -1,10 +1,11 @@
-import { H1, P } from '@docufy/mdx-components';
+import { redirect } from 'next/navigation';
+import { fetchLatest, fetchManifestV3 } from '../lib/fetchers';
 
-export default function Page() {
-  return (
-    <main style={{ padding: 24 }}>
-      <H1>Docufy</H1>
-      <P>Open-source documentation platform.</P>
-    </main>
-  );
+export const runtime = 'edge';
+
+export default async function Page() {
+  const latest = await fetchLatest();
+  const manifest = await fetchManifestV3(latest.manifestUrl);
+  const target = manifest.nav.spaces[0]?.entry ?? `/${manifest.routing.defaultSpace}`;
+  redirect(target);
 }
