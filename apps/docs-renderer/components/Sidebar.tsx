@@ -22,12 +22,14 @@ export default function Sidebar({
   currentSpace,
   currentRoute,
   layout,
+  hrefPrefix = '',
 }: {
   manifest: Manifest;
   tree: Tree;
   currentSpace: string;
   currentRoute: string;
   layout: Manifest['site']['layout'];
+  hrefPrefix?: string;
 }) {
   const router = useRouter();
   const spaces = useMemo(
@@ -51,7 +53,7 @@ export default function Sidebar({
             onChange={(e) => {
               const slug = e.target.value;
               const entry = spaces.find((s) => s.slug === slug)?.entry ?? `/${slug}`;
-              router.push(entry);
+              router.push(`${hrefPrefix}${entry}`);
             }}
           >
             {spaces.map((s) => (
@@ -67,7 +69,13 @@ export default function Sidebar({
         <div className="dfy-space-title">{selected.space.name}</div>
         <ul className="dfy-tree">
           {selected.items.map((n) => (
-            <TreeItem key={n.route} node={n} currentRoute={currentRoute} depth={0} />
+            <TreeItem
+              key={n.route}
+              node={n}
+              currentRoute={currentRoute}
+              depth={0}
+              hrefPrefix={hrefPrefix}
+            />
           ))}
         </ul>
       </nav>
@@ -79,10 +87,12 @@ function TreeItem({
   node,
   currentRoute,
   depth,
+  hrefPrefix = '',
 }: {
   node: UiTreeItem;
   currentRoute: string;
   depth: number;
+  hrefPrefix?: string;
 }) {
   const hasChildren = (node.children?.length ?? 0) > 0;
   const initiallyOpen = useMemo(() => isAncestor(node, currentRoute), [node, currentRoute]);
@@ -128,7 +138,7 @@ function TreeItem({
         )}
         <Link
           prefetch
-          href={node.route}
+          href={`${hrefPrefix}${node.route}`}
           aria-current={isActive(node.route, currentRoute) ? 'page' : undefined}
           className={isActive(node.route, currentRoute) ? 'active' : undefined}
         >
@@ -145,7 +155,13 @@ function TreeItem({
       {open && (
         <ul className="dfy-children">
           {node.children!.map((c) => (
-            <TreeItem key={c.route} node={c} currentRoute={currentRoute} depth={depth + 1} />
+            <TreeItem
+              key={c.route}
+              node={c}
+              currentRoute={currentRoute}
+              depth={depth + 1}
+              hrefPrefix={hrefPrefix}
+            />
           ))}
         </ul>
       )}

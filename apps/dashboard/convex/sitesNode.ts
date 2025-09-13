@@ -164,6 +164,29 @@ async function writeLatestPointer({
   });
 }
 
+// For domain aliases: one small mutable pointer per hostname
+async function writeDomainAliases({
+  hosts,
+  payload,
+}: {
+  hosts: Array<string | undefined | null>;
+  payload: { buildId: string; treeUrl: string; manifestUrl: string; basePath?: string };
+}) {
+  const putOpts = {
+    access: 'public' as const,
+    contentType: 'application/json',
+    cacheControlMaxAge: 0,
+    addRandomSuffix: false,
+    allowOverwrite: true,
+  };
+  for (const h of hosts) {
+    if (!h) continue;
+    const host = String(h).toLowerCase().split(':')[0];
+    if (!host) continue;
+    await put(`domains/${host}/latest.json`, JSON.stringify(payload), putOpts);
+  }
+}
+
 // -------------------- Actions (internal) --------------------
 
 export const _doPublish = internalAction({
@@ -441,6 +464,17 @@ export const _doPublish = internalAction({
         manifestUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/manifest.json`,
       },
     });
+
+    // Mirror latest pointer to domain aliases
+    await writeDomainAliases({
+      hosts: [site.primaryHost, ...(site.customDomains ?? [])],
+      payload: {
+        buildId,
+        treeUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/tree.json`,
+        manifestUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/manifest.json`,
+        basePath: '',
+      },
+    });
   },
 });
 
@@ -515,5 +549,24 @@ export const _revertPointer = internalAction({
         manifestUrl: `${baseUrl}/sites/${projectId}/${buildId}/manifest.json`,
       },
     });
+
+    // Mirror pointer to domain aliases for this project (single site per project)
+    try {
+      const sites = await ctx.runQuery(api.sites.listByProject, { projectId });
+      const site = sites[0];
+      if (site) {
+        await writeDomainAliases({
+          hosts: [site.primaryHost, ...(site.customDomains ?? [])],
+          payload: {
+            buildId,
+            treeUrl: `${baseUrl}/sites/${projectId}/${buildId}/tree.json`,
+            manifestUrl: `${baseUrl}/sites/${projectId}/${buildId}/manifest.json`,
+            basePath: '',
+          },
+        });
+      }
+    } catch {
+      // best-effort; do not block revert
+    }
   },
 });

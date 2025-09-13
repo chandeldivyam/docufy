@@ -95,6 +95,9 @@ export default defineSchema({
     storeId: v.string(), // "store_..."
     baseUrl: v.string(), // "https://...public.blob.vercel-storage.com"
     selectedSpaceIds: v.array(v.id('spaces')),
+    // Multitenancy: host bindings
+    primaryHost: v.optional(v.string()), // e.g. "atlas-a61958e8.trydocufy.com"
+    customDomains: v.optional(v.array(v.string())), // e.g. ["docs.acme.com"]
     createdAt: v.number(),
     updatedAt: v.number(),
     lastBuildId: v.optional(v.string()),

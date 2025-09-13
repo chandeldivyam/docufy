@@ -1,12 +1,12 @@
 import type { Manifest, Tree, PageBlob } from './types';
-import { getBaseUrl, getProjectId, type Pointer } from './site';
+import type { Pointer } from './site';
+import { getBlobBaseUrl } from './site';
 import { ManifestZ, TreeZ } from './schema';
 const DEV = process.env.NODE_ENV !== 'production';
 
 // Small, aggressively revalidated pointer fetch. Picks up publishes almost immediately.
-export async function fetchLatest(): Promise<Pointer> {
-  const url = `${getBaseUrl()}/sites/${getProjectId()}/latest.json`;
-  const res = await fetch(url, { next: { revalidate: 2 } });
+export async function fetchLatestBy(pointerUrl: string): Promise<Pointer> {
+  const res = await fetch(pointerUrl, { next: { revalidate: 2 } });
   if (!res.ok) throw new Error(`latest.json failed: ${res.status}`);
   return res.json();
 }
@@ -28,12 +28,12 @@ export async function fetchTreeV2(treeUrl: string): Promise<Tree> {
 }
 
 export async function fetchPageBlob(relBlobKey: string): Promise<PageBlob> {
-  const res = await fetch(`${getBaseUrl()}/${relBlobKey}`, { cache: 'force-cache' });
+  const res = await fetch(`${getBlobBaseUrl()}/${relBlobKey}`, { cache: 'force-cache' });
   if (!res.ok) throw new Error(`blob failed: ${res.status}`);
   return res.json();
 }
 
 // Convenience aliases if preferred naming is desired
-export const fetchPointer = fetchLatest;
+export const fetchPointer = fetchLatestBy;
 export const fetchManifest = fetchManifestV3;
 export const fetchTree = fetchTreeV2;

@@ -1,9 +1,11 @@
 // apps/docs-renderer/app/(site)/[space]/[[...slug]]/page.tsx
 import { Suspense } from 'react';
-import { fetchLatest, fetchManifestV3, fetchTreeV2, fetchPageBlob } from '../../../../lib/fetchers';
+import { fetchManifestV3, fetchTreeV2, fetchPageBlob } from '../../../../lib/fetchers';
 import Sidebar from '../../../../components/Sidebar';
 import Content from '../../../../components/Content';
 import SpacesHeader from '../../../../components/SpacesHeader';
+import { currentBasePath } from '../../../../lib/site';
+import { getPointer } from '../../../../lib/pointer';
 
 export const runtime = 'edge';
 
@@ -13,7 +15,8 @@ export default async function DocPage({
   params: Promise<{ space: string; slug?: string[] }>;
 }) {
   const { space, slug } = await params;
-  const pointer = await fetchLatest();
+  const pointer = await getPointer();
+
   const [manifest, tree] = await Promise.all([
     fetchManifestV3(pointer.manifestUrl),
     fetchTreeV2(pointer.treeUrl),
@@ -25,6 +28,7 @@ export default async function DocPage({
 
   const blobPromise = fetchPageBlob(page.blob);
   const isTabs = manifest.site.layout === 'sidebar-tabs';
+  const hrefPrefix = (await currentBasePath()) || pointer.basePath || '';
 
   return (
     <div className="dfy-root">
@@ -40,6 +44,7 @@ export default async function DocPage({
           currentSpace={space}
           currentRoute={route}
           layout={manifest.site.layout}
+          hrefPrefix={hrefPrefix}
         />
         <main className="dfy-content">
           <Suspense fallback={<div>Loading…</div>}>

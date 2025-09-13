@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { fetchLatest, fetchManifestV3 } from '../../../lib/fetchers';
+import { fetchLatestBy, fetchManifestV3 } from '../../../lib/fetchers';
+import { domainPointerUrl } from '../../../lib/site';
 
 export const runtime = 'edge';
 
 export async function GET() {
   try {
-    const latest = await fetchLatest();
+    const latest = await fetchLatestBy(await domainPointerUrl());
     const manifest = await fetchManifestV3(latest.manifestUrl);
     return NextResponse.json({
       ok: true,
