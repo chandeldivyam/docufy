@@ -20,9 +20,10 @@ export default function Home() {
             </>
           ) : (
             <>
-              <Link href="/sign-in">
-                <Button>Sign in</Button>
-              </Link>
+              {/* Use a plain anchor to avoid Next.js prefetch/data fetch causing CORS on WorkOS redirect */}
+              <Button asChild>
+                <a href="/sign-in">Sign in</a>
+              </Button>
             </>
           )}
         </div>
