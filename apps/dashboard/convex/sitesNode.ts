@@ -13,13 +13,16 @@ import type { JSONContent } from '@tiptap/core';
 
 // -------------------- Types --------------------
 
+// Tree/doc shapes coming from getTreeForSpace
 interface DocumentTreeNode {
   _id: Id<'documents'>;
   type: 'page' | 'group';
   title: string;
   slug: string;
   iconName?: string;
+  updatedAt?: number; // added in documents.getTreeForSpace
   children?: DocumentTreeNode[];
+  pmsDocKey?: string;
 }
 
 interface SpaceWithTree {
@@ -32,24 +35,70 @@ interface SpaceWithTree {
   tree: DocumentTreeNode[];
 }
 
-// Manifest v2 (content-addressed bundles)
+// Page bundle ref (content-addressed JSON blob)
 type PageBundleRef = {
   hash: string; // sha256 hex
   key: string; // "sites/<projectId>/blobs/<hash>.json"
   url: string; // fully-qualified URL with baseUrl prefix for convenience
   size: number; // bytes
 };
-interface BuildManifestV2 {
-  projectId: Id<'projects'>;
-  siteId: Id<'sites'>;
+
+// Manifest v3 (route-indexed with prefetch hints)
+type NavSpace = {
+  slug: string;
+  name: string;
+  style: 'dropdown' | 'tab';
+  order: number;
+  iconName?: string;
+  entry?: string; // first route for this space
+};
+
+type PageIndexEntry = {
+  title: string;
+  space: string; // space slug
+  iconName?: string;
+  blob: string; // relative blob key
+  hash: string;
+  size: number;
+  neighbors: string[]; // routes
+  lastModified: number;
+};
+
+interface BuildManifestV3 {
+  version: 3;
+  contentVersion: 'pm-bundle-v2';
   buildId: string;
   publishedAt: number;
+  site: {
+    projectId: Id<'projects'>;
+    name?: string | null;
+    logoUrl?: string | null;
+    layout: 'sidebar-dropdown' | 'sidebar-tabs';
+    baseUrl: string;
+  };
+  routing: {
+    basePath: string;
+    defaultSpace: string;
+  };
+  nav: { spaces: NavSpace[] };
   counts: { pages: number; newBlobs: number; reusedBlobs: number };
-  spacesPublished: Array<{ _id: Id<'spaces'>; slug: string; name: string }>;
-  contentVersion: 'pm-bundle-v2';
-  // docId -> bundle ref
-  pages: Record<string, PageBundleRef>;
+  pages: Record<string, PageIndexEntry>; // route -> index entry
 }
+
+// Tree v2 for UI
+type UiTreeItem = {
+  kind: 'group' | 'page';
+  title: string;
+  iconName?: string;
+  slug: string;
+  route: string;
+  children?: UiTreeItem[];
+};
+
+type UiTreeSpace = {
+  space: { slug: string; name: string; iconName?: string };
+  items: UiTreeItem[];
+};
 
 // -------------------- Helpers (Node runtime) --------------------
 
@@ -115,6 +164,29 @@ async function writeLatestPointer({
   });
 }
 
+// For domain aliases: one small mutable pointer per hostname
+async function writeDomainAliases({
+  hosts,
+  payload,
+}: {
+  hosts: Array<string | undefined | null>;
+  payload: { buildId: string; treeUrl: string; manifestUrl: string; basePath?: string };
+}) {
+  const putOpts = {
+    access: 'public' as const,
+    contentType: 'application/json',
+    cacheControlMaxAge: 0,
+    addRandomSuffix: false,
+    allowOverwrite: true,
+  };
+  for (const h of hosts) {
+    if (!h) continue;
+    const host = String(h).toLowerCase().split(':')[0];
+    if (!host) continue;
+    await put(`domains/${host}/latest.json`, JSON.stringify(payload), putOpts);
+  }
+}
+
 // -------------------- Actions (internal) --------------------
 
 export const _doPublish = internalAction({
@@ -123,43 +195,65 @@ export const _doPublish = internalAction({
     const site = await ctx.runQuery(api.sites.getSite, { siteId });
     if (!site) throw new Error('Site not found');
 
-    // 1) Load selected spaces and assemble trees
-    const spaces = await ctx.runQuery(api.spaces.list, { projectId: site.projectId });
-    const selected = spaces.filter((s) =>
-      site.selectedSpaceIds.some((id) => String(id) === String(s._id)),
-    );
+    // Load all spaces to preserve the selected order
+    const allSpaces = await ctx.runQuery(api.spaces.list, { projectId: site.projectId });
+    const selected = site.selectedSpaceIds
+      .map((id) => allSpaces.find((s) => String(s._id) === String(id)))
+      .filter((s): s is NonNullable<typeof s> => !!s);
 
+    // Materialize trees for selected spaces
     const trees: SpaceWithTree[] = [];
     for (const s of selected) {
       const tree = await ctx.runQuery(api.documents.getTreeForSpace, { spaceId: s._id });
       trees.push({ space: { _id: s._id, name: s.name, slug: s.slug, iconName: s.iconName }, tree });
     }
 
-    // 2) Flatten pages
-    const pages: Array<{
+    // Flatten pages with routes and space context
+    type FlatPage = {
       id: Id<'documents'>;
-      slug: string;
-      pmsDocKey?: string;
       title: string;
-      path: string[];
+      slug: string;
+      path: string[]; // within space
       iconName?: string;
-    }> = [];
+      spaceId: Id<'spaces'>;
+      spaceSlug: string;
+      updatedAt?: number;
+      pmsDocKey?: string;
+    };
 
-    function walk(node: DocumentTreeNode, parents: DocumentTreeNode[] = []) {
-      const path = parents.map((p) => p.slug).concat(node.slug);
-      if (node.type === 'page') {
-        pages.push({
-          id: node._id,
-          slug: node.slug,
-          pmsDocKey: (node as DocumentTreeNode & { pmsDocKey?: string }).pmsDocKey,
-          title: node.title,
-          path,
-          iconName: node.iconName,
-        });
-      }
-      for (const child of node.children ?? []) walk(child, parents.concat(node));
+    const flatPages: FlatPage[] = [];
+    const routesBySpace = new Map<string, string[]>(); // slug -> ordered list of routes
+    const routeByDocId = new Map<string, string>();
+
+    function routeFor(spaceSlug: string, segments: string[]) {
+      return `/${spaceSlug}/${segments.join('/')}`;
     }
-    for (const { tree } of trees) for (const n of tree) walk(n, []);
+
+    for (const { space, tree } of trees) {
+      function walk(n: DocumentTreeNode, parents: DocumentTreeNode[] = []) {
+        const path = parents.map((p) => p.slug).concat(n.slug);
+        if (n.type === 'page') {
+          const route = routeFor(space.slug, path);
+          flatPages.push({
+            id: n._id,
+            title: n.title,
+            slug: n.slug,
+            path,
+            iconName: n.iconName,
+            spaceId: space._id,
+            spaceSlug: space.slug,
+            updatedAt: n.updatedAt,
+            pmsDocKey: n.pmsDocKey,
+          });
+          routeByDocId.set(String(n._id), route);
+          const arr = routesBySpace.get(space.slug) ?? [];
+          arr.push(route);
+          routesBySpace.set(space.slug, arr);
+        }
+        for (const c of n.children ?? []) walk(c, parents.concat(n));
+      }
+      for (const n of tree) walk(n, []);
+    }
 
     await ctx.runMutation(api.sites._updateProgress, {
       siteId,
@@ -167,16 +261,49 @@ export const _doPublish = internalAction({
       deltaItems: 0,
       deltaPages: 0,
       deltaBytes: 0,
-      itemsTotal: pages.length,
+      itemsTotal: flatPages.length,
     });
 
-    // 3) Write versioned tree.json (renderer boots from this)
+    // Build UI-focused tree v2 with routes
+    const uiTreeSpaces: UiTreeSpace[] = trees.map(({ space, tree }) => {
+      function asUi(node: DocumentTreeNode, parents: DocumentTreeNode[] = []): UiTreeItem {
+        const route = routeFor(space.slug, parents.map((p) => p.slug).concat(node.slug));
+        const base = {
+          kind: node.type,
+          title: node.title,
+          iconName: node.iconName,
+          slug: node.slug,
+          route,
+        } as UiTreeItem;
+        if (node.children?.length) {
+          return { ...base, children: node.children.map((c) => asUi(c, parents.concat(node))) };
+        }
+        return base;
+      }
+      return {
+        space: { slug: space.slug, name: space.name, iconName: space.iconName },
+        items: tree.map((n) => asUi(n, [])),
+      };
+    });
+
+    const navSpaces: NavSpace[] = selected.map((s, i) => ({
+      slug: s.slug,
+      name: s.name,
+      style: 'dropdown',
+      order: i + 1,
+      iconName: s.iconName,
+      entry: (routesBySpace.get(s.slug) ?? [])[0],
+    }));
+
     const treePayload = {
+      version: 2,
       projectId: site.projectId,
       buildId,
       publishedAt: Date.now(),
-      spaces: trees.map(({ space, tree }) => ({ space, tree })),
+      nav: { spaces: navSpaces.map(({ style: _style, ...rest }) => rest) },
+      spaces: uiTreeSpaces,
     };
+
     await writeVersioned({
       projectId: site.projectId,
       buildId,
@@ -185,16 +312,15 @@ export const _doPublish = internalAction({
       contentType: 'application/json',
     });
 
-    // 4) For each page: get snapshot, build bundle, hash, and store/reuse
+    // Build page bundles and store/reuse content-addressed blobs
     let newBlobs = 0;
     let reusedBlobs = 0;
     const pageRefs: Record<string, PageBundleRef> = {};
 
-    for (const p of pages) {
-      const docKey = p.pmsDocKey ?? `space/${String(site.projectId) /* backfill ok */}/doc/${p.id}`;
-
-      // latestVersion returns number | null
+    for (const p of flatPages) {
+      const docKey = p.pmsDocKey ?? `space/${String(site.projectId)}/doc/${p.id}`;
       const latest = await ctx.runQuery(api.editor.latestVersion, { id: docKey });
+
       let pmDoc: JSONContent | null = null;
       if (latest !== null) {
         const snap = await ctx.runQuery(api.editor.getSnapshot, { id: docKey, version: latest });
@@ -215,7 +341,6 @@ export const _doPublish = internalAction({
         rendered: { html, toc },
         plain,
         source: pmDoc ?? {},
-        // room for metadata additions later
       };
       const bundle = JSON.stringify(bundleObj);
       const hash = sha256Hex(bundle);
@@ -228,13 +353,12 @@ export const _doPublish = internalAction({
       });
 
       if (!existing) {
-        // Store the content-addressed blob
         await put(key, bundle, {
           access: 'public',
           contentType: 'application/json',
           cacheControlMaxAge: 31536000,
           addRandomSuffix: false,
-          allowOverwrite: false, // content-addressed: never overwrite
+          allowOverwrite: false,
         });
         await ctx.runMutation(api.sites._recordBlobIfMissing, {
           projectId: site.projectId,
@@ -243,7 +367,6 @@ export const _doPublish = internalAction({
           size,
         });
         newBlobs += 1;
-
         await ctx.runMutation(api.sites._updateProgress, {
           siteId,
           buildId,
@@ -253,7 +376,6 @@ export const _doPublish = internalAction({
         });
       } else {
         reusedBlobs += 1;
-        // Still advance items/pages so the UI shows page progress
         await ctx.runMutation(api.sites._updateProgress, {
           siteId,
           buildId,
@@ -271,16 +393,58 @@ export const _doPublish = internalAction({
       };
     }
 
-    // 5) manifest.json (points to content-addressed bundles)
-    const manifest: BuildManifestV2 = {
-      projectId: site.projectId,
-      siteId,
+    // Build route-indexed page entries with neighbor prefetch hints
+    const pagesIndex: BuildManifestV3['pages'] = {};
+    const now = Date.now();
+    for (const p of flatPages) {
+      const ref = pageRefs[String(p.id)]!;
+      const route = routeByDocId.get(String(p.id))!;
+      pagesIndex[route] = {
+        title: p.title,
+        space: p.spaceSlug,
+        iconName: p.iconName,
+        blob: ref.key,
+        hash: ref.hash,
+        size: ref.size,
+        neighbors: [],
+        lastModified: p.updatedAt ?? now,
+      };
+    }
+
+    // Prefetch neighbors: next 1-2 pages within each space
+    for (const [_spaceSlug, routes] of routesBySpace.entries()) {
+      for (let i = 0; i < routes.length; i++) {
+        const here: string = routes[i]!;
+        const n: string[] = [];
+        const r1 = routes[i + 1];
+        if (r1) n.push(r1);
+        const r2 = routes[i + 2];
+        if (r2) n.push(r2);
+        const entry = pagesIndex[here];
+        if (entry) entry.neighbors = n;
+      }
+    }
+
+    // Final manifest v3
+    const manifest: BuildManifestV3 = {
+      version: 3,
+      contentVersion: 'pm-bundle-v2',
       buildId,
       publishedAt: Date.now(),
-      counts: { pages: pages.length, newBlobs, reusedBlobs },
-      spacesPublished: selected.map((s) => ({ _id: s._id, slug: s.slug, name: s.name })),
-      contentVersion: 'pm-bundle-v2',
-      pages: pageRefs,
+      site: {
+        projectId: site.projectId,
+        name: null,
+        logoUrl: null,
+        layout: 'sidebar-dropdown',
+        baseUrl: site.baseUrl as string,
+      },
+      routing: {
+        basePath: '/',
+        defaultSpace: navSpaces[0]?.slug ?? selected[0]?.slug ?? 'docs',
+      },
+      nav: { spaces: navSpaces },
+      counts: { pages: flatPages.length, newBlobs, reusedBlobs },
+      pages: pagesIndex,
     };
 
     await writeVersioned({
@@ -291,13 +455,24 @@ export const _doPublish = internalAction({
       contentType: 'application/json',
     });
 
-    // 6) Update "latest.json" pointer (no-cache), pointing to **versioned** assets
+    // Update latest pointer to new immutable assets
     await writeLatestPointer({
       projectId: site.projectId,
       payload: {
         buildId,
         treeUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/tree.json`,
         manifestUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/manifest.json`,
+      },
+    });
+
+    // Mirror latest pointer to domain aliases
+    await writeDomainAliases({
+      hosts: [site.primaryHost, ...(site.customDomains ?? [])],
+      payload: {
+        buildId,
+        treeUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/tree.json`,
+        manifestUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/manifest.json`,
+        basePath: '',
       },
     });
   },
@@ -374,5 +549,24 @@ export const _revertPointer = internalAction({
         manifestUrl: `${baseUrl}/sites/${projectId}/${buildId}/manifest.json`,
       },
     });
+
+    // Mirror pointer to domain aliases for this project (single site per project)
+    try {
+      const sites = await ctx.runQuery(api.sites.listByProject, { projectId });
+      const site = sites[0];
+      if (site) {
+        await writeDomainAliases({
+          hosts: [site.primaryHost, ...(site.customDomains ?? [])],
+          payload: {
+            buildId,
+            treeUrl: `${baseUrl}/sites/${projectId}/${buildId}/tree.json`,
+            manifestUrl: `${baseUrl}/sites/${projectId}/${buildId}/manifest.json`,
+            basePath: '',
+          },
+        });
+      }
+    } catch {
+      // best-effort; do not block revert
+    }
   },
 });

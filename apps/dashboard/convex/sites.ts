@@ -10,6 +10,21 @@ import { api, internal } from './_generated/api';
 
 // -------------------- Public mutations/queries --------------------
 
+function slugify(name: string) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .slice(0, 48);
+}
+
+function allocatePrimaryHost(projectName: string) {
+  const slug = slugify(projectName) || 'site';
+  const rand = Math.random().toString(16).slice(2, 8);
+  return `${slug}-${rand}.trydocufy.com`;
+}
+
 export const create = mutation({
   args: {
     projectId: v.id('projects'),
@@ -19,17 +34,24 @@ export const create = mutation({
   handler: async (ctx, { projectId, storeId, baseUrl }) => {
     await assertMembership(ctx, projectId);
 
+    const project = await ctx.db.get(projectId);
+    if (!project) throw appError('PROJECT_NOT_FOUND');
+
     const existing = await ctx.db
       .query('sites')
       .withIndex('by_project', (q) => q.eq('projectId', projectId))
       .first();
     if (existing) throw appError('SITE_ALREADY_EXISTS', 'Site already exists for this project');
 
+    const primaryHost = allocatePrimaryHost(project.name);
+
     const id = await ctx.db.insert('sites', {
       projectId,
       storeId,
       baseUrl,
       selectedSpaceIds: [],
+      primaryHost,
+      customDomains: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -53,11 +75,16 @@ export const getOrCreateForProject = mutation({
 
     if (!storeId || !baseUrl)
       throw appError('SITE_MISSING_STORE', 'Vercel Blob store not configured');
+    const project = await ctx.db.get(projectId);
+    if (!project) throw appError('PROJECT_NOT_FOUND');
+    const primaryHost = allocatePrimaryHost(project.name);
     const id = await ctx.db.insert('sites', {
       projectId,
       storeId,
       baseUrl,
       selectedSpaceIds: [],
+      primaryHost,
+      customDomains: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -120,6 +147,17 @@ export const getBuildById = query({
 export const getSite = query({
   args: { siteId: v.id('sites') },
   handler: async (ctx, { siteId }) => ctx.db.get(siteId),
+});
+
+export const listByProject = query({
+  args: { projectId: v.id('projects') },
+  handler: async (ctx, { projectId }) => {
+    await assertMembership(ctx, projectId);
+    return await ctx.db
+      .query('sites')
+      .withIndex('by_project', (q) => q.eq('projectId', projectId))
+      .collect();
+  },
 });
 
 export const assertProjectAccess = query({
@@ -257,6 +295,35 @@ export const _recordBlobIfMissing = mutation({
       refCount: 1,
     });
     return await ctx.db.get(id);
+  },
+});
+
+// -------------------- Domain bindings --------------------
+
+export const addCustomDomain = mutation({
+  args: { siteId: v.id('sites'), domain: v.string() },
+  handler: async (ctx, { siteId, domain }) => {
+    const site = await ctx.db.get(siteId);
+    if (!site) throw appError('SITE_NOT_FOUND');
+    await assertMembership(ctx, site.projectId, ['owner', 'admin', 'editor']);
+
+    const d = domain.trim().toLowerCase();
+    if (!/^[a-z0-9.-]+$/.test(d)) throw appError('INVALID_DOMAIN');
+    const updated = Array.from(new Set([...(site.customDomains ?? []), d]));
+    await ctx.db.patch(siteId, { customDomains: updated, updatedAt: Date.now() });
+  },
+});
+
+export const removeCustomDomain = mutation({
+  args: { siteId: v.id('sites'), domain: v.string() },
+  handler: async (ctx, { siteId, domain }) => {
+    const site = await ctx.db.get(siteId);
+    if (!site) throw appError('SITE_NOT_FOUND');
+    await assertMembership(ctx, site.projectId, ['owner', 'admin', 'editor']);
+
+    const d = domain.trim().toLowerCase();
+    const updated = (site.customDomains ?? []).filter((x) => x !== d);
+    await ctx.db.patch(siteId, { customDomains: updated, updatedAt: Date.now() });
   },
 });
 

@@ -397,6 +397,8 @@ type DocumentNode = {
   isHidden: boolean;
   pmsDocKey?: string;
   iconName?: string;
+  createdAt?: number;
+  updatedAt?: number;
 };
 
 type TreeNode = DocumentNode & {
@@ -449,6 +451,8 @@ export const getTreeForSpace = query({
         isHidden: !!d.isHidden,
         pmsDocKey: d.pmsDocKey,
         iconName: d.iconName,
+        createdAt: d.createdAt,
+        updatedAt: d.updatedAt,
       };
 
       arr.push(node);

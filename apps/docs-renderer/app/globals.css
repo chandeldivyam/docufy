@@ -1,3 +1,46 @@
+/* Design tokens */
+:root {
+  --bg: #ffffff;
+  --fg: #0b1220;
+  --muted: #667085;
+  --border: #e5e7eb;
+  --sidebar-bg: #fafafa;
+  --accent: #2563eb;
+  --accent-fg: #ffffff;
+  --radius: 10px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  --header-h: 52px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c1015;
+    --fg: #e7edf3;
+    --muted: #9aa4b2;
+    --border: #1f2937;
+    --sidebar-bg: #0e141b;
+    --accent: #3b82f6;
+    --accent-fg: #e7edf3;
+  }
+}
+
+/* Base */
 html,
 body,
 #__next {
@@ -5,14 +48,218 @@ body,
 }
 body {
   margin: 0;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    Helvetica,
-    Arial,
-    'Apple Color Emoji',
-    'Segoe UI Emoji';
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--fg);
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+}
+
+main,
+article {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+/* Typography */
+h1 {
+  font-size: clamp(24px, 2.2vw, 32px);
+  margin: var(--space-4) 0;
+}
+h2 {
+  font-size: clamp(20px, 1.6vw, 24px);
+  margin: var(--space-4) 0;
+}
+h3 {
+  font-size: 18px;
+  margin: var(--space-3) 0;
+}
+p {
+  line-height: 1.75;
+  color: var(--fg);
+}
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+}
+
+/* Layout */
+.dfy-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.dfy-header {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.dfy-main {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+
+/* Sidebar */
+.dfy-sidebar {
+  width: 300px;
+  overflow: auto;
+  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
+  padding: var(--space-3);
+  position: sticky;
+  top: 0;
+}
+.dfy-space-select {
+  margin-bottom: var(--space-3);
+}
+.dfy-space-select select {
+  width: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  box-shadow: var(--shadow-sm);
+}
+.dfy-space-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: var(--space-2) 0 var(--space-2);
+}
+.dfy-tree a,
+.dfy-group {
+  display: block;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.dfy-tree a:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+@media (prefers-color-scheme: dark) {
+  .dfy-tree a:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+.dfy-tree a.active {
+  background: var(--accent);
+  color: var(--accent-fg);
+  box-shadow: var(--shadow-sm);
+}
+.dfy-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dfy-disclosure {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+.dfy-disclosure::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-left: 2px solid #888;
+  border-bottom: 2px solid #888;
+  transform: rotate(-45deg);
+  transition: transform 0.12s ease-in-out;
+}
+.dfy-disclosure[aria-expanded='true']::before {
+  transform: rotate(45deg);
+}
+.dfy-leaf {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+}
+
+.dfy-children {
+  margin-left: 12px;
+  border-left: 1px dashed var(--border);
+  padding-left: 12px;
+}
+
+/* Content */
+.dfy-content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-5);
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
+}
+
+/* Article primitives */
+.dfy-article blockquote {
+  margin: 16px 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+.dfy-article hr {
+  border: 0;
+  height: 1px;
+  background: var(--border);
+  margin: 24px 0;
+}
+.dfy-article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 14px;
+}
+.dfy-article th,
+.dfy-article td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+/* Code blocks */
+pre {
+  background: #0e1111;
+  color: #e6edf3;
+  padding: 12px;
+  border-radius: 8px;
+  overflow: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Focus rings */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Visually hidden */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
 }
