@@ -76,6 +76,7 @@
   },
   "scripts": {
     "dev": "next dev --port 3001",
+    "prebuild": "pnpm -w build:packages",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
