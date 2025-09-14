@@ -27,7 +27,7 @@ export const syncFromWorkOS = internalMutation({
         emailVerified: args.emailVerified,
         firstName: args.firstName,
         lastName: args.lastName,
-        profilePictureUrl: args.profilePictureUrl,
+        profilePictureUrl: args.profilePictureUrl || undefined,
       });
       return existingUser._id;
     } else {
@@ -38,7 +38,7 @@ export const syncFromWorkOS = internalMutation({
         emailVerified: args.emailVerified,
         firstName: args.firstName,
         lastName: args.lastName,
-        profilePictureUrl: args.profilePictureUrl,
+        profilePictureUrl: args.profilePictureUrl || undefined,
         createdAt: Date.now(),
       });
     }

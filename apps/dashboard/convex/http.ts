@@ -27,7 +27,7 @@ http.route({
             emailVerified: data.email_verified,
             firstName: data.first_name,
             lastName: data.last_name,
-            profilePictureUrl: data.profile_picture_url,
+            profilePictureUrl: data.profile_picture_url ?? undefined,
           });
 
           break;
@@ -40,7 +40,7 @@ http.route({
             emailVerified: data.email_verified,
             firstName: data.first_name,
             lastName: data.last_name,
-            profilePictureUrl: data.profile_picture_url,
+            profilePictureUrl: data.profile_picture_url ?? undefined,
           });
 
           break;
