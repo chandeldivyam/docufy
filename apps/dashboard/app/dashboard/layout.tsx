@@ -20,7 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Toaster position="bottom-right" />
           </Authenticated>
           <Unauthenticated>
-            <></>
+            <div className="flex h-full items-center justify-center">Authenticating...</div>
           </Unauthenticated>
         </div>
       </ConvexQueryCacheProvider>
