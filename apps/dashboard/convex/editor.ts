@@ -2,6 +2,7 @@ import { ProsemirrorSync } from '@convex-dev/prosemirror-sync';
 import { components } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { appError } from './_utils/errors';
+import { assertMembershipGenericCtx } from './_utils/auth';
 
 const pms = new ProsemirrorSync(components.prosemirrorSync);
 
@@ -29,24 +30,8 @@ export const { getSnapshot, submitSnapshot, latestVersion, getSteps, submitSteps
       const projectId = (space as { projectId?: Id<'projects'> }).projectId;
       if (!projectId) throw appError('PROJECT_ID_NOT_FOUND', 'Project ID not found');
 
-      // Check user has access to the project
-      const identity = await ctx.auth.getUserIdentity();
-      if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
-
-      const user = await ctx.db
-        .query('users')
-        .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
-        .first();
-
-      if (!user) throw appError('USER_NOT_FOUND', 'User not found');
-
-      const membership = await ctx.db
-        .query('projectMembers')
-        .withIndex('by_project_and_user', (q) => q.eq('projectId', projectId))
-        .filter((q) => q.eq(q.field('userId'), user._id))
-        .first();
-
-      if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
+      // Any project member (viewer+) can read
+      await assertMembershipGenericCtx(ctx, projectId);
     } catch (error) {
       throw appError(
         'READ_ACCESS_DENIED',
@@ -64,32 +49,8 @@ export const { getSnapshot, submitSnapshot, latestVersion, getSteps, submitSteps
       const projectId = (space as { projectId?: Id<'projects'> }).projectId;
       if (!projectId) throw appError('PROJECT_ID_NOT_FOUND', 'Project ID not found');
 
-      const identity = await ctx.auth.getUserIdentity();
-      if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
-
-      const user = await ctx.db
-        .query('users')
-        .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
-        .first();
-
-      if (!user) throw appError('USER_NOT_FOUND', 'User not found');
-
-      const membership = await ctx.db
-        .query('projectMembers')
-        .withIndex('by_project_and_user', (q) => q.eq('projectId', projectId))
-        .filter((q) => q.eq(q.field('userId'), user._id))
-        .first();
-
-      if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
-
-      if (!membership.role || typeof membership.role !== 'string')
-        throw appError('ACCESS_DENIED', 'Access denied');
-
-      // Only editors and above can write
-      const allowedRoles = ['owner', 'admin', 'editor'];
-      if (!allowedRoles.includes(membership.role)) {
-        throw appError('WRITE_ACCESS_DENIED', 'Write access denied - insufficient permissions');
-      }
+      // Editors and above can write
+      await assertMembershipGenericCtx(ctx, projectId, ['owner', 'admin', 'editor']);
     } catch (error) {
       throw appError(
         'WRITE_ACCESS_DENIED',

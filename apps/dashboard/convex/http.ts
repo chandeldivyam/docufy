@@ -1,88 +1,55 @@
+// apps/dashboard/convex/http.ts
 import { httpRouter } from 'convex/server';
 import { httpAction } from './_generated/server';
 import { internal } from './_generated/api';
+import type { WebhookEvent } from '@clerk/backend';
+import { Webhook } from 'svix';
 
 const http = httpRouter();
 
 http.route({
-  path: '/workos-webhook',
+  path: '/clerk-users-webhook',
   method: 'POST',
   handler: httpAction(async (ctx, request) => {
-    const bodyText = await request.text();
-    const sigHeader = String(request.headers.get('workos-signature'));
+    const event = await validateRequest(request);
+    if (!event) return new Response('Invalid signature', { status: 400 });
 
-    try {
-      await ctx.runAction(internal.workos.verifyWebhook, {
-        payload: bodyText,
-        signature: sigHeader,
-      });
-
-      const { data, event } = JSON.parse(bodyText);
-
-      switch (event) {
-        case 'user.created': {
-          await ctx.runMutation(internal.users.syncFromWorkOS, {
-            email: data.email,
-            workosUserId: data.id,
-            emailVerified: data.email_verified,
-            firstName: data.first_name,
-            lastName: data.last_name,
-            profilePictureUrl: data.profile_picture_url ?? undefined,
-          });
-
-          break;
-        }
-
-        case 'user.updated': {
-          await ctx.runMutation(internal.users.syncFromWorkOS, {
-            email: data.email,
-            workosUserId: data.id,
-            emailVerified: data.email_verified,
-            firstName: data.first_name,
-            lastName: data.last_name,
-            profilePictureUrl: data.profile_picture_url ?? undefined,
-          });
-
-          break;
-        }
-
-        default: {
-          throw new Error(`Unhandled event type: ${event}`);
-        }
+    switch (event.type) {
+      case 'user.created':
+      case 'user.updated': {
+        await ctx.runMutation(internal.users.upsertFromClerk, { data: event.data });
+        break;
       }
-
-      return new Response(JSON.stringify({ status: 'success' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } catch (e) {
-      if (e instanceof Error) {
-        if (e.message.includes('Unhandled event type')) {
-          return new Response(
-            JSON.stringify({
-              status: 'error',
-              message: e.message,
-            }),
-            {
-              status: 422,
-              headers: { 'Content-Type': 'application/json' },
-            },
-          );
-        }
+      case 'user.deleted': {
+        await ctx.runMutation(internal.users.deleteFromClerk, { clerkUserId: event.data.id! });
+        break;
       }
-
-      return new Response(
-        JSON.stringify({
-          status: 'error',
-          message: 'Internal server error',
-        }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
+      default:
+        // ignore other events
+        break;
     }
+
+    return new Response(JSON.stringify({ status: 'ok' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }),
 });
+
+async function validateRequest(req: Request): Promise<WebhookEvent | null> {
+  const payload = await req.text();
+  const headers = {
+    'svix-id': req.headers.get('svix-id')!,
+    'svix-timestamp': req.headers.get('svix-timestamp')!,
+    'svix-signature': req.headers.get('svix-signature')!,
+  };
+  try {
+    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET!);
+    return wh.verify(payload, headers) as unknown as WebhookEvent;
+  } catch (err) {
+    console.error('Clerk webhook verify failed', err);
+    return null;
+  }
+}
 
 export default http;

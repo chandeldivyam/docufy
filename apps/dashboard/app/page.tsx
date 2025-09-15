@@ -1,31 +1,27 @@
+// apps/dashboard/app/page.tsx
 'use client';
 
-import { useAuth } from '@workos-inc/authkit-nextjs/components';
+import { Authenticated, Unauthenticated } from 'convex/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { SignInButton } from '@clerk/nextjs';
 
 export default function Home() {
-  const { user } = useAuth();
-
   return (
     <div className="p-4">
       <div className="mb-4 flex items-center justify-between">
         <h1>Docufy Dashboard</h1>
         <div className="flex gap-2">
-          {user ? (
-            <>
-              <Link href="/dashboard">
-                <Button>Dashboard</Button>
-              </Link>
-            </>
-          ) : (
-            <>
-              {/* Use a plain anchor to avoid Next.js prefetch/data fetch causing CORS on WorkOS redirect */}
-              <Button asChild>
-                <a href="/sign-in">Sign in</a>
-              </Button>
-            </>
-          )}
+          <Authenticated>
+            <Link href="/dashboard" prefetch={false}>
+              <Button>Dashboard</Button>
+            </Link>
+          </Authenticated>
+          <Unauthenticated>
+            <SignInButton mode="modal">
+              <Button>Sign in</Button>
+            </SignInButton>
+          </Unauthenticated>
         </div>
       </div>
     </div>

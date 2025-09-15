@@ -1,21 +1,18 @@
-'use node';
+// This file previously contained WorkOS webhook verification.
+// WorkOS has been fully removed in favor of Clerk. We keep a no-op
+// export so Convex' generated API typings remain stable until the
+// next codegen run removes this module from the API map.
 
 import { internalAction } from './_generated/server';
 import { v } from 'convex/values';
-import { WorkOS } from '@workos-inc/node';
+import { appError } from './_utils/errors';
 
 export const verifyWebhook = internalAction({
   args: v.object({
     payload: v.string(),
     signature: v.string(),
   }),
-  handler: async (ctx, args) => {
-    const workos = new WorkOS(process.env.WORKOS_API_KEY);
-
-    return await workos.webhooks.constructEvent({
-      payload: JSON.parse(args.payload),
-      sigHeader: args.signature,
-      secret: String(process.env.WORKOS_WEBHOOK_SECRET),
-    });
+  handler: async () => {
+    throw appError('GONE', 'WorkOS integration has been removed.');
   },
 });

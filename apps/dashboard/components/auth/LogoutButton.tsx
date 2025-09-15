@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@workos-inc/authkit-nextjs/components';
+import { useClerk } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ interface LogoutButtonProps {
 
 export function LogoutButton({ variant = 'default', className }: LogoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { signOut } = useAuth();
+  const { signOut } = useClerk();
 
   const handleSignOut = async () => {
     setIsLoading(true);

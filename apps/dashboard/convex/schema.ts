@@ -4,7 +4,7 @@ import { v } from 'convex/values';
 
 export default defineSchema({
   users: defineTable({
-    workosUserId: v.string(),
+    externalId: v.optional(v.string()),
     email: v.string(),
     emailVerified: v.boolean(),
     firstName: v.optional(v.string()),
@@ -13,7 +13,7 @@ export default defineSchema({
     createdAt: v.number(),
     defaultProjectId: v.optional(v.id('projects')),
   })
-    .index('by_workos_user_id', ['workosUserId'])
+    .index('by_external_id', ['externalId'])
     .index('by_email', ['email']),
 
   projects: defineTable({

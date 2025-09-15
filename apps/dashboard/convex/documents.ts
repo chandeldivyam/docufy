@@ -4,6 +4,7 @@ import { appError } from './_utils/errors';
 import { Id } from './_generated/dataModel';
 import { GenericMutationCtx } from 'convex/server';
 import { DataModel } from './_generated/dataModel';
+import { assertMembership } from './_utils/auth';
 
 /* ---------- Slug helpers ---------- */
 function slugify(s: string) {
@@ -109,29 +110,10 @@ export const createDocument = mutation({
     isHidden: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
-
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
-      .first();
-    if (!user) throw appError('USER_NOT_FOUND', 'User not found');
-
     const space = await ctx.db.get(args.spaceId);
     if (!space) throw appError('SPACE_NOT_FOUND', 'Space not found');
 
-    // Membership & role
-    const membership = await ctx.db
-      .query('projectMembers')
-      .withIndex('by_project_and_user', (q) =>
-        q.eq('projectId', space.projectId).eq('userId', user._id),
-      )
-      .first();
-    if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
-    const allowedRoles = ['owner', 'admin', 'editor'];
-    if (!allowedRoles.includes(membership.role))
-      throw appError('WRITE_ACCESS_DENIED', 'Insufficient permissions');
+    await assertMembership(ctx, space.projectId, ['admin', 'editor', 'owner']);
 
     // Type constraints
     if (args.type === 'group' && args.parentId) {
@@ -195,22 +177,7 @@ export const getDocument = query({
     const space = await ctx.db.get(document.spaceId);
     if (!space) throw appError('SPACE_NOT_FOUND', 'Space not found');
 
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
-      .first();
-
-    if (!user) throw appError('USER_NOT_FOUND', 'User not found');
-
-    // Check membership
-    const membership = await ctx.db
-      .query('projectMembers')
-      .withIndex('by_project_and_user', (q) =>
-        q.eq('projectId', space.projectId).eq('userId', user._id),
-      )
-      .first();
-
-    if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
+    const { membership } = await assertMembership(ctx, space.projectId);
 
     const editableRoles = ['owner', 'admin', 'editor'];
     const editable = editableRoles.includes(membership.role);
@@ -229,19 +196,8 @@ export const getDocumentsInSpace = query({
     const space = await ctx.db.get(args.spaceId);
     if (!space) throw appError('SPACE_NOT_FOUND', 'Space not found');
 
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
-      .first();
-    if (!user) throw appError('USER_NOT_FOUND', 'User not found');
-
-    const membership = await ctx.db
-      .query('projectMembers')
-      .withIndex('by_project_and_user', (q) =>
-        q.eq('projectId', space.projectId).eq('userId', user._id),
-      )
-      .first();
-    if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
+    // Editors and above can update document metadata
+    await assertMembership(ctx, space.projectId, ['owner', 'admin', 'editor']);
 
     return await ctx.db
       .query('documents')
@@ -272,27 +228,7 @@ export const updateDocument = mutation({
     const space = await ctx.db.get(document.spaceId);
     if (!space) throw appError('SPACE_NOT_FOUND', 'Space not found');
 
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
-      .first();
-
-    if (!user) throw appError('USER_NOT_FOUND', 'User not found');
-
-    // Check membership and permissions
-    const membership = await ctx.db
-      .query('projectMembers')
-      .withIndex('by_project_and_user', (q) =>
-        q.eq('projectId', space.projectId).eq('userId', user._id),
-      )
-      .first();
-
-    if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
-
-    const allowedRoles = ['owner', 'admin', 'editor'];
-    if (!allowedRoles.includes(membership.role)) {
-      throw appError('WRITE_ACCESS_DENIED', 'Insufficient permissions');
-    }
+    await assertMembership(ctx, space.projectId);
 
     const updates: { updatedAt: number } & {
       title?: string;
@@ -346,33 +282,14 @@ async function collectSubtreeIds(
 export const deleteDocument = mutation({
   args: { documentId: v.id('documents') },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
-
     const document = await ctx.db.get(args.documentId);
     if (!document) throw appError('DOCUMENT_NOT_FOUND', 'Document not found');
 
     const space = await ctx.db.get(document.spaceId);
     if (!space) throw appError('SPACE_NOT_FOUND', 'Space not found');
 
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
-      .first();
-    if (!user) throw appError('USER_NOT_FOUND', 'User not found');
-
-    const membership = await ctx.db
-      .query('projectMembers')
-      .withIndex('by_project_and_user', (q) =>
-        q.eq('projectId', space.projectId).eq('userId', user._id),
-      )
-      .first();
-    if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
-
-    const allowedRoles = ['owner', 'admin', 'editor'];
-    if (!allowedRoles.includes(membership.role)) {
-      throw appError('WRITE_ACCESS_DENIED', 'Insufficient permissions');
-    }
+    // Editors and above can delete
+    await assertMembership(ctx, space.projectId, ['owner', 'admin', 'editor']);
 
     const toDelete = await collectSubtreeIds(
       ctx,
@@ -410,25 +327,11 @@ export type { DocumentNode, TreeNode };
 export const getTreeForSpace = query({
   args: { spaceId: v.id('spaces') },
   handler: async (ctx, { spaceId }) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
-
     const space = await ctx.db.get(spaceId);
     if (!space) throw appError('SPACE_NOT_FOUND', 'Space not found');
 
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
-      .first();
-    if (!user) throw appError('USER_NOT_FOUND', 'User not found');
-
-    const membership = await ctx.db
-      .query('projectMembers')
-      .withIndex('by_project_and_user', (q) =>
-        q.eq('projectId', space.projectId).eq('userId', user._id),
-      )
-      .first();
-    if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
+    // Any project member (viewer+) can read the tree
+    await assertMembership(ctx, space.projectId);
 
     const all = await ctx.db
       .query('documents')
@@ -483,9 +386,6 @@ export const moveDocument = mutation({
     index: v.number(), // 0-based index within new parent
   },
   handler: async (ctx, { documentId, parentId, index }) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
-
     const doc = await ctx.db.get(documentId);
     if (!doc) throw appError('DOCUMENT_NOT_FOUND', 'Document not found');
 
@@ -496,24 +396,8 @@ export const moveDocument = mutation({
       throw appError('INVALID_PARENT', 'A document cannot be its own parent');
     }
 
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_workos_user_id', (q) => q.eq('workosUserId', identity.subject))
-      .first();
-    if (!user) throw appError('USER_NOT_FOUND', 'User not found');
-
-    const membership = await ctx.db
-      .query('projectMembers')
-      .withIndex('by_project_and_user', (q) =>
-        q.eq('projectId', space.projectId).eq('userId', user._id),
-      )
-      .first();
-    if (!membership) throw appError('ACCESS_DENIED', 'Access denied');
-
-    const allowedRoles = ['owner', 'admin', 'editor'];
-    if (!allowedRoles.includes(membership.role)) {
-      throw appError('WRITE_ACCESS_DENIED', 'Insufficient permissions');
-    }
+    // Editors and above can move
+    await assertMembership(ctx, space.projectId, ['owner', 'admin', 'editor']);
 
     // Rule: groups must stay at root
     if (doc.type === 'group' && parentId) {

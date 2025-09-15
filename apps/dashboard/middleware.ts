@@ -1,10 +1,12 @@
-import { authkitMiddleware } from '@workos-inc/authkit-nextjs';
+// apps/dashboard/middleware.ts
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-export default authkitMiddleware({
-  middlewareAuth: {
-    enabled: true,
-    unauthenticatedPaths: ['/', '/sign-in', '/sign-up'],
-  },
+const isPublic = createRouteMatcher(['/', '/sign-in(.*)', '/sign-up(.*)']);
+
+export default clerkMiddleware(async (auth, req) => {
+  if (!isPublic(req)) {
+    await auth.protect();
+  }
 });
 
 export const config = {
