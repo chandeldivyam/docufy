@@ -3,7 +3,7 @@
 // Node-only internals for site publishing and pointer flips
 import { internalAction } from './_generated/server';
 import { v } from 'convex/values';
-import type { Id } from './_generated/dataModel';
+import type { Id, Doc } from './_generated/dataModel';
 import { api } from './_generated/api';
 
 import { put } from '@vercel/blob';
@@ -189,6 +189,26 @@ async function writeDomainAliases({
 
 // -------------------- Actions (internal) --------------------
 
+// Expose a small internal helper so other actions can mirror the pointer
+export const _mirrorPointerToDomains = internalAction({
+  args: { siteId: v.id('sites'), hosts: v.array(v.string()) },
+  handler: async (ctx, { siteId, hosts }) => {
+    const site = await ctx.runQuery(api.sites.getSite, { siteId });
+    if (!site) throw new Error('Site not found');
+    const buildId = site.lastBuildId;
+    if (!buildId) return; // nothing published yet
+
+    const payload = {
+      buildId,
+      treeUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/tree.json`,
+      manifestUrl: `${site.baseUrl}/sites/${site.projectId}/${buildId}/manifest.json`,
+      basePath: '',
+    } as const;
+
+    await writeDomainAliases({ hosts, payload });
+  },
+});
+
 export const _doPublish = internalAction({
   args: { siteId: v.id('sites'), buildId: v.string() },
   handler: async (ctx, { siteId, buildId }) => {
@@ -196,10 +216,12 @@ export const _doPublish = internalAction({
     if (!site) throw new Error('Site not found');
 
     // Load all spaces to preserve the selected order
-    const allSpaces = await ctx.runQuery(api.spaces.list, { projectId: site.projectId });
-    const selected = site.selectedSpaceIds
-      .map((id) => allSpaces.find((s) => String(s._id) === String(id)))
-      .filter((s): s is NonNullable<typeof s> => !!s);
+    const allSpaces = (await ctx.runQuery(api.spaces.list, {
+      projectId: site.projectId,
+    })) as Doc<'spaces'>[];
+    const selected: Doc<'spaces'>[] = site.selectedSpaceIds
+      .map((id: Id<'spaces'>) => allSpaces.find((s: Doc<'spaces'>) => String(s._id) === String(id)))
+      .filter((s): s is Doc<'spaces'> => !!s);
 
     // Materialize trees for selected spaces
     const trees: SpaceWithTree[] = [];
@@ -286,7 +308,7 @@ export const _doPublish = internalAction({
       };
     });
 
-    const navSpaces: NavSpace[] = selected.map((s, i) => ({
+    const navSpaces: NavSpace[] = selected.map((s: Doc<'spaces'>, i: number) => ({
       slug: s.slug,
       name: s.name,
       style: 'dropdown',

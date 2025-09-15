@@ -142,7 +142,7 @@ const DocEditor = forwardRef<DocEditorHandle, Props>(function DocEditor(
   return (
     <div className={className}>
       {notReady ? (
-        <div className="text-muted-foreground p-2 text-sm">Creating page…</div>
+        <div className="text-muted-foreground p-2 text-sm"></div>
       ) : (
         <div
           ref={scrollRef}

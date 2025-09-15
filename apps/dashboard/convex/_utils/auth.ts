@@ -36,11 +36,13 @@ export async function assertMembership(
   return { me, membership };
 }
 
-export async function getUserOrThrowGenericCtx(ctx: GenericCtx | GenericQueryCtx<GenericDataModel>) {
+export async function getUserOrThrowGenericCtx(
+  ctx: GenericCtx | GenericQueryCtx<GenericDataModel>,
+) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw appError('UNAUTHORIZED', 'Unauthorized');
 
-  const user = await ctx.runQuery(api.users.getCurrentUser, {})
+  const user = await ctx.runQuery(api.users.getCurrentUser, {});
 
   if (!user) throw appError('USER_NOT_FOUND', 'User not found');
   return user;
@@ -49,7 +51,7 @@ export async function getUserOrThrowGenericCtx(ctx: GenericCtx | GenericQueryCtx
 export async function assertMembershipGenericCtx(
   ctx: GenericCtx | GenericQueryCtx<GenericDataModel>,
   projectId: Id<'projects'>,
-  allowed: Role[] = ['owner', 'admin', 'editor', 'viewer']
+  allowed: Role[] = ['owner', 'admin', 'editor', 'viewer'],
 ) {
   const me = await getUserOrThrowGenericCtx(ctx);
   const membership = await ctx.runQuery(api.projectMembers.listMembers, {
