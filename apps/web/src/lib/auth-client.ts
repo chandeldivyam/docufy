@@ -1,4 +1,5 @@
 import { createAuthClient } from "better-auth/react"
+import { organizationClient } from "better-auth/client/plugins"
 import {
   createCollection,
   localOnlyCollectionOptions,
@@ -24,4 +25,5 @@ export const authClient = createAuthClient({
     typeof window !== `undefined`
       ? window.location.origin // Always use current domain in browser
       : undefined, // Let better-auth handle server-side baseURL detection
+  plugins: [organizationClient()],
 })

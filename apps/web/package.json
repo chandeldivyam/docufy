@@ -1,5 +1,5 @@
 {
-  "name": "webapp",
+  "name": "web",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,7 +17,9 @@
   },
   "dependencies": {
     "@electric-sql/client": "^1.0.10",
+    "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.13",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/electric-db-collection": "^0.1.6",
     "@tanstack/react-db": "^0.1.6",
