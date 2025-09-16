@@ -17,7 +17,12 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedOrgsRouteImport } from './routes/_authenticated/orgs'
 import { Route as AuthenticatedActiveOrgRouteImport } from './routes/_authenticated/_active-org'
 import { Route as AuthenticatedActiveOrgIndexRouteImport } from './routes/_authenticated/_active-org/index'
+import { Route as AuthenticatedActiveOrgSettingsRouteImport } from './routes/_authenticated/_active-org/settings'
 import { ServerRoute as ApiUsersServerRouteImport } from './routes/api/users'
+import { ServerRoute as ApiUserInvitationsServerRouteImport } from './routes/api/user-invitations'
+import { ServerRoute as ApiOrganizationsServerRouteImport } from './routes/api/organizations'
+import { ServerRoute as ApiMembersServerRouteImport } from './routes/api/members'
+import { ServerRoute as ApiInvitationsServerRouteImport } from './routes/api/invitations'
 import { ServerRoute as ApiTrpcSplatServerRouteImport } from './routes/api/trpc/$'
 import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
 
@@ -52,9 +57,36 @@ const AuthenticatedActiveOrgIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedActiveOrgRoute,
   } as any)
+const AuthenticatedActiveOrgSettingsRoute =
+  AuthenticatedActiveOrgSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedActiveOrgRoute,
+  } as any)
 const ApiUsersServerRoute = ApiUsersServerRouteImport.update({
   id: '/api/users',
   path: '/api/users',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
+const ApiUserInvitationsServerRoute =
+  ApiUserInvitationsServerRouteImport.update({
+    id: '/api/user-invitations',
+    path: '/api/user-invitations',
+    getParentRoute: () => rootServerRouteImport,
+  } as any)
+const ApiOrganizationsServerRoute = ApiOrganizationsServerRouteImport.update({
+  id: '/api/organizations',
+  path: '/api/organizations',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
+const ApiMembersServerRoute = ApiMembersServerRouteImport.update({
+  id: '/api/members',
+  path: '/api/members',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
+const ApiInvitationsServerRoute = ApiInvitationsServerRouteImport.update({
+  id: '/api/invitations',
+  path: '/api/invitations',
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiTrpcSplatServerRoute = ApiTrpcSplatServerRouteImport.update({
@@ -72,12 +104,14 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
   '/orgs': typeof AuthenticatedOrgsRoute
+  '/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/': typeof AuthenticatedActiveOrgIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
   '/orgs': typeof AuthenticatedOrgsRoute
+  '/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/': typeof AuthenticatedActiveOrgIndexRoute
 }
 export interface FileRoutesById {
@@ -87,13 +121,14 @@ export interface FileRoutesById {
   '/logout': typeof LogoutRoute
   '/_authenticated/_active-org': typeof AuthenticatedActiveOrgRouteWithChildren
   '/_authenticated/orgs': typeof AuthenticatedOrgsRoute
+  '/_authenticated/_active-org/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/_authenticated/_active-org/': typeof AuthenticatedActiveOrgIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/login' | '/logout' | '/orgs' | '/'
+  fullPaths: '/login' | '/logout' | '/orgs' | '/settings' | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/logout' | '/orgs' | '/'
+  to: '/login' | '/logout' | '/orgs' | '/settings' | '/'
   id:
     | '__root__'
     | '/_authenticated'
@@ -101,6 +136,7 @@ export interface FileRouteTypes {
     | '/logout'
     | '/_authenticated/_active-org'
     | '/_authenticated/orgs'
+    | '/_authenticated/_active-org/settings'
     | '/_authenticated/_active-org/'
   fileRoutesById: FileRoutesById
 }
@@ -110,30 +146,68 @@ export interface RootRouteChildren {
   LogoutRoute: typeof LogoutRoute
 }
 export interface FileServerRoutesByFullPath {
+  '/api/invitations': typeof ApiInvitationsServerRoute
+  '/api/members': typeof ApiMembersServerRoute
+  '/api/organizations': typeof ApiOrganizationsServerRoute
+  '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/users': typeof ApiUsersServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRoutesByTo {
+  '/api/invitations': typeof ApiInvitationsServerRoute
+  '/api/members': typeof ApiMembersServerRoute
+  '/api/organizations': typeof ApiOrganizationsServerRoute
+  '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/users': typeof ApiUsersServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
+  '/api/invitations': typeof ApiInvitationsServerRoute
+  '/api/members': typeof ApiMembersServerRoute
+  '/api/organizations': typeof ApiOrganizationsServerRoute
+  '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/users': typeof ApiUsersServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths: '/api/users' | '/api/auth/$' | '/api/trpc/$'
+  fullPaths:
+    | '/api/invitations'
+    | '/api/members'
+    | '/api/organizations'
+    | '/api/user-invitations'
+    | '/api/users'
+    | '/api/auth/$'
+    | '/api/trpc/$'
   fileServerRoutesByTo: FileServerRoutesByTo
-  to: '/api/users' | '/api/auth/$' | '/api/trpc/$'
-  id: '__root__' | '/api/users' | '/api/auth/$' | '/api/trpc/$'
+  to:
+    | '/api/invitations'
+    | '/api/members'
+    | '/api/organizations'
+    | '/api/user-invitations'
+    | '/api/users'
+    | '/api/auth/$'
+    | '/api/trpc/$'
+  id:
+    | '__root__'
+    | '/api/invitations'
+    | '/api/members'
+    | '/api/organizations'
+    | '/api/user-invitations'
+    | '/api/users'
+    | '/api/auth/$'
+    | '/api/trpc/$'
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
+  ApiInvitationsServerRoute: typeof ApiInvitationsServerRoute
+  ApiMembersServerRoute: typeof ApiMembersServerRoute
+  ApiOrganizationsServerRoute: typeof ApiOrganizationsServerRoute
+  ApiUserInvitationsServerRoute: typeof ApiUserInvitationsServerRoute
   ApiUsersServerRoute: typeof ApiUsersServerRoute
   ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute
   ApiTrpcSplatServerRoute: typeof ApiTrpcSplatServerRoute
@@ -183,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActiveOrgIndexRouteImport
       parentRoute: typeof AuthenticatedActiveOrgRoute
     }
+    '/_authenticated/_active-org/settings': {
+      id: '/_authenticated/_active-org/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedActiveOrgSettingsRouteImport
+      parentRoute: typeof AuthenticatedActiveOrgRoute
+    }
   }
 }
 declare module '@tanstack/react-start/server' {
@@ -192,6 +273,34 @@ declare module '@tanstack/react-start/server' {
       path: '/api/users'
       fullPath: '/api/users'
       preLoaderRoute: typeof ApiUsersServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/user-invitations': {
+      id: '/api/user-invitations'
+      path: '/api/user-invitations'
+      fullPath: '/api/user-invitations'
+      preLoaderRoute: typeof ApiUserInvitationsServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/organizations': {
+      id: '/api/organizations'
+      path: '/api/organizations'
+      fullPath: '/api/organizations'
+      preLoaderRoute: typeof ApiOrganizationsServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/members': {
+      id: '/api/members'
+      path: '/api/members'
+      fullPath: '/api/members'
+      preLoaderRoute: typeof ApiMembersServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/invitations': {
+      id: '/api/invitations'
+      path: '/api/invitations'
+      fullPath: '/api/invitations'
+      preLoaderRoute: typeof ApiInvitationsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
     '/api/trpc/$': {
@@ -212,11 +321,13 @@ declare module '@tanstack/react-start/server' {
 }
 
 interface AuthenticatedActiveOrgRouteChildren {
+  AuthenticatedActiveOrgSettingsRoute: typeof AuthenticatedActiveOrgSettingsRoute
   AuthenticatedActiveOrgIndexRoute: typeof AuthenticatedActiveOrgIndexRoute
 }
 
 const AuthenticatedActiveOrgRouteChildren: AuthenticatedActiveOrgRouteChildren =
   {
+    AuthenticatedActiveOrgSettingsRoute: AuthenticatedActiveOrgSettingsRoute,
     AuthenticatedActiveOrgIndexRoute: AuthenticatedActiveOrgIndexRoute,
   }
 
@@ -248,6 +359,10 @@ export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 const rootServerRouteChildren: RootServerRouteChildren = {
+  ApiInvitationsServerRoute: ApiInvitationsServerRoute,
+  ApiMembersServerRoute: ApiMembersServerRoute,
+  ApiOrganizationsServerRoute: ApiOrganizationsServerRoute,
+  ApiUserInvitationsServerRoute: ApiUserInvitationsServerRoute,
   ApiUsersServerRoute: ApiUsersServerRoute,
   ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
   ApiTrpcSplatServerRoute: ApiTrpcSplatServerRoute,

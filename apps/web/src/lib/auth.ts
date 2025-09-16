@@ -32,7 +32,7 @@ export const auth = betterAuth({
     minPasswordLength: process.env.NODE_ENV === "production" ? 8 : 1,
   },
   trustedOrigins: [
-    "https://webapp.localhost",
+    "https://web.localhost",
     `https://${networkIP}`,
     "http://localhost:5173",
   ],

@@ -6,8 +6,6 @@ import {
 } from "@tanstack/react-router"
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 
-import appCss from "../styles.css?url"
-
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -22,12 +20,6 @@ export const Route = createRootRoute({
         title: `Docufy Dashboard`,
       },
     ],
-    links: [
-      {
-        rel: `stylesheet`,
-        href: appCss,
-      },
-    ],
   }),
 
   component: () => (
@@ -36,6 +28,7 @@ export const Route = createRootRoute({
       <TanStackRouterDevtools />
     </RootDocument>
   ),
+  notFoundComponent: () => <div>Not found</div>,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {

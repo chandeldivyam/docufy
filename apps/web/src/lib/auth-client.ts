@@ -20,10 +20,23 @@ export const authStateCollection = createCollection(
   })
 )
 
+// Fix: Properly handle SSR and client-side URL construction
+function getBaseURL() {
+  // Client-side: always use current origin
+  if (typeof window !== "undefined") {
+    return window.location.origin
+  }
+
+  // Server-side: use environment variable or default
+  if (process.env.PUBLIC_URL) {
+    return process.env.PUBLIC_URL
+  }
+
+  // Default for local development
+  return "http://localhost:5173"
+}
+
 export const authClient = createAuthClient({
-  baseURL:
-    typeof window !== `undefined`
-      ? window.location.origin // Always use current domain in browser
-      : undefined, // Let better-auth handle server-side baseURL detection
+  baseURL: getBaseURL(),
   plugins: [organizationClient()],
 })

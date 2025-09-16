@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
+import { useLiveQuery } from "@tanstack/react-db"
 import { authClient } from "@/lib/auth-client"
+import { userInvitationsCollection } from "@/lib/collections"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,42 +17,29 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 export const Route = createFileRoute("/_authenticated/orgs")({
+  loader: async () => {
+    await userInvitationsCollection.preload()
+    return null
+  },
   component: OrgsPage,
   ssr: false,
 })
 
-// Derive the exact shapes from the Better Auth client methods
-type ListInvitesRes = Awaited<
-  ReturnType<typeof authClient.organization.listUserInvitations>
->
-type Invitation = NonNullable<ListInvitesRes["data"]>[number]
-
+// Use Better Auth for organizations; Electric only for invites
 type ListOrgsRes = Awaited<ReturnType<typeof authClient.organization.list>>
 type ListedOrg = NonNullable<ListOrgsRes["data"]>[number]
 
 function OrgsPage() {
   const navigate = useNavigate()
 
-  // 1) My organizations (reactive)
+  // 1) My organizations (Better Auth hook)
   const { data: orgs, isPending: orgsLoading } =
     authClient.useListOrganizations()
 
-  // 2) Pending invitations (fetch-once)
-  const [invitations, setInvitations] = useState<Invitation[]>([])
-  const [invitesLoading, setInvitesLoading] = useState(true)
-  useEffect(() => {
-    let alive = true
-    ;(async () => {
-      const { data } = await authClient.organization.listUserInvitations()
-      if (alive) {
-        setInvitations(data ?? [])
-        setInvitesLoading(false)
-      }
-    })()
-    return () => {
-      alive = false
-    }
-  }, [])
+  // 2) Pending invitations (Electric, reactive)
+  const { data: invitations } = useLiveQuery((q) =>
+    q.from({ invitations: userInvitationsCollection })
+  )
 
   // 3) Form state
   const [name, setName] = useState("")
@@ -115,11 +104,7 @@ function OrgsPage() {
 
   async function acceptInvitation(inviteId: string) {
     await authClient.organization.acceptInvitation({ invitationId: inviteId })
-    // refresh invites + orgs
-    const { data } = await authClient.organization.listUserInvitations()
-    setInvitations(data ?? [])
     // After accepting, Better Auth made us a member; pick that org automatically
-    // If you want to force users to click explicitly, remove this:
     const { data: orgs } = await authClient.organization.list()
     const joined = orgs?.find(
       (o: ListedOrg) => o.membership?.status === "active"
@@ -129,8 +114,6 @@ function OrgsPage() {
 
   async function rejectInvitation(inviteId: string) {
     await authClient.organization.rejectInvitation({ invitationId: inviteId })
-    const { data } = await authClient.organization.listUserInvitations()
-    setInvitations(data ?? [])
   }
 
   return (
@@ -161,7 +144,7 @@ function OrgsPage() {
                 <div className="text-muted-foreground">Loading…</div>
               ) : !orgs?.length ? (
                 <div className="text-muted-foreground">
-                  You don’t belong to any organizations yet.
+                  You dont belong to any organizations yet.
                 </div>
               ) : (
                 <ul className="grid gap-3">
@@ -194,43 +177,43 @@ function OrgsPage() {
               <CardDescription>Accept or reject</CardDescription>
             </CardHeader>
             <CardContent>
-              {invitesLoading ? (
-                <div className="text-muted-foreground">Loading…</div>
-              ) : !invitations?.length ? (
+              {!invitations?.length ? (
                 <div className="text-muted-foreground">
                   No invitations found.
                 </div>
               ) : (
                 <ul className="grid gap-3">
-                  {invitations!.map((inv) => (
-                    <li
-                      key={inv.id}
-                      className="flex items-center justify-between rounded border p-3"
-                    >
-                      <div>
-                        <div className="font-medium">
-                          {inv.organization?.name ?? inv.organizationId}
+                  {invitations
+                    .filter((inv) => inv.status === "pending")
+                    .map((inv) => (
+                      <li
+                        key={inv.id}
+                        className="flex items-center justify-between rounded border p-3"
+                      >
+                        <div>
+                          <div className="font-medium">
+                            {inv.organizationId}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {inv.email} • role: {inv.role}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {inv.email} • role: {inv.role}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="default"
+                            onClick={() => acceptInvitation(inv.id)}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            onClick={() => rejectInvitation(inv.id)}
+                          >
+                            Reject
+                          </Button>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="default"
-                          onClick={() => acceptInvitation(inv.id)}
-                        >
-                          Accept
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          onClick={() => rejectInvitation(inv.id)}
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
+                      </li>
+                    ))}
                 </ul>
               )}
             </CardContent>
