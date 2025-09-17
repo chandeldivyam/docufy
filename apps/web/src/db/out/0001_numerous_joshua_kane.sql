@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS org_user_profiles (
   "name"            text,
   "email"           text,
   "image"           text,
+  "org_name"        text,
+  "org_slug"        text,
+  "org_logo"        text,
   "created_at"      timestamp DEFAULT now() NOT NULL,
   CONSTRAINT "org_user_profiles_organization_id_user_id_pk" PRIMARY KEY("organization_id","user_id")
 );
@@ -14,14 +17,20 @@ CREATE TABLE IF NOT EXISTS org_user_profiles (
 CREATE OR REPLACE FUNCTION trg_members_upsert_org_user_profiles() RETURNS TRIGGER AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    INSERT INTO org_user_profiles (organization_id, user_id, role, name, email, image)
-    SELECT NEW.organization_id, NEW.user_id, COALESCE(NEW.role, 'member'), u.name, u.email, u.image
-    FROM users u WHERE u.id = NEW.user_id
+    INSERT INTO org_user_profiles (organization_id, user_id, role, name, email, image, org_name, org_slug, org_logo)
+    SELECT NEW.organization_id, NEW.user_id, COALESCE(NEW.role, 'member'), 
+           u.name, u.email, u.image,
+           o.name, o.slug, o.logo
+    FROM users u, organizations o 
+    WHERE u.id = NEW.user_id AND o.id = NEW.organization_id
     ON CONFLICT (organization_id, user_id) DO UPDATE
-      SET role  = EXCLUDED.role,
-          name  = EXCLUDED.name,
-          email = EXCLUDED.email,
-          image = EXCLUDED.image;
+      SET role     = EXCLUDED.role,
+          name     = EXCLUDED.name,
+          email    = EXCLUDED.email,
+          image    = EXCLUDED.image,
+          org_name = EXCLUDED.org_name,
+          org_slug = EXCLUDED.org_slug,
+          org_logo = EXCLUDED.org_logo;
     RETURN NEW;
   ELSIF TG_OP = 'UPDATE' THEN
     UPDATE org_user_profiles
@@ -68,3 +77,20 @@ DROP TRIGGER IF EXISTS users_after_upd ON users;
 
 CREATE TRIGGER users_after_upd AFTER UPDATE OF name, email, image ON users
 FOR EACH ROW EXECUTE FUNCTION trg_users_propagate_to_org_user_profiles();
+
+-- 4) Organizations trigger - propagate organization changes
+CREATE OR REPLACE FUNCTION trg_organizations_propagate_to_org_user_profiles() RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE org_user_profiles
+     SET org_name = NEW.name,
+         org_slug = NEW.slug,
+         org_logo = NEW.logo
+   WHERE organization_id = NEW.id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS organizations_after_upd ON organizations;
+
+CREATE TRIGGER organizations_after_upd AFTER UPDATE OF name, slug, logo ON organizations
+FOR EACH ROW EXECUTE FUNCTION trg_organizations_propagate_to_org_user_profiles();

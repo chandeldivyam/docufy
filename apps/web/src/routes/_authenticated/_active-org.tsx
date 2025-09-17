@@ -27,12 +27,12 @@ import {
   Users,
 } from "lucide-react"
 import { useLiveQuery } from "@tanstack/react-db"
-import { organizationsCollection } from "@/lib/collections"
+import { myOrganizationsCollection } from "@/lib/collections"
 
 export const Route = createFileRoute("/_authenticated/_active-org")({
   ssr: false,
   loader: async () => {
-    await organizationsCollection.preload()
+    await myOrganizationsCollection.preload()
   },
   component: ActiveOrgGate,
 })
@@ -54,7 +54,7 @@ function AppLayout() {
 
   // Live list of orgs for the switcher
   const { data: allOrgs } = useLiveQuery((q) =>
-    q.from({ organizations: organizationsCollection })
+    q.from({ myOrganizations: myOrganizationsCollection })
   )
 
   async function setActive(orgId: string) {
@@ -70,7 +70,13 @@ function AppLayout() {
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <OrgSwitcher
             activeOrgId={activeOrg!.id}
-            orgs={allOrgs ?? []}
+            orgs={
+              allOrgs?.map((org) => ({
+                id: org.organization_id,
+                name: org.org_name,
+                slug: org.org_slug,
+              })) ?? []
+            }
             onSwitch={setActive}
           />
         </div>
@@ -98,18 +104,6 @@ function AppLayout() {
 
       {/* Main */}
       <main className="min-w-0">
-        <div className="flex h-14 items-center justify-between border-b px-4">
-          <div className="font-medium truncate">{activeOrg?.name}</div>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => navigate({ to: "/orgs" })}
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            New workspace
-          </Button>
-        </div>
-
         <div className="p-4">
           <Outlet />
         </div>

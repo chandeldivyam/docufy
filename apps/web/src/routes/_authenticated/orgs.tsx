@@ -2,7 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { useLiveQuery } from "@tanstack/react-db"
 import { authClient } from "@/lib/auth-client"
-import { userInvitationsCollection } from "@/lib/collections"
+import {
+  userInvitationsCollection,
+  myOrganizationsCollection,
+} from "@/lib/collections"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -18,7 +21,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 export const Route = createFileRoute("/_authenticated/orgs")({
   loader: async () => {
-    await userInvitationsCollection.preload()
+    await Promise.all([
+      userInvitationsCollection.preload(),
+      myOrganizationsCollection.preload(),
+    ])
     return null
   },
   component: OrgsPage,
@@ -33,8 +39,9 @@ function OrgsPage() {
   const navigate = useNavigate()
 
   // 1) My organizations (Better Auth hook)
-  const { data: orgs, isPending: orgsLoading } =
-    authClient.useListOrganizations()
+  const { data: orgs } = useLiveQuery((q) =>
+    q.from({ myOrganizations: myOrganizationsCollection })
+  )
 
   // 2) Pending invitations (Electric, reactive)
   const { data: invitations } = useLiveQuery((q) =>
@@ -140,9 +147,7 @@ function OrgsPage() {
               <CardDescription>Pick one to continue</CardDescription>
             </CardHeader>
             <CardContent>
-              {orgsLoading ? (
-                <div className="text-muted-foreground">Loading…</div>
-              ) : !orgs?.length ? (
+              {!orgs?.length ? (
                 <div className="text-muted-foreground">
                   You dont belong to any organizations yet.
                 </div>
@@ -150,16 +155,16 @@ function OrgsPage() {
                 <ul className="grid gap-3">
                   {orgs.map((org) => (
                     <li
-                      key={org.id}
+                      key={org.organization_id}
                       className="flex items-center justify-between rounded border p-3"
                     >
                       <div>
-                        <div className="font-medium">{org.name}</div>
+                        <div className="font-medium">{org.org_name}</div>
                         <div className="text-xs text-muted-foreground">
-                          {org.slug}
+                          {org.org_slug}
                         </div>
                       </div>
-                      <Button onClick={() => setActive(org.id)}>
+                      <Button onClick={() => setActive(org.organization_id)}>
                         Use this workspace
                       </Button>
                     </li>

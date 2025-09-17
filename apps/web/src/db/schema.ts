@@ -19,6 +19,9 @@ export const orgUserProfiles = pgTable(
     name: text("name"),
     email: text("email"),
     image: text("image"),
+    orgName: text("org_name"),
+    orgSlug: text("org_slug"),
+    orgLogo: text("org_logo"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => ({ pk: primaryKey({ columns: [t.organizationId, t.userId] }) })

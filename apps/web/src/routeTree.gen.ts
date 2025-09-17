@@ -22,6 +22,7 @@ import { ServerRoute as ApiUsersServerRouteImport } from './routes/api/users'
 import { ServerRoute as ApiUserInvitationsServerRouteImport } from './routes/api/user-invitations'
 import { ServerRoute as ApiOrganizationsServerRouteImport } from './routes/api/organizations'
 import { ServerRoute as ApiOrgUserProfilesServerRouteImport } from './routes/api/org-user-profiles'
+import { ServerRoute as ApiMyOrganizationsServerRouteImport } from './routes/api/my-organizations'
 import { ServerRoute as ApiMembersServerRouteImport } from './routes/api/members'
 import { ServerRoute as ApiInvitationsServerRouteImport } from './routes/api/invitations'
 import { ServerRoute as ApiTrpcSplatServerRouteImport } from './routes/api/trpc/$'
@@ -84,6 +85,12 @@ const ApiOrgUserProfilesServerRoute =
   ApiOrgUserProfilesServerRouteImport.update({
     id: '/api/org-user-profiles',
     path: '/api/org-user-profiles',
+    getParentRoute: () => rootServerRouteImport,
+  } as any)
+const ApiMyOrganizationsServerRoute =
+  ApiMyOrganizationsServerRouteImport.update({
+    id: '/api/my-organizations',
+    path: '/api/my-organizations',
     getParentRoute: () => rootServerRouteImport,
   } as any)
 const ApiMembersServerRoute = ApiMembersServerRouteImport.update({
@@ -155,6 +162,7 @@ export interface RootRouteChildren {
 export interface FileServerRoutesByFullPath {
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/members': typeof ApiMembersServerRoute
+  '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
   '/api/organizations': typeof ApiOrganizationsServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
@@ -165,6 +173,7 @@ export interface FileServerRoutesByFullPath {
 export interface FileServerRoutesByTo {
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/members': typeof ApiMembersServerRoute
+  '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
   '/api/organizations': typeof ApiOrganizationsServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
@@ -176,6 +185,7 @@ export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/members': typeof ApiMembersServerRoute
+  '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
   '/api/organizations': typeof ApiOrganizationsServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
@@ -188,6 +198,7 @@ export interface FileServerRouteTypes {
   fullPaths:
     | '/api/invitations'
     | '/api/members'
+    | '/api/my-organizations'
     | '/api/org-user-profiles'
     | '/api/organizations'
     | '/api/user-invitations'
@@ -198,6 +209,7 @@ export interface FileServerRouteTypes {
   to:
     | '/api/invitations'
     | '/api/members'
+    | '/api/my-organizations'
     | '/api/org-user-profiles'
     | '/api/organizations'
     | '/api/user-invitations'
@@ -208,6 +220,7 @@ export interface FileServerRouteTypes {
     | '__root__'
     | '/api/invitations'
     | '/api/members'
+    | '/api/my-organizations'
     | '/api/org-user-profiles'
     | '/api/organizations'
     | '/api/user-invitations'
@@ -219,6 +232,7 @@ export interface FileServerRouteTypes {
 export interface RootServerRouteChildren {
   ApiInvitationsServerRoute: typeof ApiInvitationsServerRoute
   ApiMembersServerRoute: typeof ApiMembersServerRoute
+  ApiMyOrganizationsServerRoute: typeof ApiMyOrganizationsServerRoute
   ApiOrgUserProfilesServerRoute: typeof ApiOrgUserProfilesServerRoute
   ApiOrganizationsServerRoute: typeof ApiOrganizationsServerRoute
   ApiUserInvitationsServerRoute: typeof ApiUserInvitationsServerRoute
@@ -310,6 +324,13 @@ declare module '@tanstack/react-start/server' {
       preLoaderRoute: typeof ApiOrgUserProfilesServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
+    '/api/my-organizations': {
+      id: '/api/my-organizations'
+      path: '/api/my-organizations'
+      fullPath: '/api/my-organizations'
+      preLoaderRoute: typeof ApiMyOrganizationsServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
     '/api/members': {
       id: '/api/members'
       path: '/api/members'
@@ -382,6 +403,7 @@ export const routeTree = rootRouteImport
 const rootServerRouteChildren: RootServerRouteChildren = {
   ApiInvitationsServerRoute: ApiInvitationsServerRoute,
   ApiMembersServerRoute: ApiMembersServerRoute,
+  ApiMyOrganizationsServerRoute: ApiMyOrganizationsServerRoute,
   ApiOrgUserProfilesServerRoute: ApiOrgUserProfilesServerRoute,
   ApiOrganizationsServerRoute: ApiOrganizationsServerRoute,
   ApiUserInvitationsServerRoute: ApiUserInvitationsServerRoute,
