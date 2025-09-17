@@ -22,6 +22,7 @@ import { Route as AuthenticatedOrgSlugIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedActiveOrgSettingsRouteImport } from './routes/_authenticated/_active-org/settings'
 import { Route as AuthenticatedOrgSlugSettingsRouteImport } from './routes/_authenticated/$orgSlug/settings'
 import { ServerRoute as ApiUserInvitationsServerRouteImport } from './routes/api/user-invitations'
+import { ServerRoute as ApiSpacesServerRouteImport } from './routes/api/spaces'
 import { ServerRoute as ApiOrgUserProfilesServerRouteImport } from './routes/api/org-user-profiles'
 import { ServerRoute as ApiMyOrganizationsServerRouteImport } from './routes/api/my-organizations'
 import { ServerRoute as ApiInvitationsServerRouteImport } from './routes/api/invitations'
@@ -88,6 +89,11 @@ const ApiUserInvitationsServerRoute =
     path: '/api/user-invitations',
     getParentRoute: () => rootServerRouteImport,
   } as any)
+const ApiSpacesServerRoute = ApiSpacesServerRouteImport.update({
+  id: '/api/spaces',
+  path: '/api/spaces',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
 const ApiOrgUserProfilesServerRoute =
   ApiOrgUserProfilesServerRouteImport.update({
     id: '/api/org-user-profiles',
@@ -191,6 +197,7 @@ export interface FileServerRoutesByFullPath {
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
+  '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
@@ -199,6 +206,7 @@ export interface FileServerRoutesByTo {
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
+  '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
@@ -208,6 +216,7 @@ export interface FileServerRoutesById {
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
+  '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
@@ -218,6 +227,7 @@ export interface FileServerRouteTypes {
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
+    | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
     | '/api/trpc/$'
@@ -226,6 +236,7 @@ export interface FileServerRouteTypes {
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
+    | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
     | '/api/trpc/$'
@@ -234,6 +245,7 @@ export interface FileServerRouteTypes {
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
+    | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
     | '/api/trpc/$'
@@ -243,6 +255,7 @@ export interface RootServerRouteChildren {
   ApiInvitationsServerRoute: typeof ApiInvitationsServerRoute
   ApiMyOrganizationsServerRoute: typeof ApiMyOrganizationsServerRoute
   ApiOrgUserProfilesServerRoute: typeof ApiOrgUserProfilesServerRoute
+  ApiSpacesServerRoute: typeof ApiSpacesServerRoute
   ApiUserInvitationsServerRoute: typeof ApiUserInvitationsServerRoute
   ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute
   ApiTrpcSplatServerRoute: typeof ApiTrpcSplatServerRoute
@@ -329,6 +342,13 @@ declare module '@tanstack/react-start/server' {
       path: '/api/user-invitations'
       fullPath: '/api/user-invitations'
       preLoaderRoute: typeof ApiUserInvitationsServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/spaces': {
+      id: '/api/spaces'
+      path: '/api/spaces'
+      fullPath: '/api/spaces'
+      preLoaderRoute: typeof ApiSpacesServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
     '/api/org-user-profiles': {
@@ -426,6 +446,7 @@ const rootServerRouteChildren: RootServerRouteChildren = {
   ApiInvitationsServerRoute: ApiInvitationsServerRoute,
   ApiMyOrganizationsServerRoute: ApiMyOrganizationsServerRoute,
   ApiOrgUserProfilesServerRoute: ApiOrgUserProfilesServerRoute,
+  ApiSpacesServerRoute: ApiSpacesServerRoute,
   ApiUserInvitationsServerRoute: ApiUserInvitationsServerRoute,
   ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
   ApiTrpcSplatServerRoute: ApiTrpcSplatServerRoute,

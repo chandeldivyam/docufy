@@ -4,6 +4,7 @@ import {
 } from "@tanstack/react-db"
 import { electricCollectionOptions } from "@tanstack/electric-db-collection"
 import { z } from "zod"
+import { trpc } from "@/lib/trpc-client"
 
 const electricParsers = {
   // parse both timestamp flavors into JS Date
@@ -20,6 +21,15 @@ function getApiUrl(path: string): string {
   // During SSR, use the configured base URL
   const baseUrl = process.env.PUBLIC_URL || "http://localhost:5173"
   return new URL(path, baseUrl).toString()
+}
+
+export function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "")
+    .slice(0, 80)
 }
 
 // Invitation rows come back in snake_case, so parse then map to camelCase
@@ -168,5 +178,90 @@ export const myOrganizationsCollection = createCollection(
     },
     schema: orgUserProfilesRawSchema,
     getKey: (item) => item.organization_id,
+  })
+)
+
+const spacesRawSchema = z.object({
+  id: z.string(),
+  organization_id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().nullable().optional(),
+  icon_name: z.string().nullable().optional(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+})
+
+export type SpaceRow = z.infer<typeof spacesRawSchema>
+
+function createSpacesCollectionFor(url: string) {
+  return createCollection(
+    electricCollectionOptions({
+      id: `spaces:${url}`,
+      shapeOptions: {
+        url,
+        parser: electricParsers,
+      },
+      schema: spacesRawSchema,
+      getKey: (item) => item.id,
+
+      onInsert: async ({ transaction }) => {
+        const { modified: row } = transaction.mutations[0]
+        const result = await trpc.spaces.create.mutate({
+          organizationId: row.organization_id,
+          name: row.name,
+          slug: row.slug,
+          description: row.description ?? undefined,
+          iconName: row.icon_name ?? undefined,
+        })
+        return { txid: result.txid }
+      },
+
+      onUpdate: async ({ transaction }) => {
+        const { original: prev, modified: next } = transaction.mutations[0]
+        const result = await trpc.spaces.update.mutate({
+          id: prev.id,
+          name: next.name !== prev.name ? next.name : undefined,
+          slug: next.slug !== prev.slug ? next.slug : undefined,
+          description:
+            next.description !== prev.description
+              ? (next.description ?? null)
+              : undefined,
+          iconName:
+            next.icon_name !== prev.icon_name
+              ? (next.icon_name ?? null)
+              : undefined,
+        })
+        return { txid: result.txid }
+      },
+
+      onDelete: async ({ transaction }) => {
+        const { original: prev } = transaction.mutations[0]
+        const result = await trpc.spaces.delete.mutate({ id: prev.id })
+        return { txid: result.txid }
+      },
+    })
+  )
+}
+
+// Per-org spaces collection (org-scoped shape)
+type SpacesCollection = ReturnType<typeof createSpacesCollectionFor>
+const spacesByOrg = new Map<string, SpacesCollection>()
+
+export function getOrgSpacesCollection(orgId: string): SpacesCollection {
+  let col = spacesByOrg.get(orgId)
+  if (!col) {
+    col = createSpacesCollectionFor(getApiUrl(`/api/spaces?orgId=${orgId}`))
+    spacesByOrg.set(orgId, col)
+  }
+  return col
+}
+
+// Local empty collection for stable hooks before orgId is known
+export const emptySpacesCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-spaces",
+    schema: spacesRawSchema,
+    getKey: (item) => item.id,
   })
 )
