@@ -14,6 +14,7 @@ export default [
       '**/public/**',
       '**/*.d.ts',
       '**/convex/_generated/**',
+      '**/.output/**',
     ],
   },
 ];
