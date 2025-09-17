@@ -6,6 +6,7 @@
     "dev": "docker compose up -d && vite dev",
     "start": "node .output/server/index.mjs",
     "build": "vite build",
+    "prebuild": "pnpm -w migrate",
     "migrate": "drizzle-kit migrate",
     "migrate:generate": "drizzle-kit generate",
     "serve": "vite preview",
