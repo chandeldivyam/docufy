@@ -4,6 +4,7 @@ build
 out
 .next
 .turbo
+.output
 coverage
 pnpm-lock.yaml
 apps/dashboard/convex/_generated/*

@@ -1,3 +1,4 @@
+// src/routes/__root.tsx
 import {
   Outlet,
   HeadContent,
@@ -5,6 +6,7 @@ import {
   createRootRoute,
 } from "@tanstack/react-router"
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
+import { ThemeProvider, ThemeScript } from "@/components/theme-provider"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -23,19 +25,23 @@ export const Route = createRootRoute({
   }),
 
   component: () => (
-    <RootDocument>
-      <Outlet />
-      <TanStackRouterDevtools />
-    </RootDocument>
+    <ThemeProvider defaultTheme="system" enableSystem>
+      <RootDocument>
+        <Outlet />
+        <TanStackRouterDevtools />
+      </RootDocument>
+    </ThemeProvider>
   ),
   notFoundComponent: () => <div>Not found</div>,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* This script prevents FOUC by applying theme before React hydrates */}
+        <ThemeScript storageKey="ui-theme" />
       </head>
       <body>
         {children}

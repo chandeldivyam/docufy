@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 import { useLiveQuery } from "@tanstack/react-db"
 import { myOrganizationsCollection } from "@/lib/collections"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug")({
   ssr: false,
@@ -97,15 +98,19 @@ function OrgSlugLayout() {
           </NavItem>
         </nav>
 
-        <div className="mt-auto p-2">
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
-            onClick={() => authClient.signOut()}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
+        <div className="mt-auto p-2 space-y-2">
+          {/* Theme Toggle */}
+          <div className="flex items-center justify-between px-2">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              className="justify-center"
+              onClick={() => authClient.signOut()}
+            >
+              <LogOut />
+              Logout
+            </Button>
+          </div>
         </div>
       </aside>
 

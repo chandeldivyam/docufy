@@ -2,6 +2,8 @@ import { createServerFileRoute } from "@tanstack/react-start/server"
 import { auth } from "@/lib/auth"
 import { prepareElectricUrl, proxyElectricRequest } from "@/lib/electric-proxy"
 
+const sqlQuote = (s: string) => s.replaceAll("'", "''")
+
 export const ServerRoute = createServerFileRoute(
   "/api/my-organizations"
 ).methods({
@@ -22,7 +24,7 @@ export const ServerRoute = createServerFileRoute(
     }
     const originUrl = prepareElectricUrl(request.url)
     originUrl.searchParams.set("table", "org_user_profiles")
-    originUrl.searchParams.set("where", `user_id = '${userId}'`)
+    originUrl.searchParams.set("where", `user_id = '${sqlQuote(userId)}'`)
     return proxyElectricRequest(originUrl)
   },
 })

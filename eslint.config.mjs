@@ -15,6 +15,7 @@ export default [
       '**/*.d.ts',
       '**/convex/_generated/**',
       '**/.output/**',
+      '**/.vercel/**',
     ],
   },
 ];

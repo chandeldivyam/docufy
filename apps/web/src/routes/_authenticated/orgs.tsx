@@ -31,10 +31,6 @@ export const Route = createFileRoute("/_authenticated/orgs")({
   ssr: false,
 })
 
-// Use Better Auth for organizations; Electric only for invites
-type ListOrgsRes = Awaited<ReturnType<typeof authClient.organization.list>>
-type ListedOrg = NonNullable<ListOrgsRes["data"]>[number]
-
 function OrgsPage() {
   const navigate = useNavigate()
 
@@ -106,18 +102,20 @@ function OrgsPage() {
 
   async function setActive(orgId: string, slug?: string | null) {
     await authClient.organization.setActive({ organizationId: orgId })
+    if (!slug) {
+      slug =
+        orgs?.find((org) => org.organization_id === orgId)?.org_slug ?? null
+    }
     if (slug) navigate({ to: `/${slug}` })
-    else navigate({ to: "/" }) // root will redirect to slug
+    else navigate({ to: "/" }) // root will redirect once slug replicates
   }
 
   async function acceptInvitation(inviteId: string) {
+    const invitation = invitations?.find((inv) => inv.id === inviteId)
     await authClient.organization.acceptInvitation({ invitationId: inviteId })
-    // After accepting, Better Auth made us a member; pick that org automatically
-    const { data: orgs } = await authClient.organization.list()
-    const joined = orgs?.find(
-      (o: ListedOrg) => o.membership?.status === "active"
-    )
-    if (joined) await setActive(joined.id)
+    if (invitation?.organizationId) {
+      await setActive(invitation.organizationId)
+    }
   }
 
   async function rejectInvitation(inviteId: string) {

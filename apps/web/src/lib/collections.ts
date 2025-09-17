@@ -105,6 +105,8 @@ const orgUserProfilesRawSchema = z.object({
   org_name: z.string(),
 })
 
+export type OrgUserProfileRow = z.infer<typeof orgUserProfilesRawSchema>
+
 export const orgUserProfilesCollection = createCollection(
   electricCollectionOptions({
     id: "org-user-profiles",

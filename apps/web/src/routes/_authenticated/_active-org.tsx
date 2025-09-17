@@ -20,7 +20,7 @@ function ActiveOrgGate() {
   )
 
   if (sPending || oPending)
-    return <div className="p-8 text-muted-foreground">Loading…</div>
+    return <div className="p-8 text-muted-foreground">Authenticating..</div>
   if (!session) return <Navigate to="/login" replace />
   if (!activeOrg) return <Navigate to="/orgs" replace />
 

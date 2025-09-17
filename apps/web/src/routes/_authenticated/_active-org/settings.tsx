@@ -67,9 +67,7 @@ function SettingsPage() {
                     className="flex items-center justify-between py-3"
                   >
                     <div>
-                      <div className="font-medium">
-                        {p.name ?? p.user_id} here
-                      </div>
+                      <div className="font-medium">{p.name ?? p.user_id}</div>
                       <div className="text-xs text-muted-foreground">
                         {p.email}
                       </div>
