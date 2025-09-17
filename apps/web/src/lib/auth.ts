@@ -6,6 +6,7 @@ import { db } from "@/db/connection"
 import * as schema from "@/db/auth-schema"
 import { networkInterfaces } from "os"
 
+// Get network IP for local development
 const nets = networkInterfaces()
 let networkIP = "192.168.1.1"
 for (const name of Object.keys(nets)) {
@@ -20,6 +21,34 @@ for (const name of Object.keys(nets)) {
   }
 }
 
+// Determine if we're in production
+const isProduction = process.env.NODE_ENV === "production"
+
+// Build trusted origins list
+const trustedOrigins: string[] = []
+
+// Production origins
+if (isProduction) {
+  // Add your production domain
+  if (process.env.PUBLIC_URL) {
+    trustedOrigins.push(process.env.PUBLIC_URL)
+  }
+  // Add Vercel preview URLs
+  if (process.env.VERCEL_URL) {
+    trustedOrigins.push(`https://${process.env.VERCEL_URL}`)
+  }
+  // Add your custom domain
+  trustedOrigins.push("https://app.trydocufy.com")
+} else {
+  // Development origins
+  trustedOrigins.push(
+    "https://web.localhost",
+    `https://${networkIP}`,
+    "http://localhost:5173",
+    "http://localhost:3000"
+  )
+}
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -28,13 +57,18 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    disableSignUp: process.env.NODE_ENV === "production",
-    minPasswordLength: process.env.NODE_ENV === "production" ? 8 : 1,
+    // Disable sign-ups in production for security
+    disableSignUp: isProduction,
+    // Require stronger passwords in production
+    minPasswordLength: isProduction ? 8 : 1,
   },
-  trustedOrigins: [
-    "https://web.localhost",
-    `https://${networkIP}`,
-    "http://localhost:5173",
-  ],
+  trustedOrigins: trustedOrigins.filter(Boolean),
   plugins: [organization(), reactStartCookies()],
+  // Add secure cookie settings for production
+  ...(isProduction && {
+    cookies: {
+      secure: true,
+      sameSite: "lax",
+    },
+  }),
 })
