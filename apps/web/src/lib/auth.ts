@@ -57,8 +57,6 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    // Disable sign-ups in production for security
-    disableSignUp: isProduction,
     // Require stronger passwords in production
     minPasswordLength: isProduction ? 8 : 1,
   },
