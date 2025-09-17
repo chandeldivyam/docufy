@@ -22,6 +22,21 @@ export const Route = createRootRoute({
         title: `Docufy Dashboard`,
       },
     ],
+    links: [
+      {
+        rel: `icon`,
+        type: `image/svg+xml`,
+        href: `/logo.svg`,
+      },
+      {
+        rel: `shortcut icon`,
+        href: `/logo.svg`,
+      },
+      {
+        rel: `manifest`,
+        href: `/manifest.json`,
+      },
+    ],
   }),
 
   component: () => (
