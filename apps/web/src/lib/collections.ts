@@ -3,11 +3,6 @@ import {
   localOnlyCollectionOptions,
 } from "@tanstack/react-db"
 import { electricCollectionOptions } from "@tanstack/electric-db-collection"
-import {
-  selectUsersSchema,
-  selectOrganizationsSchema,
-  selectMembersSchema,
-} from "@/db/schema"
 import { z } from "zod"
 
 const electricParsers = {
@@ -93,37 +88,6 @@ export const userInvitationsCollection = createCollection(
       parser: electricParsers,
     },
     schema: invitationRowSchema,
-    getKey: (item) => item.id,
-  })
-)
-
-// Do the same parser for users, organizations, members
-export const usersCollection = createCollection(
-  electricCollectionOptions({
-    id: "users",
-    shapeOptions: { url: getApiUrl("/api/users"), parser: electricParsers },
-    schema: selectUsersSchema, // this one already matches camelCase ok if your schema transform handles it
-    getKey: (item) => item.id,
-  })
-)
-
-export const organizationsCollection = createCollection(
-  electricCollectionOptions({
-    id: "organizations",
-    shapeOptions: {
-      url: getApiUrl("/api/organizations"),
-      parser: electricParsers,
-    },
-    schema: selectOrganizationsSchema,
-    getKey: (item) => item.id,
-  })
-)
-
-export const membersCollection = createCollection(
-  electricCollectionOptions({
-    id: "members",
-    shapeOptions: { url: getApiUrl("/api/members"), parser: electricParsers },
-    schema: selectMembersSchema,
     getKey: (item) => item.id,
   })
 )
