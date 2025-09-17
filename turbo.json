@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["DOCS_BLOB_BASE_URL"],
+  "globalEnv": ["DOCS_BLOB_BASE_URL", "DATABASE_URL", "BETTER_AUTH_SECRET"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
