@@ -16,8 +16,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedOrgsRouteImport } from './routes/_authenticated/orgs'
 import { Route as AuthenticatedActiveOrgRouteImport } from './routes/_authenticated/_active-org'
+import { Route as AuthenticatedOrgSlugRouteImport } from './routes/_authenticated/$orgSlug'
 import { Route as AuthenticatedActiveOrgIndexRouteImport } from './routes/_authenticated/_active-org/index'
+import { Route as AuthenticatedOrgSlugIndexRouteImport } from './routes/_authenticated/$orgSlug/index'
 import { Route as AuthenticatedActiveOrgSettingsRouteImport } from './routes/_authenticated/_active-org/settings'
+import { Route as AuthenticatedOrgSlugSettingsRouteImport } from './routes/_authenticated/$orgSlug/settings'
 import { ServerRoute as ApiUsersServerRouteImport } from './routes/api/users'
 import { ServerRoute as ApiUserInvitationsServerRouteImport } from './routes/api/user-invitations'
 import { ServerRoute as ApiOrganizationsServerRouteImport } from './routes/api/organizations'
@@ -53,17 +56,34 @@ const AuthenticatedActiveOrgRoute = AuthenticatedActiveOrgRouteImport.update({
   id: '/_active-org',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedOrgSlugRoute = AuthenticatedOrgSlugRouteImport.update({
+  id: '/$orgSlug',
+  path: '/$orgSlug',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedActiveOrgIndexRoute =
   AuthenticatedActiveOrgIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedActiveOrgRoute,
   } as any)
+const AuthenticatedOrgSlugIndexRoute =
+  AuthenticatedOrgSlugIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedOrgSlugRoute,
+  } as any)
 const AuthenticatedActiveOrgSettingsRoute =
   AuthenticatedActiveOrgSettingsRouteImport.update({
     id: '/settings',
     path: '/settings',
     getParentRoute: () => AuthenticatedActiveOrgRoute,
+  } as any)
+const AuthenticatedOrgSlugSettingsRoute =
+  AuthenticatedOrgSlugSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedOrgSlugRoute,
   } as any)
 const ApiUsersServerRoute = ApiUsersServerRouteImport.update({
   id: '/api/users',
@@ -117,15 +137,20 @@ const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/$orgSlug': typeof AuthenticatedOrgSlugRouteWithChildren
   '/orgs': typeof AuthenticatedOrgsRoute
+  '/$orgSlug/settings': typeof AuthenticatedOrgSlugSettingsRoute
   '/settings': typeof AuthenticatedActiveOrgSettingsRoute
+  '/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
   '/': typeof AuthenticatedActiveOrgIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
   '/orgs': typeof AuthenticatedOrgsRoute
+  '/$orgSlug/settings': typeof AuthenticatedOrgSlugSettingsRoute
   '/settings': typeof AuthenticatedActiveOrgSettingsRoute
+  '/$orgSlug': typeof AuthenticatedOrgSlugIndexRoute
   '/': typeof AuthenticatedActiveOrgIndexRoute
 }
 export interface FileRoutesById {
@@ -133,24 +158,45 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/_authenticated/$orgSlug': typeof AuthenticatedOrgSlugRouteWithChildren
   '/_authenticated/_active-org': typeof AuthenticatedActiveOrgRouteWithChildren
   '/_authenticated/orgs': typeof AuthenticatedOrgsRoute
+  '/_authenticated/$orgSlug/settings': typeof AuthenticatedOrgSlugSettingsRoute
   '/_authenticated/_active-org/settings': typeof AuthenticatedActiveOrgSettingsRoute
+  '/_authenticated/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
   '/_authenticated/_active-org/': typeof AuthenticatedActiveOrgIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/login' | '/logout' | '/orgs' | '/settings' | '/'
+  fullPaths:
+    | '/login'
+    | '/logout'
+    | '/$orgSlug'
+    | '/orgs'
+    | '/$orgSlug/settings'
+    | '/settings'
+    | '/$orgSlug/'
+    | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/logout' | '/orgs' | '/settings' | '/'
+  to:
+    | '/login'
+    | '/logout'
+    | '/orgs'
+    | '/$orgSlug/settings'
+    | '/settings'
+    | '/$orgSlug'
+    | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
     | '/logout'
+    | '/_authenticated/$orgSlug'
     | '/_authenticated/_active-org'
     | '/_authenticated/orgs'
+    | '/_authenticated/$orgSlug/settings'
     | '/_authenticated/_active-org/settings'
+    | '/_authenticated/$orgSlug/'
     | '/_authenticated/_active-org/'
   fileRoutesById: FileRoutesById
 }
@@ -278,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActiveOrgRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/$orgSlug': {
+      id: '/_authenticated/$orgSlug'
+      path: '/$orgSlug'
+      fullPath: '/$orgSlug'
+      preLoaderRoute: typeof AuthenticatedOrgSlugRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/_active-org/': {
       id: '/_authenticated/_active-org/'
       path: '/'
@@ -285,12 +338,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActiveOrgIndexRouteImport
       parentRoute: typeof AuthenticatedActiveOrgRoute
     }
+    '/_authenticated/$orgSlug/': {
+      id: '/_authenticated/$orgSlug/'
+      path: '/'
+      fullPath: '/$orgSlug/'
+      preLoaderRoute: typeof AuthenticatedOrgSlugIndexRouteImport
+      parentRoute: typeof AuthenticatedOrgSlugRoute
+    }
     '/_authenticated/_active-org/settings': {
       id: '/_authenticated/_active-org/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedActiveOrgSettingsRouteImport
       parentRoute: typeof AuthenticatedActiveOrgRoute
+    }
+    '/_authenticated/$orgSlug/settings': {
+      id: '/_authenticated/$orgSlug/settings'
+      path: '/settings'
+      fullPath: '/$orgSlug/settings'
+      preLoaderRoute: typeof AuthenticatedOrgSlugSettingsRouteImport
+      parentRoute: typeof AuthenticatedOrgSlugRoute
     }
   }
 }
@@ -362,6 +429,19 @@ declare module '@tanstack/react-start/server' {
   }
 }
 
+interface AuthenticatedOrgSlugRouteChildren {
+  AuthenticatedOrgSlugSettingsRoute: typeof AuthenticatedOrgSlugSettingsRoute
+  AuthenticatedOrgSlugIndexRoute: typeof AuthenticatedOrgSlugIndexRoute
+}
+
+const AuthenticatedOrgSlugRouteChildren: AuthenticatedOrgSlugRouteChildren = {
+  AuthenticatedOrgSlugSettingsRoute: AuthenticatedOrgSlugSettingsRoute,
+  AuthenticatedOrgSlugIndexRoute: AuthenticatedOrgSlugIndexRoute,
+}
+
+const AuthenticatedOrgSlugRouteWithChildren =
+  AuthenticatedOrgSlugRoute._addFileChildren(AuthenticatedOrgSlugRouteChildren)
+
 interface AuthenticatedActiveOrgRouteChildren {
   AuthenticatedActiveOrgSettingsRoute: typeof AuthenticatedActiveOrgSettingsRoute
   AuthenticatedActiveOrgIndexRoute: typeof AuthenticatedActiveOrgIndexRoute
@@ -379,11 +459,13 @@ const AuthenticatedActiveOrgRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedOrgSlugRoute: typeof AuthenticatedOrgSlugRouteWithChildren
   AuthenticatedActiveOrgRoute: typeof AuthenticatedActiveOrgRouteWithChildren
   AuthenticatedOrgsRoute: typeof AuthenticatedOrgsRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedOrgSlugRoute: AuthenticatedOrgSlugRouteWithChildren,
   AuthenticatedActiveOrgRoute: AuthenticatedActiveOrgRouteWithChildren,
   AuthenticatedOrgsRoute: AuthenticatedOrgsRoute,
 }

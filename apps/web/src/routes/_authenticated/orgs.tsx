@@ -93,9 +93,9 @@ function OrgsPage() {
       if (error || !data)
         throw new Error(error?.message ?? "Failed to create organization")
 
-      // set active and enter app
+      // set active and enter app at slugged URL
       await authClient.organization.setActive({ organizationId: data.id })
-      navigate({ to: "/" })
+      navigate({ to: `/${finalSlug}` })
     } catch (e) {
       console.error(e)
       setError("Unable to create organization")
@@ -104,9 +104,10 @@ function OrgsPage() {
     }
   }
 
-  async function setActive(orgId: string) {
+  async function setActive(orgId: string, slug?: string | null) {
     await authClient.organization.setActive({ organizationId: orgId })
-    navigate({ to: "/" })
+    if (slug) navigate({ to: `/${slug}` })
+    else navigate({ to: "/" }) // root will redirect to slug
   }
 
   async function acceptInvitation(inviteId: string) {
@@ -164,7 +165,11 @@ function OrgsPage() {
                           {org.org_slug}
                         </div>
                       </div>
-                      <Button onClick={() => setActive(org.organization_id)}>
+                      <Button
+                        onClick={() =>
+                          setActive(org.organization_id, org.org_slug)
+                        }
+                      >
                         Use this workspace
                       </Button>
                     </li>

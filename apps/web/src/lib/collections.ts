@@ -1,4 +1,7 @@
-import { createCollection } from "@tanstack/react-db"
+import {
+  createCollection,
+  localOnlyCollectionOptions,
+} from "@tanstack/react-db"
 import { electricCollectionOptions } from "@tanstack/electric-db-collection"
 import {
   selectUsersSchema,
@@ -56,6 +59,30 @@ export const invitationsCollection = createCollection(
     getKey: (item) => item.id,
   })
 )
+
+// Per-org invitations collection (org-scoped shape)
+type InvitationsCollection = typeof invitationsCollection
+const invitationsByOrg = new Map<string, InvitationsCollection>()
+export function getOrgInvitationsCollection(
+  orgId: string
+): InvitationsCollection {
+  let col = invitationsByOrg.get(orgId)
+  if (!col) {
+    col = createCollection(
+      electricCollectionOptions({
+        id: `invitations-${orgId}`,
+        shapeOptions: {
+          url: getApiUrl(`/api/invitations?orgId=${orgId}`),
+          parser: electricParsers,
+        },
+        schema: invitationRowSchema,
+        getKey: (item) => item.id,
+      })
+    ) as InvitationsCollection
+    invitationsByOrg.set(orgId, col)
+  }
+  return col
+}
 
 // Invitations addressed to the current user (pending only)
 export const userInvitationsCollection = createCollection(
@@ -125,6 +152,46 @@ export const orgUserProfilesCollection = createCollection(
     getKey: (item) => `${item.organization_id}:${item.user_id}`,
   })
 )
+
+// Local empty collections for stable hooks before orgId is known
+export const emptyOrgUserProfilesCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-org-user-profiles",
+    schema: orgUserProfilesRawSchema,
+    getKey: (item) => `${item.organization_id}:${item.user_id}`,
+  })
+)
+export const emptyInvitationsCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-invitations",
+    schema: invitationRowSchema,
+    getKey: (item) => item.id,
+  })
+)
+
+// Per-org org_user_profiles collection (org-scoped shape)
+type OrgUserProfilesCollection = typeof orgUserProfilesCollection
+const orgUserProfilesByOrg = new Map<string, OrgUserProfilesCollection>()
+export function getOrgUserProfilesCollection(
+  orgId: string
+): OrgUserProfilesCollection {
+  let col = orgUserProfilesByOrg.get(orgId)
+  if (!col) {
+    col = createCollection(
+      electricCollectionOptions({
+        id: `org-user-profiles-${orgId}`,
+        shapeOptions: {
+          url: getApiUrl(`/api/org-user-profiles?orgId=${orgId}`),
+          parser: electricParsers,
+        },
+        schema: orgUserProfilesRawSchema,
+        getKey: (item) => `${item.organization_id}:${item.user_id}`,
+      })
+    ) as OrgUserProfilesCollection
+    orgUserProfilesByOrg.set(orgId, col)
+  }
+  return col
+}
 
 export const myOrganizationsCollection = createCollection(
   electricCollectionOptions({
