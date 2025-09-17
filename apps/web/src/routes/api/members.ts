@@ -18,8 +18,7 @@ export const ServerRoute = createServerFileRoute("/api/members").methods({
     }
     const url = new URL(request.url)
     const orgId =
-      url.searchParams.get("orgId") ??
-      sess?.session?.activeOrganizationId
+      url.searchParams.get("orgId") ?? sess?.session?.activeOrganizationId
 
     if (!orgId) {
       return new Response(JSON.stringify({ error: "No active organization" }), {

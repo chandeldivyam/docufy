@@ -2,7 +2,9 @@ import { createServerFileRoute } from "@tanstack/react-start/server"
 import { auth } from "@/lib/auth"
 import { prepareElectricUrl, proxyElectricRequest } from "@/lib/electric-proxy"
 
-export const ServerRoute = createServerFileRoute("/api/invitations").methods({
+export const ServerRoute = createServerFileRoute(
+  "/api/org-user-profiles"
+).methods({
   GET: async ({ request }) => {
     const sess = await auth.api.getSession({ headers: request.headers })
     if (!sess) {
@@ -21,14 +23,9 @@ export const ServerRoute = createServerFileRoute("/api/invitations").methods({
         headers: { "content-type": "application/json" },
       })
     }
-
     const originUrl = prepareElectricUrl(request.url)
-    originUrl.searchParams.set("table", "invitations")
-    // inline the literal to avoid params[n] → nested map
-    originUrl.searchParams.set(
-      "where",
-      `organization_id = '${orgId}' and status = 'pending'`
-    )
+    originUrl.searchParams.set("table", "org_user_profiles")
+    originUrl.searchParams.set("where", `organization_id = '${orgId}'`)
     return proxyElectricRequest(originUrl)
   },
 })

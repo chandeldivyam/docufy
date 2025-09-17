@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useLiveQuery } from "@tanstack/react-db"
 import { authClient } from "@/lib/auth-client"
 import {
-  usersCollection,
-  membersCollection,
+  orgUserProfilesCollection,
   invitationsCollection,
 } from "@/lib/collections"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,8 +30,7 @@ export const Route = createFileRoute("/_authenticated/_active-org/settings")({
   ssr: false,
   loader: async () => {
     await Promise.all([
-      usersCollection.preload(),
-      membersCollection.preload(),
+      orgUserProfilesCollection.preload(),
       invitationsCollection.preload(),
     ])
     return null
@@ -42,11 +41,8 @@ export const Route = createFileRoute("/_authenticated/_active-org/settings")({
 function SettingsPage() {
   const { data: activeOrg } = authClient.useActiveOrganization()
 
-  const { data: allUsers } = useLiveQuery((q) =>
-    q.from({ users: usersCollection })
-  )
-  const { data: allMembers } = useLiveQuery((q) =>
-    q.from({ members: membersCollection })
+  const { data: profiles } = useLiveQuery((q) =>
+    q.from({ users: orgUserProfilesCollection })
   )
   const { data: allInvites } = useLiveQuery((q) =>
     q.from({ invitations: invitationsCollection })
@@ -61,29 +57,28 @@ function SettingsPage() {
             <CardDescription>People who currently have access</CardDescription>
           </CardHeader>
           <CardContent>
-            {!allMembers?.length ? (
+            {!profiles?.length ? (
               <p className="text-sm text-muted-foreground">No members yet.</p>
             ) : (
               <ul className="divide-y">
-                {allMembers.map((m) => {
-                  const u = allUsers?.find((u) => u.id === m.userId)
-                  return (
-                    <li
-                      key={m.id}
-                      className="flex items-center justify-between py-3"
-                    >
-                      <div>
-                        <div className="font-medium">{u?.name ?? m.userId}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {u?.email}
-                        </div>
+                {profiles.map((p) => (
+                  <li
+                    key={`${p.organization_id}:${p.user_id}`}
+                    className="flex items-center justify-between py-3"
+                  >
+                    <div>
+                      <div className="font-medium">
+                        {p.name ?? p.user_id} here
                       </div>
-                      <div className="text-xs rounded bg-muted px-2 py-1">
-                        {m.role}
+                      <div className="text-xs text-muted-foreground">
+                        {p.email}
                       </div>
-                    </li>
-                  )
-                })}
+                    </div>
+                    <div className="text-xs rounded bg-muted px-2 py-1">
+                      {p.role}
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
           </CardContent>

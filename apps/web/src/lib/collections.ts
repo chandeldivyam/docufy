@@ -100,3 +100,25 @@ export const membersCollection = createCollection(
     getKey: (item) => item.id,
   })
 )
+
+const orgUserProfilesRawSchema = z.object({
+  organization_id: z.string(),
+  user_id: z.string(),
+  role: z.string(),
+  name: z.string().nullable(),
+  email: z.string().nullable(),
+  image: z.string().nullable(),
+  created_at: z.coerce.date(),
+})
+
+export const orgUserProfilesCollection = createCollection(
+  electricCollectionOptions({
+    id: "org-user-profiles",
+    shapeOptions: {
+      url: getApiUrl("/api/org-user-profiles"),
+      parser: electricParsers,
+    },
+    schema: orgUserProfilesRawSchema,
+    getKey: (item) => `${item.organization_id}:${item.user_id}`,
+  })
+)
