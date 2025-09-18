@@ -7,7 +7,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router"
 import { authClient } from "@/lib/auth-client"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -27,8 +27,28 @@ import {
   Plus,
 } from "lucide-react"
 import { useLiveQuery } from "@tanstack/react-db"
-import { myOrganizationsCollection } from "@/lib/collections"
+import {
+  getOrgSpacesCollection,
+  emptySpacesCollection,
+  myOrganizationsCollection,
+  slugify as slugifySpace,
+  type SpaceRow,
+} from "@/lib/collections"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { DynamicIcon } from "lucide-react/dynamic"
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { IconPickerGrid } from "@/components/icons/icon-picker"
+import { type IconName } from "lucide-react/dynamic"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug")({
   ssr: false,
@@ -73,41 +93,52 @@ function OrgSlugLayout() {
   return (
     <div className="grid h-[100svh] grid-cols-[260px_1fr]">
       {/* Sidebar */}
-      <aside className="border-r bg-background">
-        <div className="flex h-14 items-center gap-2 px-3 border-b">
+      <aside className="border-r bg-background flex flex-col h-full">
+        {/* Top section - fixed header */}
+        <div className="flex h-14 items-center gap-2 px-3 border-b flex-shrink-0">
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <OrgSwitcher currentSlug={orgSlug} />
         </div>
 
-        <nav className="p-2">
-          <NavItem
-            to="/$orgSlug"
-            params={{ orgSlug }}
-            icon={<HomeIcon className="h-4 w-4" />}
-            isActive={routerState.location.pathname === `/${orgSlug}`}
-          >
-            Home
-          </NavItem>
-          <NavItem
-            to="/$orgSlug/settings"
-            params={{ orgSlug }}
-            icon={<SettingsIcon className="h-4 w-4" />}
-            isActive={routerState.location.pathname === `/${orgSlug}/settings`}
-          >
-            Settings
-          </NavItem>
-        </nav>
+        {/* Middle section - scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+          <nav className="p-2 space-y-1">
+            <NavItem
+              to="/$orgSlug"
+              params={{ orgSlug }}
+              icon={<HomeIcon className="h-4 w-4" />}
+              isActive={routerState.location.pathname === `/${orgSlug}`}
+            >
+              Home
+            </NavItem>
+            <NavItem
+              to="/$orgSlug/settings"
+              params={{ orgSlug }}
+              icon={<SettingsIcon className="h-4 w-4" />}
+              isActive={
+                routerState.location.pathname === `/${orgSlug}/settings`
+              }
+            >
+              Settings
+            </NavItem>
+          </nav>
 
-        <div className="mt-auto p-2 space-y-2">
-          {/* Theme Toggle */}
+          <div className="px-2 py-3">
+            <SpacesSection currentSlug={orgSlug} />
+          </div>
+        </div>
+
+        {/* Bottom section - fixed footer */}
+        <div className="border-t p-2 space-y-2 flex-shrink-0">
           <div className="flex items-center justify-between px-2">
             <ThemeToggle />
             <Button
               variant="ghost"
-              className="justify-center"
+              size="sm"
+              className="gap-2"
               onClick={() => authClient.signOut()}
             >
-              <LogOut />
+              <LogOut className="h-4 w-4" />
               Logout
             </Button>
           </div>
@@ -212,5 +243,399 @@ function NavItem({
       {icon}
       <span>{children}</span>
     </Link>
+  )
+}
+
+function SpacesSection({ currentSlug }: { currentSlug: string }) {
+  // Resolve orgId for current slug
+  const navigate = useNavigate()
+  const routerState = useRouterState()
+  const pathname = routerState.location.pathname
+
+  const { data: myOrgs } = useLiveQuery((q) =>
+    q.from({ myOrganizations: myOrganizationsCollection })
+  )
+  const orgId = myOrgs?.find((o) => o.org_slug === currentSlug)?.organization_id
+
+  // Use org-scoped Electric shape
+  const spacesCollection = orgId
+    ? getOrgSpacesCollection(orgId)
+    : emptySpacesCollection
+  const { data: spaces } = useLiveQuery(
+    (q) => q.from({ spaces: spacesCollection }),
+    [spacesCollection]
+  )
+
+  // Create-space dialog state
+  const [createOpen, setCreateOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
+  const [iconName, setIconName] = useState<string>("file-text")
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Edit dialog state
+  const [editOpen, setEditOpen] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editName, setEditName] = useState("")
+  const [editDescription, setEditDescription] = useState<string>("")
+  const [editIcon, setEditIcon] = useState<string>("file-text")
+
+  // Delete dialog state
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleteSlug, setDeleteSlug] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  async function createSpace(e: React.FormEvent) {
+    e.preventDefault()
+    if (!orgId || !name.trim()) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const now = new Date()
+      const spaceId =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}`
+
+      await spacesCollection.insert({
+        id: spaceId,
+        organization_id: orgId,
+        name: name.trim(),
+        slug: slugifySpace(name),
+        description: description ? description : null,
+        icon_name: iconName || null,
+        created_at: now,
+        updated_at: now,
+      })
+      setCreateOpen(false)
+      setName("")
+      setDescription("")
+      setIconName("file-text")
+      navigate({
+        to: "/$orgSlug/spaces/$spaceId",
+        params: { orgSlug: currentSlug, spaceId },
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create space")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function openEdit(s: SpaceRow) {
+    setEditId(s.id)
+    setEditName(s.name)
+    setEditDescription(s.description ?? "")
+    setEditIcon(s.icon_name ?? "file-text")
+    setEditOpen(true)
+  }
+
+  async function saveEdit() {
+    if (!editId) return
+    await spacesCollection.update(editId, (draft) => {
+      draft.name = editName.trim() || draft.name
+      draft.description = editDescription ? editDescription : null
+      draft.icon_name = editIcon || null
+      draft.updated_at = new Date()
+    })
+    setEditOpen(false)
+  }
+
+  function openDelete(s: SpaceRow) {
+    setDeleteId(s.id)
+    setDeleteSlug(s.slug)
+    setDeleteError(null)
+    setDeleteOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await spacesCollection.delete(deleteId)
+      setDeleteOpen(false)
+      if (
+        pathname.startsWith(`/${currentSlug}/spaces/${deleteId}`) ||
+        (deleteSlug &&
+          pathname.startsWith(`/${currentSlug}/spaces/${deleteSlug}`))
+      ) {
+        navigate({ to: "/$orgSlug", params: { orgSlug: currentSlug } })
+      }
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Failed to delete")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between px-2">
+        <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+          Spaces
+        </h3>
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-6 w-6">
+              <Plus className="h-3 w-3" />
+              <span className="sr-only">Create space</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent aria-label="Create space">
+            <DialogHeader>
+              <DialogTitle>Create space</DialogTitle>
+              <DialogDescription>
+                Create a new space to organize your documents.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={createSpace} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
+                <div className="space-y-2">
+                  <Label>Icon</Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        type="button"
+                        className="w-16 justify-center"
+                      >
+                        <DynamicIcon
+                          name={(iconName as IconName) || "file-text"}
+                          className="h-5 w-5"
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-[420px] p-1"
+                    >
+                      <IconPickerGrid
+                        onSelect={(n) => setIconName(n)}
+                        onRemove={() => setIconName("file-text")}
+                      />
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="space-name">Name</Label>
+                  <Input
+                    id="space-name"
+                    placeholder="User Guide"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="space-desc">Description (optional)</Label>
+                <Input
+                  id="space-desc"
+                  placeholder="Brief description for this space"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+
+              {error ? (
+                <p className="text-sm text-destructive">{error}</p>
+              ) : null}
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCreateOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting || !name.trim()}>
+                  {submitting ? "Creating…" : "Create"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {spaces && spaces.length > 0 ? (
+        <ul className="space-y-1">
+          {spaces.map((s) => (
+            <li key={s.id} className="relative group">
+              <Link
+                to="/$orgSlug/spaces/$spaceId"
+                params={{ orgSlug: currentSlug, spaceId: s.id }}
+                className={cn(
+                  "flex items-center gap-2 rounded px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground",
+                  pathname.startsWith(`/${currentSlug}/spaces/${s.id}`) &&
+                    "bg-accent text-accent-foreground"
+                )}
+                title={s.name}
+              >
+                <DynamicIcon
+                  name={(s.icon_name as IconName) || "file-text"}
+                  className="h-4 w-4"
+                />
+                <span className="truncate">{s.name}</span>
+
+                <div className="ml-auto">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="invisible h-6 w-6 group-hover:visible"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                        }}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.preventDefault()
+                          openEdit(s)
+                        }}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.preventDefault()
+                          openDelete(s)
+                        }}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="px-2 py-3 text-muted-foreground text-sm">
+          No spaces yet
+        </div>
+      )}
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent aria-label="Edit space">
+          <DialogHeader>
+            <DialogTitle>Edit space</DialogTitle>
+            <DialogDescription>Edit the space details</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
+            <div className="space-y-2">
+              <Label>Icon</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    className="w-16 justify-center"
+                  >
+                    <DynamicIcon
+                      name={(editIcon as IconName) || "file-text"}
+                      className="h-5 w-5"
+                    />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[420px] p-1">
+                  <IconPickerGrid
+                    onSelect={(n) => setEditIcon(n)}
+                    onRemove={() => setEditIcon("file-text")}
+                  />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-space-name">Name</Label>
+              <Input
+                id="edit-space-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Space name"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-space-desc">Description</Label>
+            <Input
+              id="edit-space-desc"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Brief description"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEditOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={saveEdit}
+              disabled={!editId || !editName.trim()}
+            >
+              Save changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent aria-label="Delete space">
+          <DialogHeader>
+            <DialogTitle>Delete space</DialogTitle>
+            <DialogDescription>
+              This will permanently delete the space. You can not undo this.
+            </DialogDescription>
+          </DialogHeader>
+          <p
+            id="delete-space-description"
+            className="text-sm text-muted-foreground"
+          >
+            This will permanently delete the space. You can not undo this.
+          </p>
+          {deleteError ? (
+            <p className="text-sm text-destructive">{deleteError}</p>
+          ) : null}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }

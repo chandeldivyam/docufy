@@ -2,11 +2,15 @@ import { createServerFileRoute } from "@tanstack/react-start/server"
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch"
 import { router } from "@/lib/trpc"
 import { usersRouter } from "@/lib/trpc/users"
+import { spacesRouter } from "@/lib/trpc/spaces"
+import { documentsRouter } from "@/lib/trpc/documents"
 import { db } from "@/db/connection"
 import { auth } from "@/lib/auth"
 
 export const appRouter = router({
   users: usersRouter,
+  spaces: spacesRouter,
+  documents: documentsRouter,
 })
 
 export type AppRouter = typeof appRouter

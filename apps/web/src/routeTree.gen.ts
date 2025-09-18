@@ -21,10 +21,15 @@ import { Route as AuthenticatedActiveOrgIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedOrgSlugIndexRouteImport } from './routes/_authenticated/$orgSlug/index'
 import { Route as AuthenticatedActiveOrgSettingsRouteImport } from './routes/_authenticated/_active-org/settings'
 import { Route as AuthenticatedOrgSlugSettingsRouteImport } from './routes/_authenticated/$orgSlug/settings'
+import { Route as AuthenticatedOrgSlugSpacesIndexRouteImport } from './routes/_authenticated/$orgSlug/spaces/index'
+import { Route as AuthenticatedOrgSlugSpacesSpaceIdRouteImport } from './routes/_authenticated/$orgSlug/spaces/$spaceId'
+import { Route as AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport } from './routes/_authenticated/$orgSlug/spaces/$spaceId/document/$docId'
 import { ServerRoute as ApiUserInvitationsServerRouteImport } from './routes/api/user-invitations'
+import { ServerRoute as ApiSpacesServerRouteImport } from './routes/api/spaces'
 import { ServerRoute as ApiOrgUserProfilesServerRouteImport } from './routes/api/org-user-profiles'
 import { ServerRoute as ApiMyOrganizationsServerRouteImport } from './routes/api/my-organizations'
 import { ServerRoute as ApiInvitationsServerRouteImport } from './routes/api/invitations'
+import { ServerRoute as ApiDocumentsServerRouteImport } from './routes/api/documents'
 import { ServerRoute as ApiTrpcSplatServerRouteImport } from './routes/api/trpc/$'
 import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
 
@@ -82,12 +87,35 @@ const AuthenticatedOrgSlugSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedOrgSlugRoute,
   } as any)
+const AuthenticatedOrgSlugSpacesIndexRoute =
+  AuthenticatedOrgSlugSpacesIndexRouteImport.update({
+    id: '/spaces/',
+    path: '/spaces/',
+    getParentRoute: () => AuthenticatedOrgSlugRoute,
+  } as any)
+const AuthenticatedOrgSlugSpacesSpaceIdRoute =
+  AuthenticatedOrgSlugSpacesSpaceIdRouteImport.update({
+    id: '/spaces/$spaceId',
+    path: '/spaces/$spaceId',
+    getParentRoute: () => AuthenticatedOrgSlugRoute,
+  } as any)
+const AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute =
+  AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport.update({
+    id: '/document/$docId',
+    path: '/document/$docId',
+    getParentRoute: () => AuthenticatedOrgSlugSpacesSpaceIdRoute,
+  } as any)
 const ApiUserInvitationsServerRoute =
   ApiUserInvitationsServerRouteImport.update({
     id: '/api/user-invitations',
     path: '/api/user-invitations',
     getParentRoute: () => rootServerRouteImport,
   } as any)
+const ApiSpacesServerRoute = ApiSpacesServerRouteImport.update({
+  id: '/api/spaces',
+  path: '/api/spaces',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
 const ApiOrgUserProfilesServerRoute =
   ApiOrgUserProfilesServerRouteImport.update({
     id: '/api/org-user-profiles',
@@ -103,6 +131,11 @@ const ApiMyOrganizationsServerRoute =
 const ApiInvitationsServerRoute = ApiInvitationsServerRouteImport.update({
   id: '/api/invitations',
   path: '/api/invitations',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
+const ApiDocumentsServerRoute = ApiDocumentsServerRouteImport.update({
+  id: '/api/documents',
+  path: '/api/documents',
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiTrpcSplatServerRoute = ApiTrpcSplatServerRouteImport.update({
@@ -125,6 +158,9 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
   '/': typeof AuthenticatedActiveOrgIndexRoute
+  '/$orgSlug/spaces/$spaceId': typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  '/$orgSlug/spaces': typeof AuthenticatedOrgSlugSpacesIndexRoute
+  '/$orgSlug/spaces/$spaceId/document/$docId': typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -134,6 +170,9 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/$orgSlug': typeof AuthenticatedOrgSlugIndexRoute
   '/': typeof AuthenticatedActiveOrgIndexRoute
+  '/$orgSlug/spaces/$spaceId': typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  '/$orgSlug/spaces': typeof AuthenticatedOrgSlugSpacesIndexRoute
+  '/$orgSlug/spaces/$spaceId/document/$docId': typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -147,6 +186,9 @@ export interface FileRoutesById {
   '/_authenticated/_active-org/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/_authenticated/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
   '/_authenticated/_active-org/': typeof AuthenticatedActiveOrgIndexRoute
+  '/_authenticated/$orgSlug/spaces/$spaceId': typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  '/_authenticated/$orgSlug/spaces/': typeof AuthenticatedOrgSlugSpacesIndexRoute
+  '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId': typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,6 +201,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/$orgSlug/'
     | '/'
+    | '/$orgSlug/spaces/$spaceId'
+    | '/$orgSlug/spaces'
+    | '/$orgSlug/spaces/$spaceId/document/$docId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -168,6 +213,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/$orgSlug'
     | '/'
+    | '/$orgSlug/spaces/$spaceId'
+    | '/$orgSlug/spaces'
+    | '/$orgSlug/spaces/$spaceId/document/$docId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -180,6 +228,9 @@ export interface FileRouteTypes {
     | '/_authenticated/_active-org/settings'
     | '/_authenticated/$orgSlug/'
     | '/_authenticated/_active-org/'
+    | '/_authenticated/$orgSlug/spaces/$spaceId'
+    | '/_authenticated/$orgSlug/spaces/'
+    | '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,26 +239,32 @@ export interface RootRouteChildren {
   LogoutRoute: typeof LogoutRoute
 }
 export interface FileServerRoutesByFullPath {
+  '/api/documents': typeof ApiDocumentsServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
+  '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRoutesByTo {
+  '/api/documents': typeof ApiDocumentsServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
+  '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
+  '/api/documents': typeof ApiDocumentsServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
+  '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
@@ -215,34 +272,42 @@ export interface FileServerRoutesById {
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
   fullPaths:
+    | '/api/documents'
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
+    | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
     | '/api/trpc/$'
   fileServerRoutesByTo: FileServerRoutesByTo
   to:
+    | '/api/documents'
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
+    | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
     | '/api/trpc/$'
   id:
     | '__root__'
+    | '/api/documents'
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
+    | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
     | '/api/trpc/$'
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
+  ApiDocumentsServerRoute: typeof ApiDocumentsServerRoute
   ApiInvitationsServerRoute: typeof ApiInvitationsServerRoute
   ApiMyOrganizationsServerRoute: typeof ApiMyOrganizationsServerRoute
   ApiOrgUserProfilesServerRoute: typeof ApiOrgUserProfilesServerRoute
+  ApiSpacesServerRoute: typeof ApiSpacesServerRoute
   ApiUserInvitationsServerRoute: typeof ApiUserInvitationsServerRoute
   ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute
   ApiTrpcSplatServerRoute: typeof ApiTrpcSplatServerRoute
@@ -320,6 +385,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrgSlugSettingsRouteImport
       parentRoute: typeof AuthenticatedOrgSlugRoute
     }
+    '/_authenticated/$orgSlug/spaces/': {
+      id: '/_authenticated/$orgSlug/spaces/'
+      path: '/spaces'
+      fullPath: '/$orgSlug/spaces'
+      preLoaderRoute: typeof AuthenticatedOrgSlugSpacesIndexRouteImport
+      parentRoute: typeof AuthenticatedOrgSlugRoute
+    }
+    '/_authenticated/$orgSlug/spaces/$spaceId': {
+      id: '/_authenticated/$orgSlug/spaces/$spaceId'
+      path: '/spaces/$spaceId'
+      fullPath: '/$orgSlug/spaces/$spaceId'
+      preLoaderRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdRouteImport
+      parentRoute: typeof AuthenticatedOrgSlugRoute
+    }
+    '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId': {
+      id: '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId'
+      path: '/document/$docId'
+      fullPath: '/$orgSlug/spaces/$spaceId/document/$docId'
+      preLoaderRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport
+      parentRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdRoute
+    }
   }
 }
 declare module '@tanstack/react-start/server' {
@@ -329,6 +415,13 @@ declare module '@tanstack/react-start/server' {
       path: '/api/user-invitations'
       fullPath: '/api/user-invitations'
       preLoaderRoute: typeof ApiUserInvitationsServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/spaces': {
+      id: '/api/spaces'
+      path: '/api/spaces'
+      fullPath: '/api/spaces'
+      preLoaderRoute: typeof ApiSpacesServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
     '/api/org-user-profiles': {
@@ -352,6 +445,13 @@ declare module '@tanstack/react-start/server' {
       preLoaderRoute: typeof ApiInvitationsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
+    '/api/documents': {
+      id: '/api/documents'
+      path: '/api/documents'
+      fullPath: '/api/documents'
+      preLoaderRoute: typeof ApiDocumentsServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
     '/api/trpc/$': {
       id: '/api/trpc/$'
       path: '/api/trpc/$'
@@ -369,14 +469,34 @@ declare module '@tanstack/react-start/server' {
   }
 }
 
+interface AuthenticatedOrgSlugSpacesSpaceIdRouteChildren {
+  AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
+}
+
+const AuthenticatedOrgSlugSpacesSpaceIdRouteChildren: AuthenticatedOrgSlugSpacesSpaceIdRouteChildren =
+  {
+    AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute:
+      AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute,
+  }
+
+const AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren =
+  AuthenticatedOrgSlugSpacesSpaceIdRoute._addFileChildren(
+    AuthenticatedOrgSlugSpacesSpaceIdRouteChildren,
+  )
+
 interface AuthenticatedOrgSlugRouteChildren {
   AuthenticatedOrgSlugSettingsRoute: typeof AuthenticatedOrgSlugSettingsRoute
   AuthenticatedOrgSlugIndexRoute: typeof AuthenticatedOrgSlugIndexRoute
+  AuthenticatedOrgSlugSpacesSpaceIdRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  AuthenticatedOrgSlugSpacesIndexRoute: typeof AuthenticatedOrgSlugSpacesIndexRoute
 }
 
 const AuthenticatedOrgSlugRouteChildren: AuthenticatedOrgSlugRouteChildren = {
   AuthenticatedOrgSlugSettingsRoute: AuthenticatedOrgSlugSettingsRoute,
   AuthenticatedOrgSlugIndexRoute: AuthenticatedOrgSlugIndexRoute,
+  AuthenticatedOrgSlugSpacesSpaceIdRoute:
+    AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren,
+  AuthenticatedOrgSlugSpacesIndexRoute: AuthenticatedOrgSlugSpacesIndexRoute,
 }
 
 const AuthenticatedOrgSlugRouteWithChildren =
@@ -423,9 +543,11 @@ export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 const rootServerRouteChildren: RootServerRouteChildren = {
+  ApiDocumentsServerRoute: ApiDocumentsServerRoute,
   ApiInvitationsServerRoute: ApiInvitationsServerRoute,
   ApiMyOrganizationsServerRoute: ApiMyOrganizationsServerRoute,
   ApiOrgUserProfilesServerRoute: ApiOrgUserProfilesServerRoute,
+  ApiSpacesServerRoute: ApiSpacesServerRoute,
   ApiUserInvitationsServerRoute: ApiUserInvitationsServerRoute,
   ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
   ApiTrpcSplatServerRoute: ApiTrpcSplatServerRoute,

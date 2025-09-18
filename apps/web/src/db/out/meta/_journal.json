@@ -15,6 +15,20 @@
       "when": 1758092018326,
       "tag": "0001_numerous_joshua_kane",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1758141088415,
+      "tag": "0002_huge_wallop",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1758225974765,
+      "tag": "0003_spooky_wild_pack",
+      "breakpoints": true
     }
   ]
 }
