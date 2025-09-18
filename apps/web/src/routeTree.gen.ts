@@ -29,6 +29,7 @@ import { ServerRoute as ApiSpacesServerRouteImport } from './routes/api/spaces'
 import { ServerRoute as ApiOrgUserProfilesServerRouteImport } from './routes/api/org-user-profiles'
 import { ServerRoute as ApiMyOrganizationsServerRouteImport } from './routes/api/my-organizations'
 import { ServerRoute as ApiInvitationsServerRouteImport } from './routes/api/invitations'
+import { ServerRoute as ApiDocumentsServerRouteImport } from './routes/api/documents'
 import { ServerRoute as ApiTrpcSplatServerRouteImport } from './routes/api/trpc/$'
 import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
 
@@ -132,6 +133,11 @@ const ApiInvitationsServerRoute = ApiInvitationsServerRouteImport.update({
   path: '/api/invitations',
   getParentRoute: () => rootServerRouteImport,
 } as any)
+const ApiDocumentsServerRoute = ApiDocumentsServerRouteImport.update({
+  id: '/api/documents',
+  path: '/api/documents',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
 const ApiTrpcSplatServerRoute = ApiTrpcSplatServerRouteImport.update({
   id: '/api/trpc/$',
   path: '/api/trpc/$',
@@ -233,6 +239,7 @@ export interface RootRouteChildren {
   LogoutRoute: typeof LogoutRoute
 }
 export interface FileServerRoutesByFullPath {
+  '/api/documents': typeof ApiDocumentsServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
@@ -242,6 +249,7 @@ export interface FileServerRoutesByFullPath {
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRoutesByTo {
+  '/api/documents': typeof ApiDocumentsServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
@@ -252,6 +260,7 @@ export interface FileServerRoutesByTo {
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
+  '/api/documents': typeof ApiDocumentsServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
@@ -263,6 +272,7 @@ export interface FileServerRoutesById {
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
   fullPaths:
+    | '/api/documents'
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
@@ -272,6 +282,7 @@ export interface FileServerRouteTypes {
     | '/api/trpc/$'
   fileServerRoutesByTo: FileServerRoutesByTo
   to:
+    | '/api/documents'
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
@@ -281,6 +292,7 @@ export interface FileServerRouteTypes {
     | '/api/trpc/$'
   id:
     | '__root__'
+    | '/api/documents'
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
@@ -291,6 +303,7 @@ export interface FileServerRouteTypes {
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
+  ApiDocumentsServerRoute: typeof ApiDocumentsServerRoute
   ApiInvitationsServerRoute: typeof ApiInvitationsServerRoute
   ApiMyOrganizationsServerRoute: typeof ApiMyOrganizationsServerRoute
   ApiOrgUserProfilesServerRoute: typeof ApiOrgUserProfilesServerRoute
@@ -432,6 +445,13 @@ declare module '@tanstack/react-start/server' {
       preLoaderRoute: typeof ApiInvitationsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
+    '/api/documents': {
+      id: '/api/documents'
+      path: '/api/documents'
+      fullPath: '/api/documents'
+      preLoaderRoute: typeof ApiDocumentsServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
     '/api/trpc/$': {
       id: '/api/trpc/$'
       path: '/api/trpc/$'
@@ -523,6 +543,7 @@ export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 const rootServerRouteChildren: RootServerRouteChildren = {
+  ApiDocumentsServerRoute: ApiDocumentsServerRoute,
   ApiInvitationsServerRoute: ApiInvitationsServerRoute,
   ApiMyOrganizationsServerRoute: ApiMyOrganizationsServerRoute,
   ApiOrgUserProfilesServerRoute: ApiOrgUserProfilesServerRoute,

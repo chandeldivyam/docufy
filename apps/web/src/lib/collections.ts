@@ -266,3 +266,101 @@ export const emptySpacesCollection = createCollection(
     getKey: (item) => item.id,
   })
 )
+
+// Add near other schemas in this file
+const documentsRawSchema = z.object({
+  id: z.string(),
+  organization_id: z.string(),
+  space_id: z.string(),
+  parent_id: z.string().nullable(),
+  slug: z.string(),
+  title: z.string(),
+  icon_name: z.string().nullable(),
+  rank: z.string(),
+  type: z.enum(["page", "group", "api"]),
+  archived_at: z.coerce.date().nullable(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+})
+
+export type DocumentRow = z.infer<typeof documentsRawSchema>
+
+function createDocumentsCollectionFor(spaceId: string) {
+  const url = getApiUrl(`/api/documents?spaceId=${spaceId}`)
+  return createCollection(
+    electricCollectionOptions({
+      id: `documents:space:${spaceId}`,
+      shapeOptions: { url, parser: electricParsers },
+      schema: documentsRawSchema,
+      getKey: (d) => d.id,
+
+      onInsert: async ({ transaction }) => {
+        const { modified: row } = transaction.mutations[0]
+        const result = await trpc.documents.create.mutate({
+          id: row.id,
+          spaceId: row.space_id,
+          parentId: row.parent_id ?? undefined,
+          title: row.title,
+          type: row.type,
+          iconName: row.icon_name ?? undefined,
+        })
+        return { txid: result.txid }
+      },
+
+      // rename and move will come later
+      onUpdate: async ({ transaction }) => {
+        const { original: prev, modified: next } = transaction.mutations[0]
+
+        // Build a minimal patch
+        const payload: {
+          id: string
+          title?: string
+          iconName?: string | null
+          parentId?: string | null
+        } = { id: prev.id }
+
+        if (next.title !== prev.title) {
+          payload.title = next.title
+        }
+        if (next.icon_name !== prev.icon_name) {
+          payload.iconName = next.icon_name ?? null
+        }
+        if (next.parent_id !== prev.parent_id) {
+          payload.parentId = next.parent_id ?? null
+        }
+
+        const result = await trpc.documents.update.mutate(payload)
+        return { txid: result.txid }
+      },
+
+      onDelete: async ({ transaction }) => {
+        const { original: prev } = transaction.mutations[0]
+        const result = await trpc.documents.delete.mutate({ id: prev.id })
+        return { txid: result.txid }
+      },
+    })
+  )
+}
+
+type DocumentsCollection = ReturnType<typeof createDocumentsCollectionFor>
+const docsBySpace = new Map<string, DocumentsCollection>()
+
+export function getSpaceDocumentsCollection(
+  spaceId: string
+): DocumentsCollection {
+  let col = docsBySpace.get(spaceId)
+  if (!col) {
+    col = createDocumentsCollectionFor(spaceId)
+    docsBySpace.set(spaceId, col)
+  }
+  return col
+}
+
+// Optional empty collection for stable hooks before spaceId is known
+export const emptyDocumentsCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-documents",
+    schema: documentsRawSchema,
+    getKey: (d) => d.id,
+  })
+)

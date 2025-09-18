@@ -261,8 +261,9 @@ function SpacesSection({ currentSlug }: { currentSlug: string }) {
   const spacesCollection = orgId
     ? getOrgSpacesCollection(orgId)
     : emptySpacesCollection
-  const { data: spaces } = useLiveQuery((q) =>
-    q.from({ spaces: spacesCollection })
+  const { data: spaces } = useLiveQuery(
+    (q) => q.from({ spaces: spacesCollection }),
+    [spacesCollection]
   )
 
   // Create-space dialog state

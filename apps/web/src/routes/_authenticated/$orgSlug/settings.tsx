@@ -51,11 +51,13 @@ function SettingsPage() {
     ? getOrgInvitationsCollection(orgId)
     : emptyInvitationsCollection
 
-  const { data: profiles } = useLiveQuery((q) =>
-    q.from({ users: profilesCollection })
+  const { data: profiles } = useLiveQuery(
+    (q) => q.from({ users: profilesCollection }),
+    [profilesCollection]
   )
-  const { data: allInvites } = useLiveQuery((q) =>
-    q.from({ invitations: invitationsCollection })
+  const { data: allInvites } = useLiveQuery(
+    (q) => q.from({ invitations: invitationsCollection }),
+    [invitationsCollection]
   )
 
   return (
