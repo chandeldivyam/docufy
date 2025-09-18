@@ -21,6 +21,9 @@ import { Route as AuthenticatedActiveOrgIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedOrgSlugIndexRouteImport } from './routes/_authenticated/$orgSlug/index'
 import { Route as AuthenticatedActiveOrgSettingsRouteImport } from './routes/_authenticated/_active-org/settings'
 import { Route as AuthenticatedOrgSlugSettingsRouteImport } from './routes/_authenticated/$orgSlug/settings'
+import { Route as AuthenticatedOrgSlugSpacesIndexRouteImport } from './routes/_authenticated/$orgSlug/spaces/index'
+import { Route as AuthenticatedOrgSlugSpacesSpaceIdRouteImport } from './routes/_authenticated/$orgSlug/spaces/$spaceId'
+import { Route as AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport } from './routes/_authenticated/$orgSlug/spaces/$spaceId/document/$docId'
 import { ServerRoute as ApiUserInvitationsServerRouteImport } from './routes/api/user-invitations'
 import { ServerRoute as ApiSpacesServerRouteImport } from './routes/api/spaces'
 import { ServerRoute as ApiOrgUserProfilesServerRouteImport } from './routes/api/org-user-profiles'
@@ -83,6 +86,24 @@ const AuthenticatedOrgSlugSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedOrgSlugRoute,
   } as any)
+const AuthenticatedOrgSlugSpacesIndexRoute =
+  AuthenticatedOrgSlugSpacesIndexRouteImport.update({
+    id: '/spaces/',
+    path: '/spaces/',
+    getParentRoute: () => AuthenticatedOrgSlugRoute,
+  } as any)
+const AuthenticatedOrgSlugSpacesSpaceIdRoute =
+  AuthenticatedOrgSlugSpacesSpaceIdRouteImport.update({
+    id: '/spaces/$spaceId',
+    path: '/spaces/$spaceId',
+    getParentRoute: () => AuthenticatedOrgSlugRoute,
+  } as any)
+const AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute =
+  AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport.update({
+    id: '/document/$docId',
+    path: '/document/$docId',
+    getParentRoute: () => AuthenticatedOrgSlugSpacesSpaceIdRoute,
+  } as any)
 const ApiUserInvitationsServerRoute =
   ApiUserInvitationsServerRouteImport.update({
     id: '/api/user-invitations',
@@ -131,6 +152,9 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
   '/': typeof AuthenticatedActiveOrgIndexRoute
+  '/$orgSlug/spaces/$spaceId': typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  '/$orgSlug/spaces': typeof AuthenticatedOrgSlugSpacesIndexRoute
+  '/$orgSlug/spaces/$spaceId/document/$docId': typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -140,6 +164,9 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/$orgSlug': typeof AuthenticatedOrgSlugIndexRoute
   '/': typeof AuthenticatedActiveOrgIndexRoute
+  '/$orgSlug/spaces/$spaceId': typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  '/$orgSlug/spaces': typeof AuthenticatedOrgSlugSpacesIndexRoute
+  '/$orgSlug/spaces/$spaceId/document/$docId': typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -153,6 +180,9 @@ export interface FileRoutesById {
   '/_authenticated/_active-org/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/_authenticated/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
   '/_authenticated/_active-org/': typeof AuthenticatedActiveOrgIndexRoute
+  '/_authenticated/$orgSlug/spaces/$spaceId': typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  '/_authenticated/$orgSlug/spaces/': typeof AuthenticatedOrgSlugSpacesIndexRoute
+  '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId': typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -165,6 +195,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/$orgSlug/'
     | '/'
+    | '/$orgSlug/spaces/$spaceId'
+    | '/$orgSlug/spaces'
+    | '/$orgSlug/spaces/$spaceId/document/$docId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -174,6 +207,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/$orgSlug'
     | '/'
+    | '/$orgSlug/spaces/$spaceId'
+    | '/$orgSlug/spaces'
+    | '/$orgSlug/spaces/$spaceId/document/$docId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -186,6 +222,9 @@ export interface FileRouteTypes {
     | '/_authenticated/_active-org/settings'
     | '/_authenticated/$orgSlug/'
     | '/_authenticated/_active-org/'
+    | '/_authenticated/$orgSlug/spaces/$spaceId'
+    | '/_authenticated/$orgSlug/spaces/'
+    | '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -333,6 +372,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrgSlugSettingsRouteImport
       parentRoute: typeof AuthenticatedOrgSlugRoute
     }
+    '/_authenticated/$orgSlug/spaces/': {
+      id: '/_authenticated/$orgSlug/spaces/'
+      path: '/spaces'
+      fullPath: '/$orgSlug/spaces'
+      preLoaderRoute: typeof AuthenticatedOrgSlugSpacesIndexRouteImport
+      parentRoute: typeof AuthenticatedOrgSlugRoute
+    }
+    '/_authenticated/$orgSlug/spaces/$spaceId': {
+      id: '/_authenticated/$orgSlug/spaces/$spaceId'
+      path: '/spaces/$spaceId'
+      fullPath: '/$orgSlug/spaces/$spaceId'
+      preLoaderRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdRouteImport
+      parentRoute: typeof AuthenticatedOrgSlugRoute
+    }
+    '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId': {
+      id: '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId'
+      path: '/document/$docId'
+      fullPath: '/$orgSlug/spaces/$spaceId/document/$docId'
+      preLoaderRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport
+      parentRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdRoute
+    }
   }
 }
 declare module '@tanstack/react-start/server' {
@@ -389,14 +449,34 @@ declare module '@tanstack/react-start/server' {
   }
 }
 
+interface AuthenticatedOrgSlugSpacesSpaceIdRouteChildren {
+  AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
+}
+
+const AuthenticatedOrgSlugSpacesSpaceIdRouteChildren: AuthenticatedOrgSlugSpacesSpaceIdRouteChildren =
+  {
+    AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute:
+      AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute,
+  }
+
+const AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren =
+  AuthenticatedOrgSlugSpacesSpaceIdRoute._addFileChildren(
+    AuthenticatedOrgSlugSpacesSpaceIdRouteChildren,
+  )
+
 interface AuthenticatedOrgSlugRouteChildren {
   AuthenticatedOrgSlugSettingsRoute: typeof AuthenticatedOrgSlugSettingsRoute
   AuthenticatedOrgSlugIndexRoute: typeof AuthenticatedOrgSlugIndexRoute
+  AuthenticatedOrgSlugSpacesSpaceIdRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  AuthenticatedOrgSlugSpacesIndexRoute: typeof AuthenticatedOrgSlugSpacesIndexRoute
 }
 
 const AuthenticatedOrgSlugRouteChildren: AuthenticatedOrgSlugRouteChildren = {
   AuthenticatedOrgSlugSettingsRoute: AuthenticatedOrgSlugSettingsRoute,
   AuthenticatedOrgSlugIndexRoute: AuthenticatedOrgSlugIndexRoute,
+  AuthenticatedOrgSlugSpacesSpaceIdRoute:
+    AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren,
+  AuthenticatedOrgSlugSpacesIndexRoute: AuthenticatedOrgSlugSpacesIndexRoute,
 }
 
 const AuthenticatedOrgSlugRouteWithChildren =

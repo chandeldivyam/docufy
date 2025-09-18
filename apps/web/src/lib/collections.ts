@@ -208,6 +208,7 @@ function createSpacesCollectionFor(url: string) {
       onInsert: async ({ transaction }) => {
         const { modified: row } = transaction.mutations[0]
         const result = await trpc.spaces.create.mutate({
+          id: row.id,
           organizationId: row.organization_id,
           name: row.name,
           slug: row.slug,

@@ -32,7 +32,11 @@ async function assertOrgRole(
     )
     .limit(1)
   const role = rows[0]?.role
-  if (!role || typeof role !== "string" || !roles.includes(role as "owner" | "admin" | "member")) {
+  if (
+    !role ||
+    typeof role !== "string" ||
+    !roles.includes(role as "owner" | "admin" | "member")
+  ) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Insufficient permissions",
@@ -54,7 +58,7 @@ export const spacesRouter = router({
       ])
 
       const finalSlug = input.slug ? slugify(input.slug) : slugify(input.name)
-      const id = crypto.randomUUID()
+      const id = input.id ?? crypto.randomUUID()
 
       return await ctx.db.transaction(async (tx) => {
         const existing = await tx

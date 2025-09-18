@@ -248,6 +248,10 @@ function NavItem({
 
 function SpacesSection({ currentSlug }: { currentSlug: string }) {
   // Resolve orgId for current slug
+  const navigate = useNavigate()
+  const routerState = useRouterState()
+  const pathname = routerState.location.pathname
+
   const { data: myOrgs } = useLiveQuery((q) =>
     q.from({ myOrganizations: myOrganizationsCollection })
   )
@@ -279,6 +283,7 @@ function SpacesSection({ currentSlug }: { currentSlug: string }) {
   // Delete dialog state
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleteSlug, setDeleteSlug] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
@@ -289,12 +294,13 @@ function SpacesSection({ currentSlug }: { currentSlug: string }) {
     setError(null)
     try {
       const now = new Date()
-      const tmpId =
+      const spaceId =
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
           : `${Date.now()}`
+
       await spacesCollection.insert({
-        id: `opt:${tmpId}`,
+        id: spaceId,
         organization_id: orgId,
         name: name.trim(),
         slug: slugifySpace(name),
@@ -307,6 +313,10 @@ function SpacesSection({ currentSlug }: { currentSlug: string }) {
       setName("")
       setDescription("")
       setIconName("file-text")
+      navigate({
+        to: "/$orgSlug/spaces/$spaceId",
+        params: { orgSlug: currentSlug, spaceId },
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create space")
     } finally {
@@ -335,6 +345,7 @@ function SpacesSection({ currentSlug }: { currentSlug: string }) {
 
   function openDelete(s: SpaceRow) {
     setDeleteId(s.id)
+    setDeleteSlug(s.slug)
     setDeleteError(null)
     setDeleteOpen(true)
   }
@@ -346,6 +357,13 @@ function SpacesSection({ currentSlug }: { currentSlug: string }) {
     try {
       await spacesCollection.delete(deleteId)
       setDeleteOpen(false)
+      if (
+        pathname.startsWith(`/${currentSlug}/spaces/${deleteId}`) ||
+        (deleteSlug &&
+          pathname.startsWith(`/${currentSlug}/spaces/${deleteSlug}`))
+      ) {
+        navigate({ to: "/$orgSlug", params: { orgSlug: currentSlug } })
+      }
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : "Failed to delete")
     } finally {
@@ -449,10 +467,12 @@ function SpacesSection({ currentSlug }: { currentSlug: string }) {
           {spaces.map((s) => (
             <li key={s.id} className="relative group">
               <Link
-                to="/$orgSlug"
-                params={{ orgSlug: currentSlug }}
+                to="/$orgSlug/spaces/$spaceId"
+                params={{ orgSlug: currentSlug, spaceId: s.id }}
                 className={cn(
-                  "flex items-center gap-2 rounded px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                  "flex items-center gap-2 rounded px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground",
+                  pathname.startsWith(`/${currentSlug}/spaces/${s.id}`) &&
+                    "bg-accent text-accent-foreground"
                 )}
                 title={s.name}
               >

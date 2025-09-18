@@ -51,8 +51,11 @@ export const selectMembersSchema = createSelectSchema(members)
 export const selectInvitationsSchema = createSelectSchema(invitations)
 export const selectOrgUserProfilesSchema = createSelectSchema(orgUserProfiles)
 export const selectSpacesSchema = createSelectSchema(spacesTable)
-export const createSpaceSchema = createInsertSchema(spacesTable).omit({
-  createdAt: true,
-  updatedAt: true,
-  id: true,
-})
+export const createSpaceSchema = createInsertSchema(spacesTable)
+  .omit({
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    id: z.string().uuid().optional(),
+  })
