@@ -317,6 +317,7 @@ function createDocumentsCollectionFor(spaceId: string) {
           title?: string
           iconName?: string | null
           parentId?: string | null
+          rank?: string
         } = { id: prev.id }
 
         if (next.title !== prev.title) {
@@ -328,6 +329,7 @@ function createDocumentsCollectionFor(spaceId: string) {
         if (next.parent_id !== prev.parent_id) {
           payload.parentId = next.parent_id ?? null
         }
+        if (next.rank !== prev.rank) payload.rank = next.rank
 
         const result = await trpc.documents.update.mutate(payload)
         return { txid: result.txid }

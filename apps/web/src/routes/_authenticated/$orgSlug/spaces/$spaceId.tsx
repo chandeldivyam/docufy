@@ -35,6 +35,7 @@ import {
 import { DynamicIcon } from "lucide-react/dynamic"
 import type { IconName } from "lucide-react/dynamic"
 import { IconPickerGrid } from "@/components/icons/icon-picker"
+import { rankBetween } from "@/lib/rank"
 
 export const Route = createFileRoute(
   "/_authenticated/$orgSlug/spaces/$spaceId"
@@ -150,9 +151,86 @@ function DocumentsTree({
     return map
   }, [docs])
 
+  const parentById = useMemo(() => {
+    const m = new Map<string, string | null>()
+    for (const d of docs) m.set(d.id, d.parent_id)
+    return m
+  }, [docs])
+
   const rootNodes = childrenByParent.get(null) ?? []
 
   // Expanded state for groups & pages-with-children. Persist by space.
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState<{
+    id: string
+    mode: "before" | "after" | "inside"
+  } | null>(null)
+
+  function isAncestor(ancestorId: string, candidateChildId: string): boolean {
+    let cur = parentById.get(candidateChildId) ?? null
+    while (cur) {
+      if (cur === ancestorId) return true
+      cur = parentById.get(cur) ?? null
+    }
+    return false
+  }
+
+  function siblings(parentId: string | null, excludeId?: string) {
+    const list = (childrenByParent.get(parentId) ?? []).filter(
+      (d) => d.id !== excludeId
+    )
+    list.sort(byRank)
+    return list
+  }
+
+  async function move(
+    docId: string,
+    newParentId: string | null,
+    indexHint?: {
+      beforeId?: string
+      afterId?: string
+    }
+  ) {
+    const list = siblings(newParentId, docId)
+    // Find prev/next by hint, else append to end
+    const oldParentId = parentById.get(docId) ?? null
+    if (oldParentId === newParentId) {
+      const list = siblings(newParentId)
+      const beforeIdx = indexHint?.beforeId
+        ? list.findIndex((d) => d.id === indexHint!.beforeId)
+        : -1
+      const afterIdx = indexHint?.afterId
+        ? list.findIndex((d) => d.id === indexHint!.afterId)
+        : -1
+      // If dropping immediately before or after the same neighbor position, do nothing
+      if (beforeIdx === -1 && afterIdx === -1) return
+    }
+    let prevRank: string | null = null
+    let nextRank: string | null = null
+    if (indexHint?.beforeId) {
+      const i = list.findIndex((d) => d.id === indexHint!.beforeId)
+      nextRank = list[i]?.rank ?? null
+      prevRank = i > 0 ? (list[i - 1]?.rank ?? null) : null
+    } else if (indexHint?.afterId) {
+      const i = list.findIndex((d) => d.id === indexHint!.afterId)
+      prevRank = list[i]?.rank ?? null
+      nextRank =
+        i >= 0 && i + 1 < list.length ? (list[i + 1]?.rank ?? null) : null
+    } else {
+      // inside w/o hint → append to end
+      prevRank = list.length ? (list[list.length - 1]?.rank ?? null) : null
+      nextRank = null
+    }
+    const newRank = rankBetween(prevRank, nextRank)
+    await docsCollection.update(docId, (draft) => {
+      draft.parent_id = newParentId
+      draft.rank = newRank
+      draft.updated_at = new Date()
+    })
+    if (newParentId) {
+      setExpanded((e) => ({ ...e, [newParentId]: true }))
+    }
+  }
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const raw =
       typeof window !== "undefined"
@@ -306,6 +384,44 @@ function DocumentsTree({
               onDelete={deleteDoc}
               orgSlug={orgSlug}
               spaceId={spaceId}
+              draggingId={draggingId}
+              setDraggingId={setDraggingId}
+              dragOver={dragOver}
+              setDragOver={setDragOver}
+              isInvalidDrop={(targetId, mode) => {
+                if (!draggingId) return true
+                if (targetId === draggingId) return true
+                // Where would the dragged node end up?
+                const effectiveParentId =
+                  mode === "inside"
+                    ? targetId
+                    : (parentById.get(targetId) ?? null)
+                // 1) Never allow parent == self
+                if (effectiveParentId === draggingId) return true
+                // 2) Never allow moving a node into any of its descendants
+                if (
+                  effectiveParentId &&
+                  isAncestor(draggingId, effectiveParentId)
+                )
+                  return true
+                return false
+              }}
+              onPerformDrop={async (target, mode) => {
+                if (!draggingId) return
+                if (mode === "inside") {
+                  await move(draggingId, target.id) // append as last child
+                } else if (mode === "before") {
+                  await move(draggingId, target.parent_id, {
+                    beforeId: target.id,
+                  })
+                } else {
+                  await move(draggingId, target.parent_id, {
+                    afterId: target.id,
+                  })
+                }
+                setDraggingId(null)
+                setDragOver(null)
+              }}
             />
           ))}
         </ul>
@@ -335,6 +451,20 @@ function TreeNode(props: {
   onDelete: (id: string) => void
   orgSlug: string
   spaceId: string
+  draggingId: string | null
+  setDraggingId: (id: string | null) => void
+  dragOver: { id: string; mode: "before" | "after" | "inside" } | null
+  setDragOver: (
+    v: { id: string; mode: "before" | "after" | "inside" } | null
+  ) => void
+  isInvalidDrop: (
+    targetId: string,
+    mode: "before" | "after" | "inside"
+  ) => boolean
+  onPerformDrop: (
+    target: DocumentRow,
+    mode: "before" | "after" | "inside"
+  ) => void
 }) {
   const {
     node,
@@ -353,12 +483,22 @@ function TreeNode(props: {
     onDelete,
     orgSlug,
     spaceId,
+    draggingId,
+    setDraggingId,
+    dragOver,
+    setDragOver,
+    isInvalidDrop,
+    onPerformDrop,
   } = props
 
   const children = childrenByParent.get(node.id) ?? []
   const hasChildren = children.length > 0
   const isGroup = node.type === "group"
   const isEditing = editingId === node.id
+  const isDragOverHere = dragOver?.id === node.id
+  const dragMode = dragOver?.mode
+  const showInsideHighlight =
+    isDragOverHere && dragMode === "inside" && !isInvalidDrop(node.id, "inside")
 
   // Focus management for inline rename
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -373,11 +513,70 @@ function TreeNode(props: {
     <li>
       <div
         className={cn(
-          "group flex items-center gap-1 rounded px-2 py-1 text-sm",
-          isActive && "bg-accent text-accent-foreground"
+          "group relative flex items-center gap-1 rounded px-2 py-1 text-sm",
+          isActive && "bg-accent text-accent-foreground",
+          showInsideHighlight && "ring-1 ring-primary/40 bg-primary/5"
         )}
         style={{ paddingLeft: 8 + depth * 12 }}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = "move"
+          try {
+            e.dataTransfer.setData("text/plain", node.id)
+          } catch {
+            console.log("Failed to set drag data")
+          }
+          setDraggingId(node.id)
+        }}
+        onDragEnd={() => {
+          setDraggingId(null)
+          setDragOver(null)
+        }}
+        onDragOver={(e) => {
+          if (!draggingId || draggingId === node.id) return
+          e.preventDefault()
+          const rect = (
+            e.currentTarget as HTMLDivElement
+          ).getBoundingClientRect()
+          const y = e.clientY - rect.top
+          const t = rect.height * 0.25
+          const mode: "before" | "after" | "inside" =
+            y < t ? "before" : y > rect.height - t ? "after" : "inside"
+          if (isInvalidDrop(node.id, mode)) {
+            setDragOver(null)
+          } else {
+            setDragOver({ id: node.id, mode })
+          }
+        }}
+        onDragLeave={(e) => {
+          // only clear if truly leaving the row
+          const related = e.relatedTarget as Node | null
+          if (!e.currentTarget.contains(related)) {
+            setDragOver(null)
+          }
+        }}
+        onDrop={(e) => {
+          e.preventDefault()
+          if (!dragOver || dragOver.id !== node.id) return
+          if (!draggingId || draggingId === node.id) return
+          if (isInvalidDrop(node.id, dragOver.mode)) return
+          onPerformDrop(node, dragOver.mode)
+        }}
       >
+        {/* Drop line indicators */}
+        {isDragOverHere && dragMode === "before" ? (
+          <div
+            className="pointer-events-none absolute left-0 right-0 top-0 h-[2px] bg-primary"
+            style={{ left: 8 + depth * 12 }}
+          />
+        ) : null}
+        {isDragOverHere && dragMode === "after" ? (
+          <div
+            className="pointer-events-none absolute left-0 right-0 bottom-0 h-[2px] bg-primary"
+            style={{ left: 8 + depth * 12 }}
+          />
+        ) : null}
+
         {/* Disclosure */}
         {hasChildren || isGroup ? (
           <button
@@ -523,6 +722,12 @@ function TreeNode(props: {
               onDelete={onDelete}
               orgSlug={orgSlug}
               spaceId={spaceId}
+              draggingId={draggingId}
+              setDraggingId={setDraggingId}
+              dragOver={dragOver}
+              setDragOver={setDragOver}
+              isInvalidDrop={isInvalidDrop}
+              onPerformDrop={onPerformDrop}
             />
           ))}
         </ul>
