@@ -30,7 +30,11 @@ import { ServerRoute as ApiOrgUserProfilesServerRouteImport } from './routes/api
 import { ServerRoute as ApiMyOrganizationsServerRouteImport } from './routes/api/my-organizations'
 import { ServerRoute as ApiInvitationsServerRouteImport } from './routes/api/invitations'
 import { ServerRoute as ApiDocumentsServerRouteImport } from './routes/api/documents'
+import { ServerRoute as ApiDocumentUpdatesServerRouteImport } from './routes/api/document-updates'
+import { ServerRoute as ApiAwarenessUpdatesServerRouteImport } from './routes/api/awareness-updates'
 import { ServerRoute as ApiTrpcSplatServerRouteImport } from './routes/api/trpc/$'
+import { ServerRoute as ApiShapeSplatServerRouteImport } from './routes/api/shape/$'
+import { ServerRoute as ApiBlobUploadServerRouteImport } from './routes/api/blob/upload'
 import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
 
 const rootServerRouteImport = createServerRootRoute()
@@ -138,9 +142,31 @@ const ApiDocumentsServerRoute = ApiDocumentsServerRouteImport.update({
   path: '/api/documents',
   getParentRoute: () => rootServerRouteImport,
 } as any)
+const ApiDocumentUpdatesServerRoute =
+  ApiDocumentUpdatesServerRouteImport.update({
+    id: '/api/document-updates',
+    path: '/api/document-updates',
+    getParentRoute: () => rootServerRouteImport,
+  } as any)
+const ApiAwarenessUpdatesServerRoute =
+  ApiAwarenessUpdatesServerRouteImport.update({
+    id: '/api/awareness-updates',
+    path: '/api/awareness-updates',
+    getParentRoute: () => rootServerRouteImport,
+  } as any)
 const ApiTrpcSplatServerRoute = ApiTrpcSplatServerRouteImport.update({
   id: '/api/trpc/$',
   path: '/api/trpc/$',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
+const ApiShapeSplatServerRoute = ApiShapeSplatServerRouteImport.update({
+  id: '/api/shape/$',
+  path: '/api/shape/$',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
+const ApiBlobUploadServerRoute = ApiBlobUploadServerRouteImport.update({
+  id: '/api/blob/upload',
+  path: '/api/blob/upload',
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
@@ -239,6 +265,8 @@ export interface RootRouteChildren {
   LogoutRoute: typeof LogoutRoute
 }
 export interface FileServerRoutesByFullPath {
+  '/api/awareness-updates': typeof ApiAwarenessUpdatesServerRoute
+  '/api/document-updates': typeof ApiDocumentUpdatesServerRoute
   '/api/documents': typeof ApiDocumentsServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
@@ -246,9 +274,13 @@ export interface FileServerRoutesByFullPath {
   '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
+  '/api/blob/upload': typeof ApiBlobUploadServerRoute
+  '/api/shape/$': typeof ApiShapeSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRoutesByTo {
+  '/api/awareness-updates': typeof ApiAwarenessUpdatesServerRoute
+  '/api/document-updates': typeof ApiDocumentUpdatesServerRoute
   '/api/documents': typeof ApiDocumentsServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
@@ -256,10 +288,14 @@ export interface FileServerRoutesByTo {
   '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
+  '/api/blob/upload': typeof ApiBlobUploadServerRoute
+  '/api/shape/$': typeof ApiShapeSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
+  '/api/awareness-updates': typeof ApiAwarenessUpdatesServerRoute
+  '/api/document-updates': typeof ApiDocumentUpdatesServerRoute
   '/api/documents': typeof ApiDocumentsServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
@@ -267,11 +303,15 @@ export interface FileServerRoutesById {
   '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
+  '/api/blob/upload': typeof ApiBlobUploadServerRoute
+  '/api/shape/$': typeof ApiShapeSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
   fullPaths:
+    | '/api/awareness-updates'
+    | '/api/document-updates'
     | '/api/documents'
     | '/api/invitations'
     | '/api/my-organizations'
@@ -279,9 +319,13 @@ export interface FileServerRouteTypes {
     | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
+    | '/api/blob/upload'
+    | '/api/shape/$'
     | '/api/trpc/$'
   fileServerRoutesByTo: FileServerRoutesByTo
   to:
+    | '/api/awareness-updates'
+    | '/api/document-updates'
     | '/api/documents'
     | '/api/invitations'
     | '/api/my-organizations'
@@ -289,9 +333,13 @@ export interface FileServerRouteTypes {
     | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
+    | '/api/blob/upload'
+    | '/api/shape/$'
     | '/api/trpc/$'
   id:
     | '__root__'
+    | '/api/awareness-updates'
+    | '/api/document-updates'
     | '/api/documents'
     | '/api/invitations'
     | '/api/my-organizations'
@@ -299,10 +347,14 @@ export interface FileServerRouteTypes {
     | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
+    | '/api/blob/upload'
+    | '/api/shape/$'
     | '/api/trpc/$'
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
+  ApiAwarenessUpdatesServerRoute: typeof ApiAwarenessUpdatesServerRoute
+  ApiDocumentUpdatesServerRoute: typeof ApiDocumentUpdatesServerRoute
   ApiDocumentsServerRoute: typeof ApiDocumentsServerRoute
   ApiInvitationsServerRoute: typeof ApiInvitationsServerRoute
   ApiMyOrganizationsServerRoute: typeof ApiMyOrganizationsServerRoute
@@ -310,6 +362,8 @@ export interface RootServerRouteChildren {
   ApiSpacesServerRoute: typeof ApiSpacesServerRoute
   ApiUserInvitationsServerRoute: typeof ApiUserInvitationsServerRoute
   ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute
+  ApiBlobUploadServerRoute: typeof ApiBlobUploadServerRoute
+  ApiShapeSplatServerRoute: typeof ApiShapeSplatServerRoute
   ApiTrpcSplatServerRoute: typeof ApiTrpcSplatServerRoute
 }
 
@@ -452,11 +506,39 @@ declare module '@tanstack/react-start/server' {
       preLoaderRoute: typeof ApiDocumentsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
+    '/api/document-updates': {
+      id: '/api/document-updates'
+      path: '/api/document-updates'
+      fullPath: '/api/document-updates'
+      preLoaderRoute: typeof ApiDocumentUpdatesServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/awareness-updates': {
+      id: '/api/awareness-updates'
+      path: '/api/awareness-updates'
+      fullPath: '/api/awareness-updates'
+      preLoaderRoute: typeof ApiAwarenessUpdatesServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
     '/api/trpc/$': {
       id: '/api/trpc/$'
       path: '/api/trpc/$'
       fullPath: '/api/trpc/$'
       preLoaderRoute: typeof ApiTrpcSplatServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/shape/$': {
+      id: '/api/shape/$'
+      path: '/api/shape/$'
+      fullPath: '/api/shape/$'
+      preLoaderRoute: typeof ApiShapeSplatServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/blob/upload': {
+      id: '/api/blob/upload'
+      path: '/api/blob/upload'
+      fullPath: '/api/blob/upload'
+      preLoaderRoute: typeof ApiBlobUploadServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
     '/api/auth/$': {
@@ -543,6 +625,8 @@ export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 const rootServerRouteChildren: RootServerRouteChildren = {
+  ApiAwarenessUpdatesServerRoute: ApiAwarenessUpdatesServerRoute,
+  ApiDocumentUpdatesServerRoute: ApiDocumentUpdatesServerRoute,
   ApiDocumentsServerRoute: ApiDocumentsServerRoute,
   ApiInvitationsServerRoute: ApiInvitationsServerRoute,
   ApiMyOrganizationsServerRoute: ApiMyOrganizationsServerRoute,
@@ -550,6 +634,8 @@ const rootServerRouteChildren: RootServerRouteChildren = {
   ApiSpacesServerRoute: ApiSpacesServerRoute,
   ApiUserInvitationsServerRoute: ApiUserInvitationsServerRoute,
   ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
+  ApiBlobUploadServerRoute: ApiBlobUploadServerRoute,
+  ApiShapeSplatServerRoute: ApiShapeSplatServerRoute,
   ApiTrpcSplatServerRoute: ApiTrpcSplatServerRoute,
 }
 export const serverRouteTree = rootServerRouteImport

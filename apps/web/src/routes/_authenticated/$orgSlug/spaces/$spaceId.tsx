@@ -16,6 +16,14 @@ import {
 } from "@/lib/collections"
 import { Button } from "@/components/ui/button"
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import {
   Plus,
   Trash2,
   Folder,
@@ -50,6 +58,7 @@ export const Route = createFileRoute(
 
 function SpacePage() {
   const { orgSlug, spaceId } = Route.useParams()
+  const navigate = useNavigate()
 
   // Map slug -> orgId from cached org list
   const { data: myOrgs } = useLiveQuery((q) =>
@@ -82,12 +91,41 @@ function SpacePage() {
     [docsCollection]
   )
 
+  async function createTopLevelPage() {
+    if (!orgId) return
+    const now = new Date()
+    const id =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}`
+
+    await docsCollection.insert({
+      id,
+      organization_id: orgId,
+      space_id: spaceId,
+      parent_id: null,
+      slug: "pending",
+      title: "Untitled",
+      icon_name: null,
+      rank: "pending",
+      type: "page",
+      archived_at: null,
+      created_at: now,
+      updated_at: now,
+    })
+
+    navigate({
+      to: "/$orgSlug/spaces/$spaceId/document/$docId",
+      params: { orgSlug, spaceId, docId: id },
+    })
+  }
+
   if (!space)
     return <div className="p-8 text-muted-foreground">Space not found</div>
 
   return (
-    <div className="grid grid-cols-[260px_1fr] h-full">
-      <aside className="border-r bg-background p-2">
+    <div className="grid h-full grid-cols-1 md:grid-cols-[280px_1fr]">
+      <aside className="hidden h-full border-r bg-background p-2 md:block">
         <DocumentsTree
           key={spaceId}
           orgSlug={orgSlug}
@@ -99,12 +137,46 @@ function SpacePage() {
       </aside>
 
       <section className="min-w-0">
-        <header className="border-b p-4">
-          <h1 className="text-2xl font-semibold">{space.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            /{orgSlug}/spaces/{space.slug}
-          </p>
-        </header>
+        <div className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur md:hidden">
+          <div className="flex items-center gap-2 px-2 py-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Folder className="h-4 w-4" />
+                  Docs
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[90vw] max-w-[420px] p-2">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Document navigation</SheetTitle>
+                  <SheetDescription>
+                    Browse and open pages in this space.
+                  </SheetDescription>
+                </SheetHeader>
+                <DocumentsTree
+                  key={`sheet:${spaceId}`}
+                  orgSlug={orgSlug}
+                  spaceId={spaceId}
+                  orgId={orgId!}
+                  docs={docs ?? []}
+                  docsCollection={docsCollection}
+                />
+              </SheetContent>
+            </Sheet>
+            <div className="ml-auto">
+              <Button
+                variant="default"
+                size="sm"
+                className="gap-2"
+                onClick={createTopLevelPage}
+              >
+                <Plus className="h-4 w-4" />
+                New page
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="p-4">
           <Outlet />
         </div>
@@ -113,7 +185,7 @@ function SpacePage() {
   )
 }
 
-/** ---------- New Notion-like tree ---------- **/
+/** ---------- Responsive document tree ---------- **/
 
 type DocumentsCollection = ReturnType<typeof getSpaceDocumentsCollection>
 
@@ -134,93 +206,140 @@ function DocumentsTree({
   const routerState = useRouterState()
   const pathname = routerState.location.pathname
 
-  // Build parent -> children map
-  const childrenByParent = useMemo(() => {
-    const map = new Map<string | null, DocumentRow[]>()
-    for (const d of docs) {
-      if (d.archived_at) continue
-      const k = d.parent_id
-      const list = map.get(k) ?? []
-      list.push(d)
-      map.set(k, list)
+  const [query, setQuery] = useState("")
+
+  const [isTouch, setIsTouch] = useState(false)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const mediaQuery = window.matchMedia("(pointer: coarse)")
+    const updateFromMedia = () => setIsTouch(mediaQuery.matches)
+    updateFromMedia()
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "touch") {
+        setIsTouch(true)
+      } else {
+        setIsTouch(false)
+      }
     }
-    // sort by rank per group
-    for (const list of map.values()) {
-      list.sort(byRank)
+
+    mediaQuery.addEventListener?.("change", updateFromMedia)
+    window.addEventListener("pointerdown", handlePointerDown)
+
+    return () => {
+      mediaQuery.removeEventListener?.("change", updateFromMedia)
+      window.removeEventListener("pointerdown", handlePointerDown)
+    }
+  }, [])
+
+  const lowerTitleById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const doc of docs) {
+      map.set(doc.id, (doc.title || "").toLowerCase())
     }
     return map
   }, [docs])
 
   const parentById = useMemo(() => {
-    const m = new Map<string, string | null>()
-    for (const d of docs) m.set(d.id, d.parent_id)
-    return m
+    const map = new Map<string, string | null>()
+    for (const doc of docs) {
+      map.set(doc.id, doc.parent_id)
+    }
+    return map
   }, [docs])
+
+  const visibleIds = useMemo(() => {
+    if (!query.trim()) return new Set(docs.map((doc) => doc.id))
+    const q = query.trim().toLowerCase()
+    const matches = new Set<string>()
+    for (const doc of docs) {
+      if (doc.archived_at) continue
+      if ((lowerTitleById.get(doc.id) || "").includes(q)) {
+        matches.add(doc.id)
+      }
+    }
+    const withAncestors = new Set<string>(matches)
+    for (const id of matches) {
+      let current = parentById.get(id) ?? null
+      while (current) {
+        withAncestors.add(current)
+        current = parentById.get(current) ?? null
+      }
+    }
+    return withAncestors
+  }, [docs, lowerTitleById, parentById, query])
+
+  const childrenByParent = useMemo(() => {
+    const map = new Map<string | null, DocumentRow[]>()
+    for (const doc of docs) {
+      if (doc.archived_at) continue
+      if (!visibleIds.has(doc.id)) continue
+      const list = map.get(doc.parent_id) ?? []
+      list.push(doc)
+      map.set(doc.parent_id, list)
+    }
+    for (const list of map.values()) list.sort(byRank)
+    return map
+  }, [docs, visibleIds])
 
   const rootNodes = childrenByParent.get(null) ?? []
 
-  // Expanded state for groups & pages-with-children. Persist by space.
+  const siblings = (parentId: string | null, excludeId?: string) => {
+    const list = (childrenByParent.get(parentId) ?? []).filter(
+      (doc) => doc.id !== excludeId
+    )
+    list.sort(byRank)
+    return list
+  }
+
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState<{
     id: string
     mode: "before" | "after" | "inside"
   } | null>(null)
 
-  function isAncestor(ancestorId: string, candidateChildId: string): boolean {
-    let cur = parentById.get(candidateChildId) ?? null
-    while (cur) {
-      if (cur === ancestorId) return true
-      cur = parentById.get(cur) ?? null
+  const isAncestor = (ancestorId: string, candidateChildId: string) => {
+    let current = parentById.get(candidateChildId) ?? null
+    while (current) {
+      if (current === ancestorId) return true
+      current = parentById.get(current) ?? null
     }
     return false
   }
 
-  function siblings(parentId: string | null, excludeId?: string) {
-    const list = (childrenByParent.get(parentId) ?? []).filter(
-      (d) => d.id !== excludeId
-    )
-    list.sort(byRank)
-    return list
-  }
-
-  async function move(
+  const move = async (
     docId: string,
     newParentId: string | null,
-    indexHint?: {
-      beforeId?: string
-      afterId?: string
-    }
-  ) {
+    indexHint?: { beforeId?: string; afterId?: string }
+  ) => {
     const list = siblings(newParentId, docId)
-    // Find prev/next by hint, else append to end
     const oldParentId = parentById.get(docId) ?? null
     if (oldParentId === newParentId) {
-      const list = siblings(newParentId)
       const beforeIdx = indexHint?.beforeId
-        ? list.findIndex((d) => d.id === indexHint!.beforeId)
+        ? list.findIndex((doc) => doc.id === indexHint.beforeId)
         : -1
       const afterIdx = indexHint?.afterId
-        ? list.findIndex((d) => d.id === indexHint!.afterId)
+        ? list.findIndex((doc) => doc.id === indexHint.afterId)
         : -1
-      // If dropping immediately before or after the same neighbor position, do nothing
       if (beforeIdx === -1 && afterIdx === -1) return
     }
+
     let prevRank: string | null = null
     let nextRank: string | null = null
     if (indexHint?.beforeId) {
-      const i = list.findIndex((d) => d.id === indexHint!.beforeId)
-      nextRank = list[i]?.rank ?? null
-      prevRank = i > 0 ? (list[i - 1]?.rank ?? null) : null
+      const idx = list.findIndex((doc) => doc.id === indexHint.beforeId)
+      nextRank = list[idx]?.rank ?? null
+      prevRank = idx > 0 ? (list[idx - 1]?.rank ?? null) : null
     } else if (indexHint?.afterId) {
-      const i = list.findIndex((d) => d.id === indexHint!.afterId)
-      prevRank = list[i]?.rank ?? null
+      const idx = list.findIndex((doc) => doc.id === indexHint.afterId)
+      prevRank = list[idx]?.rank ?? null
       nextRank =
-        i >= 0 && i + 1 < list.length ? (list[i + 1]?.rank ?? null) : null
+        idx >= 0 && idx + 1 < list.length ? (list[idx + 1]?.rank ?? null) : null
     } else {
-      // inside w/o hint → append to end
       prevRank = list.length ? (list[list.length - 1]?.rank ?? null) : null
-      nextRank = null
     }
+
     const newRank = rankBetween(prevRank, nextRank)
     await docsCollection.update(docId, (draft) => {
       draft.parent_id = newParentId
@@ -228,9 +347,10 @@ function DocumentsTree({
       draft.updated_at = new Date()
     })
     if (newParentId) {
-      setExpanded((e) => ({ ...e, [newParentId]: true }))
+      setExpanded((prev) => ({ ...prev, [newParentId]: true }))
     }
   }
+
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const raw =
       typeof window !== "undefined"
@@ -238,6 +358,7 @@ function DocumentsTree({
         : null
     return raw ? JSON.parse(raw) : {}
   })
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(
@@ -247,15 +368,14 @@ function DocumentsTree({
     }
   }, [expanded, spaceId])
 
-  function toggle(id: string) {
-    setExpanded((e) => ({ ...e, [id]: !e[id] }))
+  const toggle = (id: string) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  // Title inline edit state
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState("")
 
-  async function startCreate({
+  const startCreate = async ({
     type,
     parentId = null,
     open = true,
@@ -263,15 +383,16 @@ function DocumentsTree({
     type: "page" | "group"
     parentId?: string | null
     open?: boolean
-  }) {
+  }) => {
     const now = new Date()
     const id =
       typeof crypto !== "undefined" && crypto.randomUUID
         ? crypto.randomUUID()
         : `${Date.now()}`
+
     await docsCollection.insert({
       id,
-      organization_id: orgId, // validated on server
+      organization_id: orgId,
       space_id: spaceId,
       parent_id: parentId,
       slug: "pending",
@@ -284,16 +405,13 @@ function DocumentsTree({
       updated_at: now,
     })
 
-    // Ensure parent shows its child
     if (parentId) {
-      setExpanded((e) => ({ ...e, [parentId]: true }))
+      setExpanded((prev) => ({ ...prev, [parentId]: true }))
     }
 
-    // Focus rename
     setEditingId(id)
     setEditTitle("Untitled")
 
-    // Optionally open the page
     if (open && type === "page") {
       navigate({
         to: "/$orgSlug/spaces/$spaceId/document/$docId",
@@ -302,8 +420,8 @@ function DocumentsTree({
     }
   }
 
-  async function commitRename(docId: string, title: string) {
-    if (!title.trim()) return // keep previous
+  const commitRename = async (docId: string, title: string) => {
+    if (!title.trim()) return
     try {
       await docsCollection.update(docId, (draft) => {
         draft.title = title.trim()
@@ -314,21 +432,20 @@ function DocumentsTree({
     }
   }
 
-  async function updateIcon(docId: string, icon: string | null) {
+  const updateIcon = async (docId: string, icon: string | null) => {
     await docsCollection.update(docId, (draft) => {
       draft.icon_name = icon
     })
   }
 
-  async function deleteDoc(docId: string) {
+  const deleteDoc = async (docId: string) => {
     await docsCollection.delete(docId)
   }
 
   return (
     <div className="space-y-2">
-      {/* Header with quick actions */}
       <div className="flex items-center justify-between px-2 pt-1">
-        <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Documents
         </h3>
         <div className="flex items-center gap-1">
@@ -355,10 +472,21 @@ function DocumentsTree({
         </div>
       </div>
 
-      {/* Tree */}
+      <div className="px-2">
+        <input
+          type="text"
+          inputMode="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search docs"
+          className="h-8 w-full rounded-md border bg-background px-2 text-xs text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+          aria-label="Search documents"
+        />
+      </div>
+
       {rootNodes.length === 0 ? (
-        <div className="px-2 py-3 text-muted-foreground text-sm">
-          No documents yet
+        <div className="px-2 py-3 text-sm text-muted-foreground">
+          {query ? "No matches" : "No documents yet"}
         </div>
       ) : (
         <ul className="mt-1 space-y-0.5">
@@ -389,27 +517,27 @@ function DocumentsTree({
               dragOver={dragOver}
               setDragOver={setDragOver}
               isInvalidDrop={(targetId, mode) => {
+                if (isTouch) return true
                 if (!draggingId) return true
                 if (targetId === draggingId) return true
-                // Where would the dragged node end up?
                 const effectiveParentId =
                   mode === "inside"
                     ? targetId
                     : (parentById.get(targetId) ?? null)
-                // 1) Never allow parent == self
                 if (effectiveParentId === draggingId) return true
-                // 2) Never allow moving a node into any of its descendants
                 if (
                   effectiveParentId &&
                   isAncestor(draggingId, effectiveParentId)
-                )
+                ) {
                   return true
+                }
                 return false
               }}
               onPerformDrop={async (target, mode) => {
+                if (isTouch) return
                 if (!draggingId) return
                 if (mode === "inside") {
-                  await move(draggingId, target.id) // append as last child
+                  await move(draggingId, target.id)
                 } else if (mode === "before") {
                   await move(draggingId, target.parent_id, {
                     beforeId: target.id,
@@ -422,6 +550,7 @@ function DocumentsTree({
                 setDraggingId(null)
                 setDragOver(null)
               }}
+              canDrag={!isTouch}
             />
           ))}
         </ul>
@@ -446,16 +575,16 @@ function TreeNode(props: {
   onCommitRename: (id: string, title: string) => void
   editingId: string | null
   editTitle: string
-  setEditTitle: (t: string) => void
+  setEditTitle: (value: string) => void
   onUpdateIcon: (id: string, icon: string | null) => void
   onDelete: (id: string) => void
   orgSlug: string
   spaceId: string
   draggingId: string | null
-  setDraggingId: (id: string | null) => void
+  setDraggingId: (value: string | null) => void
   dragOver: { id: string; mode: "before" | "after" | "inside" } | null
   setDragOver: (
-    v: { id: string; mode: "before" | "after" | "inside" } | null
+    value: { id: string; mode: "before" | "after" | "inside" } | null
   ) => void
   isInvalidDrop: (
     targetId: string,
@@ -465,6 +594,7 @@ function TreeNode(props: {
     target: DocumentRow,
     mode: "before" | "after" | "inside"
   ) => void
+  canDrag: boolean
 }) {
   const {
     node,
@@ -489,6 +619,7 @@ function TreeNode(props: {
     setDragOver,
     isInvalidDrop,
     onPerformDrop,
+    canDrag,
   } = props
 
   const children = childrenByParent.get(node.id) ?? []
@@ -500,7 +631,6 @@ function TreeNode(props: {
   const showInsideHighlight =
     isDragOverHere && dragMode === "inside" && !isInvalidDrop(node.id, "inside")
 
-  // Focus management for inline rename
   const inputRef = useRef<HTMLInputElement | null>(null)
   useEffect(() => {
     if (isEditing) {
@@ -515,55 +645,62 @@ function TreeNode(props: {
         className={cn(
           "group relative flex items-center gap-1 rounded px-2 py-1 text-sm",
           isActive && "bg-accent text-accent-foreground",
-          showInsideHighlight && "ring-1 ring-primary/40 bg-primary/5"
+          showInsideHighlight && "bg-primary/5 ring-1 ring-primary/40"
         )}
         style={{ paddingLeft: 8 + depth * 12 }}
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.effectAllowed = "move"
+        draggable={canDrag}
+        onDragStart={(event) => {
+          if (!canDrag) return
+          event.dataTransfer.effectAllowed = "move"
           try {
-            e.dataTransfer.setData("text/plain", node.id)
-          } catch {
-            console.log("Failed to set drag data")
+            event.dataTransfer.setData("text/plain", node.id)
+          } catch (_error) {
+            // Some environments disallow custom drag data; ignore gracefully
           }
           setDraggingId(node.id)
         }}
         onDragEnd={() => {
+          if (!canDrag) return
           setDraggingId(null)
           setDragOver(null)
         }}
-        onDragOver={(e) => {
+        onDragOver={(event) => {
+          if (!canDrag) return
           if (!draggingId || draggingId === node.id) return
-          e.preventDefault()
+          event.preventDefault()
           const rect = (
-            e.currentTarget as HTMLDivElement
+            event.currentTarget as HTMLDivElement
           ).getBoundingClientRect()
-          const y = e.clientY - rect.top
-          const t = rect.height * 0.25
+          const y = event.clientY - rect.top
+          const threshold = rect.height * 0.25
           const mode: "before" | "after" | "inside" =
-            y < t ? "before" : y > rect.height - t ? "after" : "inside"
+            y < threshold
+              ? "before"
+              : y > rect.height - threshold
+                ? "after"
+                : "inside"
           if (isInvalidDrop(node.id, mode)) {
             setDragOver(null)
           } else {
             setDragOver({ id: node.id, mode })
           }
         }}
-        onDragLeave={(e) => {
-          // only clear if truly leaving the row
-          const related = e.relatedTarget as Node | null
-          if (!e.currentTarget.contains(related)) {
+        onDragLeave={(event) => {
+          if (!canDrag) return
+          const related = event.relatedTarget as Node | null
+          if (!event.currentTarget.contains(related)) {
             setDragOver(null)
           }
         }}
-        onDrop={(e) => {
-          e.preventDefault()
+        onDrop={(event) => {
+          if (!canDrag) return
+          event.preventDefault()
           if (!dragOver || dragOver.id !== node.id) return
           if (!draggingId || draggingId === node.id) return
           if (isInvalidDrop(node.id, dragOver.mode)) return
           onPerformDrop(node, dragOver.mode)
         }}
       >
-        {/* Drop line indicators */}
         {isDragOverHere && dragMode === "before" ? (
           <div
             className="pointer-events-none absolute left-0 right-0 top-0 h-[2px] bg-primary"
@@ -572,17 +709,17 @@ function TreeNode(props: {
         ) : null}
         {isDragOverHere && dragMode === "after" ? (
           <div
-            className="pointer-events-none absolute left-0 right-0 bottom-0 h-[2px] bg-primary"
+            className="pointer-events-none absolute bottom-0 left-0 right-0 h-[2px] bg-primary"
             style={{ left: 8 + depth * 12 }}
           />
         ) : null}
 
-        {/* Disclosure */}
         {hasChildren || isGroup ? (
           <button
-            className="h-5 w-5 grid place-items-center rounded hover:bg-accent/50"
+            className="grid h-5 w-5 place-items-center rounded hover:bg-accent/50"
             onClick={() => onToggle(node.id)}
             title={expanded[node.id] ? "Collapse" : "Expand"}
+            aria-expanded={!!expanded[node.id]}
           >
             {expanded[node.id] ? (
               <ChevronDown className="h-4 w-4" />
@@ -594,7 +731,6 @@ function TreeNode(props: {
           <span className="h-5 w-5" />
         )}
 
-        {/* Icon - clickable picker */}
         <IconPickerButton
           current={node.icon_name}
           fallback={isGroup ? "folder" : "file-text"}
@@ -602,16 +738,15 @@ function TreeNode(props: {
           onClear={() => onUpdateIcon(node.id, null)}
         />
 
-        {/* Title: link or inline editor */}
         {isEditing ? (
           <input
             ref={inputRef}
-            className="min-w-0 flex-1 bg-transparent outline-none border rounded px-1 py-0.5"
+            className="min-w-0 flex-1 rounded border bg-transparent px-1 py-0.5 outline-none"
             value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") onCommitRename(node.id, editTitle)
-              if (e.key === "Escape") onCommitRename(node.id, node.title)
+            onChange={(event) => setEditTitle(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") onCommitRename(node.id, editTitle)
+              if (event.key === "Escape") onCommitRename(node.id, node.title)
             }}
             onBlur={() => onCommitRename(node.id, editTitle)}
           />
@@ -626,32 +761,29 @@ function TreeNode(props: {
           </Link>
         )}
 
-        {/* Row actions */}
         <div className="ml-auto flex items-center gap-1">
-          {/* Add child page */}
           <Button
             variant="ghost"
             size="icon"
             className="invisible h-6 w-6 group-hover:visible"
             title="Add child page"
-            onClick={(e) => {
-              e.stopPropagation()
+            onClick={(event) => {
+              event.stopPropagation()
               onStartCreate({ type: "page", parentId: node.id })
             }}
           >
             <Plus className="h-4 w-4" />
           </Button>
 
-          {/* Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
                 className="invisible h-6 w-6 group-hover:visible"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
                 }}
               >
                 <MoreHorizontal className="h-4 w-4" />
@@ -659,8 +791,8 @@ function TreeNode(props: {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem
-                onClick={(e) => {
-                  e.preventDefault()
+                onClick={(event) => {
+                  event.preventDefault()
                   onStartRename(node.id, node.title)
                 }}
               >
@@ -668,18 +800,17 @@ function TreeNode(props: {
                 Rename
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={(e) => {
-                  e.preventDefault()
+                onClick={(event) => {
+                  event.preventDefault()
                   onStartCreate({ type: "page", parentId: node.id })
                 }}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add child page
               </DropdownMenuItem>
-
               <DropdownMenuItem
-                onClick={async (e) => {
-                  e.preventDefault()
+                onClick={async (event) => {
+                  event.preventDefault()
                   if (node.type === "group" && children.length > 0) {
                     const ok = window.confirm(
                       "Delete this group? Its child pages will be moved to root."
@@ -700,7 +831,6 @@ function TreeNode(props: {
         </div>
       </div>
 
-      {/* Children */}
       {(children.length > 0 || isGroup) && expanded[node.id] ? (
         <ul className="space-y-0.5">
           {children.map((child) => (
@@ -728,6 +858,7 @@ function TreeNode(props: {
               setDragOver={setDragOver}
               isInvalidDrop={isInvalidDrop}
               onPerformDrop={onPerformDrop}
+              canDrag={canDrag}
             />
           ))}
         </ul>

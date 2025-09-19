@@ -1,87 +1,173 @@
-import { Plugin, PluginKey, type EditorState, type Transaction } from '@tiptap/pm/state';
-import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import { Extension } from '@tiptap/core';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
+import type { EditorView } from '@tiptap/pm/view';
 
-const uploadKey = new PluginKey('upload-image');
+const uploadPluginKey = new PluginKey('upload-images-extension');
 
-export const UploadImagesPlugin = ({ imageClass }: { imageClass: string }) =>
-  new Plugin({
-    key: uploadKey,
-    state: {
-      init() {
-        return DecorationSet.empty;
-      },
-      apply(tr: Transaction, set: DecorationSet) {
-        set = set.map(tr.mapping, tr.doc);
-        const action = tr.getMeta(this as unknown as PluginKey);
-        if (action?.add) {
-          const { id, pos, src } = action.add;
-          const placeholder = document.createElement('div');
-          placeholder.setAttribute('class', 'img-placeholder');
-          const image = document.createElement('img');
-          image.setAttribute('class', imageClass);
-          image.src = src;
-          placeholder.appendChild(image);
-          const deco = Decoration.widget(pos + 1, placeholder, { id });
-          set = set.add(tr.doc, [deco]);
-        } else if (action?.remove) {
-          set = set.remove(set.find(undefined, undefined, (spec) => spec.id === action.remove.id));
-        }
-        return set;
-      },
-    },
-    props: {
-      decorations(state: EditorState) {
-        return (this as unknown as { getState: (s: EditorState) => DecorationSet }).getState(state);
-      },
-    },
-  });
+export type UploadResult = {
+  url: string;
+  width?: number;
+  height?: number;
+};
 
-function findPlaceholder(state: EditorState, id: object) {
-  const decos = uploadKey.getState(state) as DecorationSet;
-  const found = decos.find(undefined, undefined, (spec) => spec.id === id);
-  return found.length ? found[0]!.from : null;
-}
+export type UploadContext = {
+  orgSlug?: string;
+  documentId?: string;
+};
 
 export type UploadFn = (file: File, view: EditorView, pos: number) => void;
 
 export interface ImageUploadOptions {
   validateFn?: (file: File) => boolean;
-  onUpload: (file: File) => Promise<string>;
+  onUpload: (file: File) => Promise<string | UploadResult>;
 }
 
-export const createImageUpload =
-  ({ validateFn, onUpload }: ImageUploadOptions): UploadFn =>
-  (file, view, pos) => {
-    const isValid = validateFn ? !!validateFn(file) : true;
-    if (!isValid) return;
-    const id = {};
-    const tr = view.state.tr;
-    if (!tr.selection.empty) tr.deleteSelection();
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      tr.setMeta(uploadKey, { add: { id, pos, src: reader.result } });
+const defaultValidateFile = (file: File) => file.type.startsWith('image/');
+
+const normalizeResult = async (
+  uploader: (file: File) => Promise<string | UploadResult>,
+  file: File,
+): Promise<UploadResult> => {
+  const value = await uploader(file);
+  if (typeof value === 'string') {
+    return { url: value };
+  }
+  return value;
+};
+
+const findImagePos = (
+  view: EditorView,
+  predicate: (node: ProseMirrorNode) => boolean,
+): number | null => {
+  let found: number | null = null;
+  view.state.doc.descendants((node: ProseMirrorNode, pos: number) => {
+    if (node.type.name === 'image' && predicate(node)) {
+      found = pos;
+      return false;
+    }
+    return true;
+  });
+  return found;
+};
+
+const updateImageNode = (view: EditorView, pos: number, attrs: Record<string, unknown>) => {
+  const node = view.state.doc.nodeAt(pos);
+  if (!node) return;
+  const nextAttrs = { ...node.attrs, ...attrs };
+  const tr = view.state.tr.setNodeMarkup(pos, undefined, nextAttrs, node.marks);
+  view.dispatch(tr);
+};
+
+const removeImageNode = (view: EditorView, pos: number) => {
+  const tr = view.state.tr.delete(pos, pos + 1);
+  view.dispatch(tr);
+};
+
+type InternalUploader = (file: File) => Promise<UploadResult>;
+
+type ProcessFileParams = {
+  file: File;
+  view: EditorView;
+  pos: number;
+  uploader?: InternalUploader;
+};
+
+const processFile = ({ file, view, pos, uploader }: ProcessFileParams): number => {
+  const { schema } = view.state;
+  const imageType = schema.nodes.image;
+  if (!imageType) return pos;
+
+  const objectUrl = URL.createObjectURL(file);
+  const attrs: Record<string, unknown> = { src: objectUrl };
+  if (uploader) attrs['data-uploading'] = '1';
+
+  const node = imageType.create(attrs);
+  const tr = view.state.tr.insert(pos, node);
+  view.dispatch(tr);
+  const nextPos = pos + node.nodeSize;
+
+  if (!uploader) {
+    URL.revokeObjectURL(objectUrl);
+    const insertedPos = findImagePos(view, (n) => n.attrs.src === objectUrl);
+    if (insertedPos != null) {
+      removeImageNode(view, insertedPos);
+    }
+    console.warn('UploadImagesExtension: missing uploader for image upload. Image removed.');
+    return nextPos;
+  }
+
+  void (async () => {
+    try {
+      const result = await uploader(file);
+      const currentPos = findImagePos(view, (n) => n.attrs.src === objectUrl);
+      if (currentPos == null) return;
+      updateImageNode(view, currentPos, {
+        src: result.url,
+        width: result.width ?? null,
+        height: result.height ?? null,
+        'data-uploading': null,
+      });
+    } catch (error) {
+      const currentPos = findImagePos(view, (n) => n.attrs.src === objectUrl);
+      if (currentPos != null) {
+        removeImageNode(view, currentPos);
+      }
+      console.error('Image upload failed:', error);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  })();
+
+  return nextPos;
+};
+
+type HandleFilesParams = {
+  files: File[];
+  view: EditorView;
+  pos: number;
+  uploader?: InternalUploader;
+  validate?: (file: File) => boolean;
+  replaceSelection?: boolean;
+};
+
+const handleFiles = ({
+  files,
+  view,
+  pos,
+  uploader,
+  validate = defaultValidateFile,
+  replaceSelection = false,
+}: HandleFilesParams): boolean => {
+  const accepted = files.filter((file) => validate(file));
+  if (!accepted.length) return false;
+
+  let insertPos = pos;
+  if (replaceSelection && !view.state.selection.empty) {
+    const tr = view.state.tr.deleteSelection();
+    view.dispatch(tr);
+    insertPos = view.state.selection.from;
+  }
+  for (const file of accepted) {
+    insertPos = processFile({ file, view, pos: insertPos, uploader });
+  }
+  return true;
+};
+
+export const createImageUpload = ({ validateFn, onUpload }: ImageUploadOptions): UploadFn => {
+  const validate = validateFn ?? defaultValidateFile;
+  const uploader: InternalUploader = (file) => normalizeResult(onUpload, file);
+  return (file, view, pos) => {
+    if (!validate(file)) return;
+    let targetPos = pos;
+    if (!view.state.selection.empty) {
+      const tr = view.state.tr.deleteSelection();
       view.dispatch(tr);
-    };
-    onUpload(file).then(
-      (url) => {
-        const { schema } = view.state;
-        const placeholderPos = findPlaceholder(view.state, id);
-        if (placeholderPos == null) return;
-        const node = schema.nodes.image?.create({ src: url });
-        if (!node) return;
-        const tx = view.state.tr
-          .replaceWith(placeholderPos, placeholderPos, node)
-          .setMeta(uploadKey, { remove: { id } });
-        view.dispatch(tx);
-      },
-      () => {
-        const tx = view.state.tr.delete(pos, pos).setMeta(uploadKey, { remove: { id } });
-        view.dispatch(tx);
-      },
-    );
+      targetPos = view.state.selection.from;
+    }
+    processFile({ file, view, pos: targetPos, uploader });
   };
+};
 
 export const handleImagePaste = (view: EditorView, event: ClipboardEvent, uploadFn: UploadFn) => {
   if (event.clipboardData?.files.length) {
@@ -94,21 +180,6 @@ export const handleImagePaste = (view: EditorView, event: ClipboardEvent, upload
   return false;
 };
 
-export interface UploadImagesExtensionOptions {
-  imageClass?: string;
-}
-
-// Tiptap extension wrapper to install the ProseMirror plugin
-export const UploadImagesExtension = Extension.create<UploadImagesExtensionOptions>({
-  name: 'UploadImages',
-  addOptions() {
-    return { imageClass: '' };
-  },
-  addProseMirrorPlugins() {
-    return [UploadImagesPlugin({ imageClass: this.options.imageClass ?? '' })];
-  },
-});
-
 export const handleImageDrop = (
   view: EditorView,
   event: DragEvent,
@@ -119,8 +190,81 @@ export const handleImageDrop = (
     event.preventDefault();
     const [file] = Array.from(event.dataTransfer.files);
     const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
-    if (file) uploadFn(file, view, (coords?.pos ?? 0) - 1);
+    if (file) uploadFn(file, view, coords?.pos ?? view.state.selection.from);
     return true;
   }
   return false;
 };
+
+export interface UploadImagesExtensionOptions {
+  uploader?: (file: File, ctx: { orgSlug?: string; documentId: string }) => Promise<UploadResult>;
+  context?: UploadContext;
+  validateFile?: (file: File) => boolean;
+}
+
+export const UploadImagesExtension = Extension.create<UploadImagesExtensionOptions>({
+  name: 'UploadImages',
+
+  addOptions() {
+    return {
+      uploader: undefined,
+      context: {},
+      validateFile: undefined,
+    } satisfies UploadImagesExtensionOptions;
+  },
+
+  addProseMirrorPlugins() {
+    const uploaderOption = this.options.uploader;
+    const context = this.options.context ?? {};
+    const documentId = context.documentId;
+
+    if (!uploaderOption || !documentId) {
+      return [];
+    }
+
+    const internalUploader: InternalUploader = (file) =>
+      uploaderOption(file, { orgSlug: context.orgSlug, documentId });
+
+    const validate = this.options.validateFile ?? defaultValidateFile;
+
+    return [
+      new Plugin({
+        key: uploadPluginKey,
+        props: {
+          handleDOMEvents: {
+            paste: (view: EditorView, event: ClipboardEvent) => {
+              const files = Array.from(event.clipboardData?.files ?? []) as File[];
+              if (!files.length) return false;
+              const handled = handleFiles({
+                files,
+                view,
+                pos: view.state.selection.from,
+                uploader: internalUploader,
+                validate,
+                replaceSelection: true,
+              });
+              if (handled) event.preventDefault();
+              return handled;
+            },
+            drop: (view: EditorView, event: DragEvent) => {
+              if (!event.dataTransfer?.files.length) return false;
+              const files = Array.from(event.dataTransfer.files) as File[];
+              const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
+              const pos = coords?.pos ?? view.state.selection.from;
+              const handled = handleFiles({
+                files,
+                view,
+                pos,
+                uploader: internalUploader,
+                validate,
+                replaceSelection: false,
+              });
+              if (handled) event.preventDefault();
+              return handled;
+            },
+          },
+        },
+      }),
+    ];
+  },
+});
