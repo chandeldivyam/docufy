@@ -15,9 +15,20 @@ export function ImageResizer({ editor }: Props) {
   const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(
     null
   )
+  const [enabled, setEnabled] = useState(false)
 
   useEffect(() => {
-    if (!editor) return
+    if (typeof window !== "undefined" && window.matchMedia) {
+      const isCoarse = window.matchMedia("(pointer: coarse)").matches
+      setEnabled(!isCoarse)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!editor || !enabled) {
+      setSelectedImage(null)
+      return
+    }
 
     const updateSelection = () => {
       if (!editor.isActive("image")) {
@@ -49,10 +60,10 @@ export function ImageResizer({ editor }: Props) {
       editor.off("selectionUpdate", updateSelection)
       editor.off("transaction", updateSelection)
     }
-  }, [editor])
+  }, [editor, enabled])
 
   const commitSize = useCallback(() => {
-    if (!editor || !selectedImage) return
+    if (!editor || !selectedImage || !enabled) return
 
     const width = parseInt(
       selectedImage.style.width || `${selectedImage.naturalWidth}`,
@@ -80,9 +91,9 @@ export function ImageResizer({ editor }: Props) {
         height: nextHeight,
       })
       .run()
-  }, [editor, selectedImage])
+  }, [editor, enabled, selectedImage])
 
-  if (!editor?.isActive("image") || !selectedImage) {
+  if (!enabled || !editor?.isActive("image") || !selectedImage) {
     return null
   }
 

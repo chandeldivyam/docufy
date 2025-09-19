@@ -22,6 +22,7 @@ import {
   ChevronDown,
   Home as HomeIcon,
   LogOut,
+  Menu,
   Settings as SettingsIcon,
   Users,
   Plus,
@@ -49,6 +50,14 @@ import { DynamicIcon } from "lucide-react/dynamic"
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import { IconPickerGrid } from "@/components/icons/icon-picker"
 import { type IconName } from "lucide-react/dynamic"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug")({
   ssr: false,
@@ -63,7 +72,6 @@ function OrgSlugLayout() {
   const { orgSlug } = Route.useParams()
   const { data: session, isPending: sPending } = authClient.useSession()
   const { data: activeOrg } = authClient.useActiveOrganization()
-  const routerState = useRouterState()
 
   // All orgs for validation + switcher
   const { data: myOrgs } = useLiveQuery((q) =>
@@ -91,66 +99,106 @@ function OrgSlugLayout() {
   if (!current) return <Navigate to="/orgs" replace />
 
   return (
-    <div className="grid h-[100svh] grid-cols-[260px_1fr]">
-      {/* Sidebar */}
-      <aside className="border-r bg-background flex flex-col h-full">
-        {/* Top section - fixed header */}
-        <div className="flex h-14 items-center gap-2 px-3 border-b flex-shrink-0">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <OrgSwitcher currentSlug={orgSlug} />
-        </div>
-
-        {/* Middle section - scrollable content */}
-        <div className="flex-1 overflow-y-auto">
-          <nav className="p-2 space-y-1">
-            <NavItem
-              to="/$orgSlug"
-              params={{ orgSlug }}
-              icon={<HomeIcon className="h-4 w-4" />}
-              isActive={routerState.location.pathname === `/${orgSlug}`}
-            >
-              Home
-            </NavItem>
-            <NavItem
-              to="/$orgSlug/settings"
-              params={{ orgSlug }}
-              icon={<SettingsIcon className="h-4 w-4" />}
-              isActive={
-                routerState.location.pathname === `/${orgSlug}/settings`
-              }
-            >
-              Settings
-            </NavItem>
-          </nav>
-
-          <div className="px-2 py-3">
-            <SpacesSection currentSlug={orgSlug} />
-          </div>
-        </div>
-
-        {/* Bottom section - fixed footer */}
-        <div className="border-t p-2 space-y-2 flex-shrink-0">
-          <div className="flex items-center justify-between px-2">
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={() => authClient.signOut()}
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
-          </div>
-        </div>
+    <div className="grid min-h-[100svh] grid-cols-1 md:grid-cols-[260px_1fr]">
+      {/* Sidebar - desktop */}
+      <aside className="border-r bg-background hidden h-full flex-col md:flex">
+        <MainNavContent orgSlug={orgSlug} />
       </aside>
 
       {/* Main */}
       <main className="min-w-0">
-        <div className="p-4 h-full">
+        {/* Mobile top bar */}
+        <div className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur md:hidden">
+          <div className="flex items-center gap-2 p-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Open navigation"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[85vw] max-w-sm p-0">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Workspace navigation</SheetTitle>
+                  <SheetDescription>
+                    Select a destination or manage spaces.
+                  </SheetDescription>
+                </SheetHeader>
+                <MainNavContent orgSlug={orgSlug} />
+              </SheetContent>
+            </Sheet>
+            <span className="truncate font-medium">
+              {current?.org_name ?? "Workspace"}
+            </span>
+            <div className="ml-auto">
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+
+        <div className="h-full p-4">
           <Outlet />
         </div>
       </main>
+    </div>
+  )
+}
+
+function MainNavContent({ orgSlug }: { orgSlug: string }) {
+  const routerState = useRouterState()
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="flex h-14 flex-shrink-0 items-center gap-2 border-b px-3">
+        <Building2 className="h-4 w-4 text-muted-foreground" />
+        <OrgSwitcher currentSlug={orgSlug} />
+      </div>
+
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto">
+        <nav className="space-y-1 p-2">
+          <NavItem
+            to="/$orgSlug"
+            params={{ orgSlug }}
+            icon={<HomeIcon className="h-4 w-4" />}
+            isActive={routerState.location.pathname === `/${orgSlug}`}
+          >
+            Home
+          </NavItem>
+          <NavItem
+            to="/$orgSlug/settings"
+            params={{ orgSlug }}
+            icon={<SettingsIcon className="h-4 w-4" />}
+            isActive={routerState.location.pathname === `/${orgSlug}/settings`}
+          >
+            Settings
+          </NavItem>
+        </nav>
+
+        <div className="px-2 py-3">
+          <SpacesSection currentSlug={orgSlug} />
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex-shrink-0 space-y-2 border-t p-2">
+        <div className="flex items-center justify-between px-2">
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => authClient.signOut()}
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -100,7 +100,11 @@ export function CollaborativeEditor({
       <div className="absolute top-2 right-2 text-xs text-muted-foreground capitalize">
         {status}
       </div>
-      <EditorContent key={documentId} editor={editor} className="p-6 h-full" />
+      <EditorContent
+        key={documentId}
+        editor={editor}
+        className="h-full p-4 sm:p-6"
+      />
       <ImageResizer editor={editor} />
     </div>
   )

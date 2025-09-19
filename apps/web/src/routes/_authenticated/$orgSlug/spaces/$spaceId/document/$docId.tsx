@@ -33,8 +33,8 @@ function DocumentPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
-      <div className="flex-grow min-h-0">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-grow">
         <CollaborativeEditor documentId={doc.id} orgSlug={orgSlug} />
       </div>
     </div>
