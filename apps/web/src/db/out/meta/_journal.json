@@ -29,6 +29,13 @@
       "when": 1758225974765,
       "tag": "0003_spooky_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1758275430573,
+      "tag": "0004_chief_expediter",
+      "breakpoints": true
     }
   ]
 }
