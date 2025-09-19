@@ -4,6 +4,7 @@ import * as Y from "yjs"
 import { ElectricYjsProvider } from "@/lib/y-electric/provider"
 import { createTiptapExtensions } from "./tiptap-extensions"
 import { usePresenceUser } from "@/lib/use-presence-user"
+import { ImageResizer } from "./ImageResizer"
 
 const yDocs = new Map<string, Y.Doc>()
 const providers = new Map<string, ElectricYjsProvider>()
@@ -100,6 +101,7 @@ export function CollaborativeEditor({
         {status}
       </div>
       <EditorContent key={documentId} editor={editor} className="p-6 h-full" />
+      <ImageResizer editor={editor} />
     </div>
   )
 }
