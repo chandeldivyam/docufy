@@ -7,6 +7,7 @@ import { createCodeBlock, StaticCodeBlock } from '../extensions/code-block/index
 import { ResizableImage, StaticImage } from '../extensions/image/index.js';
 import CustomKeymap from '../extensions/custom-keymap/index.js';
 import { UploadImagesExtension } from '../plugins/upload-images.js';
+import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
 
 type Mode = 'editor' | 'static';
 
@@ -35,6 +36,7 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       ResizableImage,
       UploadImagesExtension,
       CustomKeymap,
+      GlobalDragHandle,
       ...extra,
     ];
   }

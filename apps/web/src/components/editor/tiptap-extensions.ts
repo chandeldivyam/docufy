@@ -1,26 +1,28 @@
-import StarterKit from "@tiptap/starter-kit"
 import Collaboration from "@tiptap/extension-collaboration"
 import CollaborationCaret from "@tiptap/extension-collaboration-caret"
 import { type Extensions } from "@tiptap/react"
 import { type Awareness } from "y-protocols/awareness"
 import * as Y from "yjs"
+import { getExtensions } from "@docufy/content-kit/preset"
+import "@docufy/content-kit/styles.css"
 
 export function createTiptapExtensions(
   doc: Y.Doc,
-  provider: { awareness: Awareness }
+  provider: { awareness: Awareness },
+  user: { name: string; email?: string; color: string }
 ): Extensions {
   return [
-    StarterKit.configure(),
+    ...getExtensions("editor", {
+      dropcursor: { color: "#DBEAFE", width: 4 },
+      editable: true,
+      extra: [],
+    }),
     Collaboration.configure({ document: doc }),
     CollaborationCaret.configure({
       provider,
       user: {
-        name: `Cat ${Math.floor(Math.random() * 100)}`,
-        color:
-          "#" +
-          Math.floor(Math.random() * 16777215)
-            .toString(16)
-            .padStart(6, "0"),
+        name: user.name,
+        color: user.color,
       },
     }),
   ]

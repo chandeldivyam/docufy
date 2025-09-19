@@ -14,7 +14,7 @@ export const Route = createFileRoute(
 })
 
 function DocumentPage() {
-  const { spaceId, docId } = Route.useParams()
+  const { spaceId, docId, orgSlug } = Route.useParams()
   const docsCol = spaceId
     ? getSpaceDocumentsCollection(spaceId)
     : emptyDocumentsCollection
@@ -39,7 +39,7 @@ function DocumentPage() {
         <h1 className="text-2xl font-semibold">{doc.title}</h1>
       </header>
       <div className="flex-grow min-h-0">
-        <CollaborativeEditor documentId={doc.id} />
+        <CollaborativeEditor documentId={doc.id} orgSlug={orgSlug} />
       </div>
     </div>
   )

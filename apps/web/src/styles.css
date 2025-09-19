@@ -132,3 +132,614 @@ code {
     @apply bg-background text-foreground;
   }
 }
+
+.tiptap {
+  /* Layout and rhythm */
+  display: block;
+  min-height: 14rem; /* adjust per page */
+  line-height: 1.7;
+  color: var(--foreground);
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+
+  /* Selection color */
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 20%, transparent);
+    color: var(--primary);
+  }
+
+  /* Text blocks */
+  p {
+    margin-block: 0.85rem;
+  }
+
+  small {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+
+  /* Headings */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    color: var(--foreground);
+    text-wrap: pretty;
+    scroll-margin-top: 6rem;
+  }
+
+  h1 {
+    font-size: clamp(1.6rem, 2.5vw, 2rem);
+    margin: 2.25rem 0 1rem;
+  }
+  h2 {
+    font-size: clamp(1.35rem, 2vw, 1.6rem);
+    margin: 2rem 0 0.9rem;
+  }
+  h3 {
+    font-size: clamp(1.2rem, 1.5vw, 1.35rem);
+    margin: 1.6rem 0 0.6rem;
+  }
+  h4 {
+    font-size: 1.1rem;
+    margin: 1.2rem 0 0.4rem;
+  }
+  h5,
+  h6 {
+    font-size: 1rem;
+    margin: 1rem 0 0.3rem;
+  }
+
+  /* Horizontal rule */
+  hr {
+    height: 1px;
+    border: 0;
+    background: var(--border);
+    margin: 2rem 0;
+  }
+
+  /* Links */
+  a {
+    color: var(--primary);
+    text-decoration-color: color-mix(in oklch, var(--primary) 40%, transparent);
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1.5px;
+    transition:
+      color 150ms ease,
+      text-decoration-color 150ms ease;
+  }
+  a:hover {
+    color: color-mix(in oklch, var(--primary) 80%, var(--foreground));
+    text-decoration-color: currentColor;
+  }
+
+  /* Lists */
+  ul,
+  ol {
+    margin: 0.85rem 0;
+    padding-left: 1.4rem;
+  }
+  ul {
+    list-style: disc;
+  }
+  ol {
+    list-style: decimal;
+  }
+
+  li {
+    margin: 0.35rem 0;
+  }
+  li > p {
+    margin: 0.25rem 0;
+  }
+
+  /* Nested lists look lighter and tighter */
+  li ul,
+  li ol {
+    margin: 0.35rem 0;
+    padding-left: 1.2rem;
+  }
+
+  /* Task list */
+  ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.85rem 0;
+  }
+  ul[data-type="taskList"] li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    margin: 0.45rem 0;
+  }
+  ul[data-type="taskList"] li > label {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    cursor: pointer;
+    user-select: none;
+  }
+  ul[data-type="taskList"] li input[type="checkbox"] {
+    accent-color: var(--primary);
+    margin-top: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+  }
+  ul[data-type="taskList"] li[data-checked="true"] > div,
+  ul[data-type="taskList"] li[data-checked="true"] p {
+    color: color-mix(in oklch, var(--foreground) 65%, transparent);
+    text-decoration: line-through;
+  }
+
+  /* Blockquote - subtle card look */
+  blockquote {
+    position: relative;
+    margin: 1.4rem 0;
+    padding: 0.9rem 1rem 0.9rem 1.05rem;
+    background: color-mix(in oklch, var(--muted) 60%, var(--background));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  blockquote::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--primary);
+  }
+
+  /* Inline code */
+  code {
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "JetBrainsMono",
+      "Liberation Mono", monospace;
+    font-size: 0.86em;
+    background: color-mix(in oklch, var(--muted) 80%, var(--background));
+    color: color-mix(in oklch, var(--foreground) 90%, black);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius-sm));
+    padding: 0.18em 0.4em;
+  }
+  /* Remove double-styling when inside pre */
+  pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* Code blocks */
+  pre {
+    position: relative;
+    margin: 1.2rem 0;
+    padding: 0.9rem 1rem 1rem;
+    background: color-mix(in oklch, var(--secondary) 80%, var(--background));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--foreground);
+    overflow: auto;
+  }
+  pre::-webkit-scrollbar {
+    height: 10px;
+  }
+  pre::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--border) 70%, var(--foreground));
+    border-radius: 999px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.2rem 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  thead {
+    background: color-mix(in oklch, var(--muted) 60%, var(--background));
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.65rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:last-child td {
+    border-bottom: 0;
+  }
+  tbody tr:nth-child(odd) {
+    background: color-mix(in oklch, var(--muted) 35%, var(--background));
+  }
+  tbody tr:hover {
+    background: color-mix(in oklch, var(--muted) 50%, var(--background));
+  }
+
+  /* Images and media */
+  img:not(.ProseMirror-separator),
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-lg);
+    display: block;
+    margin: 1rem 0;
+    border: 1px solid var(--border);
+    background: var(--card);
+  }
+  figure {
+    margin: 1.2rem 0;
+  }
+  figcaption {
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+    text-align: center;
+    margin-top: 0.5rem;
+  }
+
+  /* KBD keys */
+  kbd {
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "JetBrainsMono",
+      "Liberation Mono", monospace;
+    font-size: 0.8em;
+    background: color-mix(in oklch, var(--muted) 80%, var(--background));
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: calc(var(--radius-sm));
+    padding: 0.1em 0.4em;
+    color: var(--foreground);
+  }
+
+  /* Marks and highlights */
+  mark {
+    background: color-mix(in oklch, var(--chart-4) 40%, var(--background));
+    color: var(--foreground);
+    border-radius: 0.2rem;
+    padding: 0.05em 0.2em;
+    box-decoration-break: clone;
+  }
+
+  /* Mentions */
+  .mention {
+    background: color-mix(in oklch, var(--secondary) 70%, var(--background));
+    border: 1px solid var(--border);
+    border-radius: 0.4rem;
+    padding: 0.05rem 0.35rem;
+    white-space: nowrap;
+  }
+
+  /* Code or image selections via ProseMirror */
+  .ProseMirror-selectednode {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+    border-radius: var(--radius);
+  }
+
+  /* Placeholder support if you enable the Placeholder extension */
+  .is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  /* Tables and code responsiveness inside constrained parents */
+  .content-wrap {
+    overflow: hidden;
+  }
+  .content-wrap > table,
+  .content-wrap > pre {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Tighten first/last spacing */
+  > :first-child {
+    margin-top: 0;
+  }
+  > :last-child {
+    margin-bottom: 0;
+  }
+}
+
+.drag-handle {
+  position: fixed;
+  opacity: 1;
+  transition: opacity ease-in 0.2s;
+  border-radius: 0.25rem;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' style='fill: rgba(0, 0, 0, 0.5)'%3E%3Cpath d='M3,2 C2.44771525,2 2,1.55228475 2,1 C2,0.44771525 2.44771525,0 3,0 C3.55228475,0 4,0.44771525 4,1 C4,1.55228475 3.55228475,2 3,2 Z M3,6 C2.44771525,6 2,5.55228475 2,5 C2,4.44771525 2.44771525,4 3,4 C3.55228475,4 4,4.44771525 4,5 C4,5.55228475 3.55228475,6 3,6 Z M3,10 C2.44771525,10 2,9.55228475 2,9 C2,8.44771525 2.44771525,8 3,8 C3.55228475,8 4,8.44771525 4,9 C4,9.55228475 3.55228475,10 3,10 Z M7,2 C6.44771525,2 6,1.55228475 6,1 C6,0.44771525 6.44771525,0 7,0 C7.55228475,0 8,0.44771525 8,1 C8,1.55228475 7.55228475,2 7,2 Z M7,6 C6.44771525,6 6,5.55228475 6,5 C6,4.44771525 6.44771525,4 7,4 C7.55228475,4 8,4.44771525 8,5 C8,5.55228475 7.55228475,6 7,6 Z M7,10 C6.44771525,10 6,9.55228475 6,9 C6,8.44771525 6.44771525,8 7,8 C7.55228475,8 8,8.44771525 8,9 C8,9.55228475 7.55228475,10 7,10 Z'%3E%3C/path%3E%3C/svg%3E");
+  background-size: calc(0.5em + 0.375rem) calc(0.5em + 0.375rem);
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 1.2rem;
+  height: 1.5rem;
+  z-index: 50;
+  cursor: grab;
+}
+
+.drag-handle:hover {
+  background-color: color-mix(in oklch, var(--muted) 40%, transparent);
+  transition: background-color 0.2s;
+}
+
+.drag-handle:active {
+  background-color: color-mix(in oklch, var(--muted) 60%, transparent);
+  transition: background-color 0.2s;
+  cursor: grabbing;
+}
+
+.drag-handle.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Dark mode drag handle */
+.dark .drag-handle {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' style='fill: rgba(255, 255, 255, 0.5)'%3E%3Cpath d='M3,2 C2.44771525,2 2,1.55228475 2,1 C2,0.44771525 2.44771525,0 3,0 C3.55228475,0 4,0.44771525 4,1 C4,1.55228475 3.55228475,2 3,2 Z M3,6 C2.44771525,6 2,5.55228475 2,5 C2,4.44771525 2.44771525,4 3,4 C3.55228475,4 4,4.44771525 4,5 C4,5.55228475 3.55228475,6 3,6 Z M3,10 C2.44771525,10 2,9.55228475 2,9 C2,8.44771525 2.44771525,8 3,8 C3.55228475,8 4,8.44771525 4,9 C4,9.55228475 3.55228475,10 3,10 Z M7,2 C6.44771525,2 6,1.55228475 6,1 C6,0.44771525 6.44771525,0 7,0 C7.55228475,0 8,0.44771525 8,1 C8,1.55228475 7.55228475,2 7,2 Z M7,6 C6.44771525,6 6,5.55228475 6,5 C6,4.44771525 6.44771525,4 7,4 C7.55228475,4 8,4.44771525 8,5 C8,5.55228475 7.55228475,6 7,6 Z M7,10 C6.44771525,10 6,9.55228475 6,9 C6,8.44771525 6.44771525,8 7,8 C7.55228475,8 8,8.44771525 8,9 C8,9.55228475 7.55228475,10 7,10 Z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+/* Hide on mobile - matching Novel's approach */
+@media screen and (max-width: 600px) {
+  .drag-handle {
+    display: none;
+    pointer-events: none;
+  }
+}
+
+/* Additional ProseMirror styles for better drag behavior */
+.tiptap:not(.dragging) .ProseMirror-selectednode {
+  outline: none !important;
+  background-color: color-mix(in oklch, var(--primary) 10%, transparent);
+  transition: background-color 0.2s;
+  box-shadow: none;
+}
+
+.ProseMirror-dropcursor {
+  border-left: 4px solid var(--primary);
+}
+
+/* Upload placeholder spinner */
+.img-placeholder {
+  position: relative;
+}
+.img-placeholder::before {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--foreground);
+  transform: translate(-50%, -50%);
+  animation: spinning 0.6s linear infinite;
+}
+@keyframes spinning {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Visual affordances for images */
+.ProseMirror img {
+  transition: filter 0.1s ease-in-out;
+}
+.ProseMirror img:hover {
+  cursor: pointer;
+  filter: brightness(92%);
+}
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.tiptap.prose a {
+  color: var(--primary) !important;
+  text-decoration: underline !important;
+  text-decoration-color: color-mix(
+    in oklch,
+    var(--primary) 60%,
+    transparent
+  ) !important;
+  text-underline-offset: 2px !important;
+  text-decoration-thickness: 1.5px !important;
+  cursor: pointer !important;
+}
+
+.tiptap.prose a:hover {
+  color: color-mix(in oklch, var(--primary) 80%, var(--foreground)) !important;
+  text-decoration-color: currentColor !important;
+}
+
+.tiptap pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  line-height: 1.6;
+  background: transparent;
+  padding: 0;
+  color: var(--syntax-base);
+  tab-size: 2;
+}
+
+/* Comments & quotes */
+.tiptap pre .hljs-comment,
+.tiptap pre .hljs-quote {
+  color: var(--syntax-comment);
+}
+
+/* Keywords & selector tags */
+.tiptap pre .hljs-keyword,
+.tiptap pre .hljs-selector-tag {
+  color: var(--syntax-keyword);
+}
+
+/* Strings, symbols, bullets */
+.tiptap pre .hljs-string,
+.tiptap pre .hljs-symbol,
+.tiptap pre .hljs-bullet {
+  color: var(--syntax-string);
+}
+
+/* Numbers, literals, builtins, params */
+.tiptap pre .hljs-number,
+.tiptap pre .hljs-literal,
+.tiptap pre .hljs-built_in,
+.tiptap pre .hljs-builtin-name,
+.tiptap pre .hljs-params {
+  color: var(--syntax-number);
+}
+
+/* Titles & sections (fn/class names) */
+.tiptap pre .hljs-title,
+.tiptap pre .hljs-section {
+  color: var(--syntax-title);
+}
+
+/* Variables, attributes, tags, names, regex, links, selectors */
+.tiptap pre .hljs-variable,
+.tiptap pre .hljs-template-variable,
+.tiptap pre .hljs-attribute,
+.tiptap pre .hljs-tag,
+.tiptap pre .hljs-name,
+.tiptap pre .hljs-selector-id,
+.tiptap pre .hljs-selector-class,
+.tiptap pre .hljs-regexp,
+.tiptap pre .hljs-link {
+  color: var(--syntax-attr);
+}
+
+/* Meta/annotations */
+.tiptap pre .hljs-meta {
+  color: var(--syntax-meta);
+}
+
+/* Emphasis & strong */
+.tiptap pre .hljs-emphasis {
+  font-style: italic;
+  color: var(--syntax-emph);
+}
+.tiptap pre .hljs-strong {
+  font-weight: 700;
+  color: var(--syntax-strong);
+}
+
+:root .tiptap pre {
+  background: color-mix(in oklch, var(--secondary) 88%, var(--background));
+}
+
+/* Code block "card" with header */
+.tiptap .tt-codeblock-group {
+  margin: 1.2rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  overflow: hidden; /* header radius clips */
+}
+
+.tiptap .tt-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: color-mix(in oklch, var(--muted) 60%, var(--background));
+  border-bottom: 1px solid var(--border);
+}
+
+.tiptap .tt-codeblock-select {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.tiptap .tt-codeblock-copy {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.875rem;
+  background: color-mix(in oklch, var(--muted) 35%, var(--background));
+  color: var(--foreground);
+}
+.tiptap .tt-codeblock-copy:hover {
+  background: color-mix(in oklch, var(--muted) 55%, var(--background));
+}
+
+.tiptap .tt-codeblock-pre {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.tiptap .collaboration-carets__caret,
+.tiptap .collaboration-cursor__caret {
+  border-left: 1px solid #0d0d0d;
+  border-right: 1px solid #0d0d0d;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+  /* optional: make sure our global outline rule doesn’t paint this */
+  outline: none;
+}
+
+/* label above the caret */
+.tiptap .collaboration-carets__label,
+.tiptap .collaboration-cursor__label {
+  position: absolute;
+  top: -1.4em;
+  left: -1px;
+  border-radius: 3px 3px 3px 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: normal;
+  padding: 0.1rem 0.3rem;
+  color: #0d0d0d;
+  user-select: none;
+  white-space: nowrap;
+  /* optional perf niceties */
+  will-change: transform;
+  backface-visibility: hidden;
+  outline: none;
+}
+
+.tiptap img.ProseMirror-separator {
+  display: inline !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
+/* Keep the trailingBreak inline and unobtrusive */
+.tiptap br.ProseMirror-trailingBreak {
+  display: inline !important;
+}

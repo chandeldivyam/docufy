@@ -2,7 +2,9 @@ import { createServerFileRoute } from "@tanstack/react-start/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/db/connection"
 import { sql } from "drizzle-orm"
-// NOTE: For brevity, this example omits the same security validation as above, but you MUST add it.
+import { documentsTable } from "@/db/schema"
+import { and, eq } from "drizzle-orm"
+import { members } from "@/db/auth-schema"
 
 export const ServerRoute = createServerFileRoute(
   "/api/awareness-updates"
@@ -23,6 +25,33 @@ export const ServerRoute = createServerFileRoute(
         JSON.stringify({ error: "documentId and clientId are required" }),
         { status: 400 }
       )
+    }
+
+    // Enforce that the caller is a member of the doc's organization
+    const [doc] = await db
+      .select({ orgId: documentsTable.organizationId })
+      .from(documentsTable)
+      .where(eq(documentsTable.id, documentId))
+      .limit(1)
+    if (!doc) {
+      return new Response(JSON.stringify({ error: "Not Found" }), {
+        status: 404,
+      })
+    }
+    const [membership] = await db
+      .select()
+      .from(members)
+      .where(
+        and(
+          eq(members.userId, sess.user.id),
+          eq(members.organizationId, doc.orgId)
+        )
+      )
+      .limit(1)
+    if (!membership) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+      })
     }
 
     const update = new Uint8Array(await request.arrayBuffer())

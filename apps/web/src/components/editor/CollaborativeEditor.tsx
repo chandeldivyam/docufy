@@ -3,14 +3,23 @@ import { useEditor, EditorContent } from "@tiptap/react"
 import * as Y from "yjs"
 import { ElectricYjsProvider } from "@/lib/y-electric/provider"
 import { createTiptapExtensions } from "./tiptap-extensions"
+import { usePresenceUser } from "@/lib/use-presence-user"
 
 const yDocs = new Map<string, Y.Doc>()
 const providers = new Map<string, ElectricYjsProvider>()
 
-export function CollaborativeEditor({ documentId }: { documentId: string }) {
+export function CollaborativeEditor({
+  documentId,
+  orgSlug,
+}: {
+  documentId: string
+  orgSlug?: string
+}) {
   const [status, setStatus] = useState<
     "connecting" | "connected" | "disconnected"
   >("connecting")
+
+  const presence = usePresenceUser(orgSlug)
 
   const { ydoc, provider } = useMemo(() => {
     let ydoc = yDocs.get(documentId)
@@ -30,10 +39,14 @@ export function CollaborativeEditor({ documentId }: { documentId: string }) {
 
   const editor = useEditor(
     {
-      extensions: createTiptapExtensions(ydoc, provider),
+      extensions: createTiptapExtensions(ydoc, provider, {
+        name: presence.name,
+        email: presence.email ?? undefined,
+        color: presence.color,
+      }),
       editorProps: {
         attributes: {
-          class: "prose dark:prose-invert focus:outline-none max-w-full",
+          class: "tiptap prose dark:prose-invert focus:outline-none max-w-full",
         },
       },
     },
@@ -53,6 +66,27 @@ export function CollaborativeEditor({ documentId }: { documentId: string }) {
   useEffect(() => {
     setStatus("connecting")
   }, [documentId])
+
+  // Keep the local awareness "user" in sync with profile changes (name/email/image/color)
+  useEffect(() => {
+    provider.awareness.setLocalState({
+      ...(provider.awareness.getLocalState() ?? {}),
+      user: {
+        id: presence.id,
+        name: presence.name,
+        email: presence.email ?? undefined,
+        image: presence.image ?? undefined,
+        color: presence.color,
+      },
+    })
+  }, [
+    provider,
+    presence.id,
+    presence.name,
+    presence.email,
+    presence.image,
+    presence.color,
+  ])
 
   return (
     <div className="relative h-full">
