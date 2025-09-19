@@ -62,13 +62,13 @@
   },
   "devDependencies": {
     "@docufy/tsconfig": "workspace:*",
-    "@tiptap/core": "^3.4.0",
-    "@tiptap/extension-code-block-lowlight": "^3.4.0",
-    "@tiptap/extension-image": "^3.4.0",
-    "@tiptap/pm": "^3.4.0",
-    "@tiptap/react": "^3.4.0",
-    "@tiptap/starter-kit": "^3.4.0",
-    "@tiptap/static-renderer": "^3.4.0",
+    "@tiptap/core": "^3.4.2",
+    "@tiptap/extension-code-block-lowlight": "^3.4.2",
+    "@tiptap/extension-image": "^3.4.2",
+    "@tiptap/pm": "^3.4.2",
+    "@tiptap/react": "^3.4.2",
+    "@tiptap/starter-kit": "^3.4.2",
+    "@tiptap/static-renderer": "^3.4.2",
     "typescript": "^5.6.0"
   },
   "scripts": {
