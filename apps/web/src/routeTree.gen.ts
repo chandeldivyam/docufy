@@ -34,6 +34,7 @@ import { ServerRoute as ApiDocumentUpdatesServerRouteImport } from './routes/api
 import { ServerRoute as ApiAwarenessUpdatesServerRouteImport } from './routes/api/awareness-updates'
 import { ServerRoute as ApiTrpcSplatServerRouteImport } from './routes/api/trpc/$'
 import { ServerRoute as ApiShapeSplatServerRouteImport } from './routes/api/shape/$'
+import { ServerRoute as ApiBlobUploadServerRouteImport } from './routes/api/blob/upload'
 import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
 
 const rootServerRouteImport = createServerRootRoute()
@@ -163,6 +164,11 @@ const ApiShapeSplatServerRoute = ApiShapeSplatServerRouteImport.update({
   path: '/api/shape/$',
   getParentRoute: () => rootServerRouteImport,
 } as any)
+const ApiBlobUploadServerRoute = ApiBlobUploadServerRouteImport.update({
+  id: '/api/blob/upload',
+  path: '/api/blob/upload',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
 const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -268,6 +274,7 @@ export interface FileServerRoutesByFullPath {
   '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
+  '/api/blob/upload': typeof ApiBlobUploadServerRoute
   '/api/shape/$': typeof ApiShapeSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
@@ -281,6 +288,7 @@ export interface FileServerRoutesByTo {
   '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
+  '/api/blob/upload': typeof ApiBlobUploadServerRoute
   '/api/shape/$': typeof ApiShapeSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
@@ -295,6 +303,7 @@ export interface FileServerRoutesById {
   '/api/spaces': typeof ApiSpacesServerRoute
   '/api/user-invitations': typeof ApiUserInvitationsServerRoute
   '/api/auth/$': typeof ApiAuthSplatServerRoute
+  '/api/blob/upload': typeof ApiBlobUploadServerRoute
   '/api/shape/$': typeof ApiShapeSplatServerRoute
   '/api/trpc/$': typeof ApiTrpcSplatServerRoute
 }
@@ -310,6 +319,7 @@ export interface FileServerRouteTypes {
     | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
+    | '/api/blob/upload'
     | '/api/shape/$'
     | '/api/trpc/$'
   fileServerRoutesByTo: FileServerRoutesByTo
@@ -323,6 +333,7 @@ export interface FileServerRouteTypes {
     | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
+    | '/api/blob/upload'
     | '/api/shape/$'
     | '/api/trpc/$'
   id:
@@ -336,6 +347,7 @@ export interface FileServerRouteTypes {
     | '/api/spaces'
     | '/api/user-invitations'
     | '/api/auth/$'
+    | '/api/blob/upload'
     | '/api/shape/$'
     | '/api/trpc/$'
   fileServerRoutesById: FileServerRoutesById
@@ -350,6 +362,7 @@ export interface RootServerRouteChildren {
   ApiSpacesServerRoute: typeof ApiSpacesServerRoute
   ApiUserInvitationsServerRoute: typeof ApiUserInvitationsServerRoute
   ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute
+  ApiBlobUploadServerRoute: typeof ApiBlobUploadServerRoute
   ApiShapeSplatServerRoute: typeof ApiShapeSplatServerRoute
   ApiTrpcSplatServerRoute: typeof ApiTrpcSplatServerRoute
 }
@@ -521,6 +534,13 @@ declare module '@tanstack/react-start/server' {
       preLoaderRoute: typeof ApiShapeSplatServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
+    '/api/blob/upload': {
+      id: '/api/blob/upload'
+      path: '/api/blob/upload'
+      fullPath: '/api/blob/upload'
+      preLoaderRoute: typeof ApiBlobUploadServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -614,6 +634,7 @@ const rootServerRouteChildren: RootServerRouteChildren = {
   ApiSpacesServerRoute: ApiSpacesServerRoute,
   ApiUserInvitationsServerRoute: ApiUserInvitationsServerRoute,
   ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
+  ApiBlobUploadServerRoute: ApiBlobUploadServerRoute,
   ApiShapeSplatServerRoute: ApiShapeSplatServerRoute,
   ApiTrpcSplatServerRoute: ApiTrpcSplatServerRoute,
 }

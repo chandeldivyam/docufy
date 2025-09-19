@@ -87,7 +87,7 @@ function SpacePage() {
 
   return (
     <div className="grid grid-cols-[260px_1fr] h-full">
-      <aside className="border-r bg-background p-2">
+      <aside className="border-r bg-background p-2 h-full">
         <DocumentsTree
           key={spaceId}
           orgSlug={orgSlug}
@@ -99,12 +99,6 @@ function SpacePage() {
       </aside>
 
       <section className="min-w-0">
-        <header className="border-b p-4">
-          <h1 className="text-2xl font-semibold">{space.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            /{orgSlug}/spaces/{space.slug}
-          </p>
-        </header>
         <div className="p-4">
           <Outlet />
         </div>

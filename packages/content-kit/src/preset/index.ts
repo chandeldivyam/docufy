@@ -15,6 +15,14 @@ export type PresetOptions = {
   dropcursor?: { color?: string; width?: number };
   editable?: boolean; // unused here but reserved for future
   extra?: AnyExtension[];
+  upload?: {
+    uploader?: (
+      file: File,
+      ctx: { orgSlug?: string; documentId: string },
+    ) => Promise<{ url: string; width?: number; height?: number }>;
+    context?: { orgSlug?: string; documentId?: string };
+    validateFile?: (file: File) => boolean;
+  };
 };
 
 export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
@@ -23,6 +31,7 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       codeBlock: false,
       dropcursor: opts.dropcursor,
       gapcursor: false,
+      undoRedo: false,
     }),
     AutoJoiner,
   ];
@@ -34,7 +43,11 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       ...base,
       createCodeBlock({ lowlight, header: true, enableTabIndentation: true }),
       ResizableImage,
-      UploadImagesExtension,
+      UploadImagesExtension.configure({
+        uploader: opts.upload?.uploader,
+        context: opts.upload?.context,
+        validateFile: opts.upload?.validateFile,
+      }),
       CustomKeymap,
       GlobalDragHandle,
       ...extra,

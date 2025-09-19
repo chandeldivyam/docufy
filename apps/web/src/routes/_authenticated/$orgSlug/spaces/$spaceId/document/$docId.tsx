@@ -34,10 +34,6 @@ function DocumentPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
-      <header className="p-4 border-b">
-        {/* You can add your title editing component here, which uses docsCol.update() */}
-        <h1 className="text-2xl font-semibold">{doc.title}</h1>
-      </header>
       <div className="flex-grow min-h-0">
         <CollaborativeEditor documentId={doc.id} orgSlug={orgSlug} />
       </div>

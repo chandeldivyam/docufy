@@ -4,17 +4,23 @@ import { type Extensions } from "@tiptap/react"
 import { type Awareness } from "y-protocols/awareness"
 import * as Y from "yjs"
 import { getExtensions } from "@docufy/content-kit/preset"
+import { uploadImageToBlob } from "@/lib/blob-uploader"
 import "@docufy/content-kit/styles.css"
 
 export function createTiptapExtensions(
   doc: Y.Doc,
   provider: { awareness: Awareness },
-  user: { name: string; email?: string; color: string }
+  user: { name: string; email?: string; color: string },
+  ctx?: { orgSlug?: string; documentId?: string }
 ): Extensions {
   return [
     ...getExtensions("editor", {
       dropcursor: { color: "#DBEAFE", width: 4 },
       editable: true,
+      upload: {
+        uploader: uploadImageToBlob,
+        context: { orgSlug: ctx?.orgSlug, documentId: ctx?.documentId },
+      },
       extra: [],
     }),
     Collaboration.configure({ document: doc }),

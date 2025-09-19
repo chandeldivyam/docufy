@@ -39,14 +39,20 @@ export function CollaborativeEditor({
 
   const editor = useEditor(
     {
-      extensions: createTiptapExtensions(ydoc, provider, {
-        name: presence.name,
-        email: presence.email ?? undefined,
-        color: presence.color,
-      }),
+      extensions: createTiptapExtensions(
+        ydoc,
+        provider,
+        {
+          name: presence.name,
+          email: presence.email ?? undefined,
+          color: presence.color,
+        },
+        { orgSlug, documentId }
+      ),
       editorProps: {
         attributes: {
-          class: "tiptap prose dark:prose-invert focus:outline-none max-w-full",
+          class:
+            "tiptap prose dark:prose-invert focus:outline-none max-w-full h-full",
         },
       },
     },

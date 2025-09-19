@@ -147,7 +147,7 @@ function OrgSlugLayout() {
 
       {/* Main */}
       <main className="min-w-0">
-        <div className="p-4">
+        <div className="p-4 h-full">
           <Outlet />
         </div>
       </main>
