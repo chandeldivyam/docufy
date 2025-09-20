@@ -34,7 +34,7 @@ function DocumentPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-grow">
+      <div className="min-h-0 flex-grow overflow-auto">
         <CollaborativeEditor documentId={doc.id} orgSlug={orgSlug} />
       </div>
     </div>

@@ -59,6 +59,8 @@ export const Route = createFileRoute(
 function SpacePage() {
   const { orgSlug, spaceId } = Route.useParams()
   const navigate = useNavigate()
+  const routerState = useRouterState()
+  const [mobileDocsOpen, setMobileDocsOpen] = useState(false)
 
   // Map slug -> orgId from cached org list
   const { data: myOrgs } = useLiveQuery((q) =>
@@ -85,6 +87,10 @@ function SpacePage() {
     // make sure we’ve (re)hydrated the new shape
     docsCollection.preload?.()
   }, [docsCollection])
+
+  useEffect(() => {
+    setMobileDocsOpen(false)
+  }, [routerState.location.pathname])
 
   const { data: docs } = useLiveQuery(
     (q) => q.from({ docs: docsCollection }),
@@ -124,8 +130,8 @@ function SpacePage() {
     return <div className="p-8 text-muted-foreground">Space not found</div>
 
   return (
-    <div className="grid h-full grid-cols-1 md:grid-cols-[280px_1fr]">
-      <aside className="hidden h-full border-r bg-background p-2 md:block">
+    <div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[280px_1fr] overflow-hidden">
+      <aside className="hidden h-full min-h-0 overflow-y-auto border-r bg-background p-2 md:block">
         <DocumentsTree
           key={spaceId}
           orgSlug={orgSlug}
@@ -136,17 +142,20 @@ function SpacePage() {
         />
       </aside>
 
-      <section className="min-w-0">
+      <section className="min-w-0 min-h-0 flex flex-col overflow-hidden">
         <div className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur md:hidden">
           <div className="flex items-center gap-2 px-2 py-2">
-            <Sheet>
+            <Sheet open={mobileDocsOpen} onOpenChange={setMobileDocsOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Folder className="h-4 w-4" />
                   Docs
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[90vw] max-w-[420px] p-2">
+              <SheetContent
+                side="left"
+                className="w-[90vw] max-w-[420px] p-2 overflow-y-auto"
+              >
                 <SheetHeader className="sr-only">
                   <SheetTitle>Document navigation</SheetTitle>
                   <SheetDescription>
@@ -177,7 +186,7 @@ function SpacePage() {
           </div>
         </div>
 
-        <div className="p-4">
+        <div className="flex-1 min-h-0 overflow-auto p-4">
           <Outlet />
         </div>
       </section>

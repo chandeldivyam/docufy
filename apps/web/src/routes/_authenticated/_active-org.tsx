@@ -5,9 +5,6 @@ import { myOrganizationsCollection } from "@/lib/collections"
 
 export const Route = createFileRoute("/_authenticated/_active-org")({
   ssr: false,
-  loader: async () => {
-    await myOrganizationsCollection.preload()
-  },
   component: ActiveOrgGate,
 })
 

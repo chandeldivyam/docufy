@@ -164,9 +164,13 @@ function OrgsPage() {
                         </div>
                       </div>
                       <Button
-                        onClick={() =>
+                        onClick={() => {
                           setActive(org.organization_id, org.org_slug)
-                        }
+                          navigate({
+                            to: "/$orgSlug",
+                            params: { orgSlug: org.org_slug },
+                          })
+                        }}
                       >
                         Use this workspace
                       </Button>

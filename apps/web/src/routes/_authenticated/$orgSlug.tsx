@@ -72,6 +72,8 @@ function OrgSlugLayout() {
   const { orgSlug } = Route.useParams()
   const { data: session, isPending: sPending } = authClient.useSession()
   const { data: activeOrg } = authClient.useActiveOrganization()
+  const routerState = useRouterState()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   // All orgs for validation + switcher
   const { data: myOrgs } = useLiveQuery((q) =>
@@ -93,24 +95,28 @@ function OrgSlugLayout() {
     }
   }, [activeOrg?.id, current])
 
+  useEffect(() => {
+    setMobileNavOpen(false)
+  }, [routerState.location.pathname])
+
   if (sPending || myOrgs === undefined)
     return <div className="p-8 text-muted-foreground">Loading…</div>
   if (!session) return <Navigate to="/login" replace />
   if (!current) return <Navigate to="/orgs" replace />
 
   return (
-    <div className="grid min-h-[100svh] grid-cols-1 md:grid-cols-[260px_1fr]">
+    <div className="grid h-[100svh] grid-cols-1 md:grid-cols-[260px_1fr] overflow-hidden">
       {/* Sidebar - desktop */}
-      <aside className="border-r bg-background hidden h-full flex-col md:flex">
+      <aside className="border-r bg-background hidden h-full min-h-0 md:flex md:flex-col overflow-hidden">
         <MainNavContent orgSlug={orgSlug} />
       </aside>
 
       {/* Main */}
-      <main className="min-w-0">
+      <main className="min-w-0 min-h-0 flex flex-col overflow-hidden">
         {/* Mobile top bar */}
         <div className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur md:hidden">
           <div className="flex items-center gap-2 p-2">
-            <Sheet>
+            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
@@ -139,7 +145,7 @@ function OrgSlugLayout() {
           </div>
         </div>
 
-        <div className="h-full p-4">
+        <div className="flex-1 min-h-0 overflow-auto p-4">
           <Outlet />
         </div>
       </main>

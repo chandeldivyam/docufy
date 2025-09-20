@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import * as Y from "yjs"
 import { ElectricYjsProvider } from "@/lib/y-electric/provider"
@@ -16,10 +16,6 @@ export function CollaborativeEditor({
   documentId: string
   orgSlug?: string
 }) {
-  const [status, setStatus] = useState<
-    "connecting" | "connected" | "disconnected"
-  >("connecting")
-
   const presence = usePresenceUser(orgSlug)
 
   const { ydoc, provider } = useMemo(() => {
@@ -61,19 +57,6 @@ export function CollaborativeEditor({
     [documentId]
   )
 
-  useEffect(() => {
-    const statusHandler = ({ status }: { status: string }) =>
-      setStatus(status as "connecting" | "connected" | "disconnected")
-    provider.on("status", statusHandler)
-    return () => {
-      provider.off("status", statusHandler)
-    }
-  }, [provider])
-
-  useEffect(() => {
-    setStatus("connecting")
-  }, [documentId])
-
   // Keep the local awareness "user" in sync with profile changes (name/email/image/color)
   useEffect(() => {
     provider.awareness.setLocalState({
@@ -97,13 +80,11 @@ export function CollaborativeEditor({
 
   return (
     <div className="relative h-full">
-      <div className="absolute top-2 right-2 text-xs text-muted-foreground capitalize">
-        {status}
-      </div>
       <EditorContent
         key={documentId}
         editor={editor}
         className="h-full p-4 sm:p-6"
+        autoFocus
       />
       <ImageResizer editor={editor} />
     </div>
