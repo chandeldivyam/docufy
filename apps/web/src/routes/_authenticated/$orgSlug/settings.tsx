@@ -117,17 +117,20 @@ function SettingsPage() {
                   .map((inv) => (
                     <li
                       key={inv.id}
-                      className="flex items-center justify-between rounded border p-3"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded border p-3"
                     >
-                      <div>
-                        <div className="font-medium">{inv.email}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium truncate" title={inv.email}>
+                          {inv.email}
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           role: {inv.role}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 flex-shrink-0">
                         <Button
                           variant="secondary"
+                          size="sm"
                           onClick={() =>
                             authClient.organization.inviteMember({
                               email: inv.email,
@@ -141,14 +144,15 @@ function SettingsPage() {
                         </Button>
                         <Button
                           variant="ghost"
+                          size="sm"
                           onClick={() =>
                             authClient.organization.cancelInvitation({
                               invitationId: inv.id,
                             })
                           }
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Cancel
+                          <Trash2 className="h-4 w-4 sm:mr-2" />
+                          <span className="hidden sm:inline">Cancel</span>
                         </Button>
                       </div>
                     </li>
