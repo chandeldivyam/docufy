@@ -1,0 +1,797 @@
+import { createFileRoute } from "@tanstack/react-router"
+import { useLiveQuery } from "@tanstack/react-db"
+import { authClient } from "@/lib/auth-client"
+import {
+  getOrgSpacesCollection,
+  getSiteSpacesCollection,
+  getSiteDomainsCollection,
+  getSiteBuildsCollection,
+  getOrgSitesCollection,
+  emptySitesCollection,
+  emptySpacesCollection,
+  type SpaceRow,
+} from "@/lib/collections"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useState, useMemo } from "react"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  ArrowUp,
+  ArrowDown,
+  Plus,
+  X,
+  Globe,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Rocket,
+  RefreshCw,
+  ExternalLink,
+  Copy,
+  Loader2,
+} from "lucide-react"
+// import { toast } from "sonner"
+// import { cn } from "@/lib/utils"
+
+export const Route = createFileRoute("/_authenticated/$orgSlug/sites/$siteId")({
+  ssr: false,
+  loader: async () => null,
+  component: SiteDetailPage,
+})
+
+function SiteDetailPage() {
+  const { siteId } = Route.useParams()
+  const { data: activeOrg } = authClient.useActiveOrganization()
+  const activeOrgId = activeOrg?.id
+
+  const sitesCol = useMemo(
+    () => (activeOrgId ? getOrgSitesCollection(activeOrgId) : null),
+    [activeOrgId]
+  )
+  const { data: sites } = useLiveQuery(
+    (q) =>
+      sitesCol
+        ? q.from({ sites: sitesCol })
+        : q.from({ sites: emptySitesCollection }),
+    [sitesCol]
+  )
+  const site = sites?.find((s) => s.id === siteId)
+
+  const spacesCol = useMemo(
+    () => (activeOrgId ? getOrgSpacesCollection(activeOrgId) : null),
+    [activeOrgId]
+  )
+  const { data: spaces } = useLiveQuery(
+    (q) =>
+      spacesCol
+        ? q.from({ spaces: spacesCol })
+        : q.from({ spaces: emptySpacesCollection }),
+    [spacesCol]
+  )
+
+  const siteSpacesCol = useMemo(() => getSiteSpacesCollection(siteId), [siteId])
+  const { data: selection } = useLiveQuery(
+    (q) => q.from({ sel: siteSpacesCol }),
+    [siteSpacesCol]
+  )
+
+  const domainsCol = useMemo(() => getSiteDomainsCollection(siteId), [siteId])
+  const { data: domains } = useLiveQuery(
+    (q) => q.from({ domains: domainsCol }),
+    [domainsCol]
+  )
+
+  const buildsCol = useMemo(() => getSiteBuildsCollection(siteId), [siteId])
+  const { data: builds } = useLiveQuery(
+    (q) => q.from({ builds: buildsCol }),
+    [buildsCol]
+  )
+
+  const [newDomain, setNewDomain] = useState("")
+  const [isAddingDomain, setIsAddingDomain] = useState(false)
+  const [domainToDelete, setDomainToDelete] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const selectionLoaded = selection !== undefined
+
+  if (!site) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="text-center space-y-3">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+          <p className="text-muted-foreground">Loading site details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const orderedSelection = (selection ?? [])
+    .slice()
+    .sort((a, b) => a.position - b.position)
+  const selectedIds = new Set(orderedSelection.map((s) => s.space_id))
+  const allSpacesById = new Map((spaces ?? []).map((s) => [s.id, s]))
+  const selected = orderedSelection
+    .map((sel) => allSpacesById.get(sel.space_id))
+    .filter((space): space is SpaceRow => Boolean(space))
+  const available = (spaces ?? [])
+    .filter((s) => !selectedIds.has(s.id))
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  async function applySelection(nextOrderedIds: string[]) {
+    if (!selectionLoaded) return
+    setIsSaving(true)
+    try {
+      const currentRows = (selection ?? [])
+        .slice()
+        .sort((a, b) => a.position - b.position)
+      const currentMap = new Map(currentRows.map((row) => [row.space_id, row]))
+      const nextSet = new Set(nextOrderedIds)
+
+      for (const row of currentRows) {
+        if (!nextSet.has(row.space_id)) {
+          await siteSpacesCol.delete(`${row.site_id}:${row.space_id}`)
+        }
+      }
+
+      for (let i = 0; i < nextOrderedIds.length; i++) {
+        const spaceId = nextOrderedIds[i]
+        if (!spaceId) continue
+        const existing = currentMap.get(spaceId)
+        if (!existing) {
+          await siteSpacesCol.insert({
+            site_id: siteId,
+            space_id: spaceId,
+            position: i,
+            style: "dropdown",
+          })
+        } else if (existing.position !== i) {
+          await siteSpacesCol.update(`${siteId}:${spaceId}`, (draft) => {
+            draft.position = i
+          })
+        }
+      }
+    } catch (error) {
+      console.error("Failed to update space selection", error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function addDomain() {
+    const d = newDomain.trim().toLowerCase()
+    if (!d) return
+    setIsAddingDomain(true)
+    try {
+      await domainsCol.insert({
+        id: crypto.randomUUID(),
+        site_id: siteId,
+        domain: d,
+        verified: false,
+        last_checked_at: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      })
+      // toast.success("Domain added successfully")
+      console.log("Domain added successfully")
+      setNewDomain("")
+    } catch (error) {
+      console.error("Failed to add domain", error)
+    } finally {
+      setIsAddingDomain(false)
+    }
+  }
+
+  async function removeDomain(domainId: string) {
+    try {
+      await domainsCol.delete(domainId)
+      // toast.success("Domain removed")
+      console.log("Domain removed")
+      setDomainToDelete(null)
+    } catch (error) {
+      console.error("Failed to remove domain", error)
+    }
+  }
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text)
+    // toast.success("Copied to clipboard")
+    console.log("Copied to clipboard")
+  }
+
+  const latestBuild = builds?.sort(
+    (a, b) => b.started_at.getTime() - a.started_at.getTime()
+  )[0]
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">{site.name}</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your site settings, content, and deployments
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {site.primary_host && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                window.open(`https://${site.primary_host}`, "_blank")
+              }
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View Site
+            </Button>
+          )}
+          {latestBuild && (
+            <Badge
+              variant={
+                latestBuild.status === "success"
+                  ? "default"
+                  : latestBuild.status === "failed"
+                    ? "destructive"
+                    : "secondary"
+              }
+            >
+              {latestBuild.status === "running" && (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              )}
+              {latestBuild.status}
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      <Tabs defaultValue="settings" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4 max-w-lg">
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="domains">Domains</TabsTrigger>
+          <TabsTrigger value="deploys">Deploys</TabsTrigger>
+        </TabsList>
+
+        {/* Settings Tab */}
+        <TabsContent value="settings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Site Configuration</CardTitle>
+              <CardDescription>
+                Basic settings for your documentation site
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="site-name">Site Name</Label>
+                  <Input
+                    id="site-name"
+                    value={site.name}
+                    onChange={(e) =>
+                      sitesCol?.update(
+                        site.id,
+                        (d) => void (d.name = e.target.value)
+                      )
+                    }
+                    placeholder="My Documentation"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Display name for your site
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="site-slug">URL Slug</Label>
+                  <Input
+                    id="site-slug"
+                    value={site.slug}
+                    onChange={(e) =>
+                      sitesCol?.update(
+                        site.id,
+                        (d) => void (d.slug = e.target.value)
+                      )
+                    }
+                    placeholder="my-docs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    URL-friendly identifier
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="base-url">Base URL</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="base-url"
+                      value={site.base_url}
+                      onChange={(e) =>
+                        sitesCol?.update(
+                          site.id,
+                          (d) => void (d.base_url = e.target.value)
+                        )
+                      }
+                      placeholder="https://cdn.example.com"
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(site.base_url)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    CDN endpoint for your content
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="store-id">Store ID</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="store-id"
+                      value={site.store_id}
+                      onChange={(e) =>
+                        sitesCol?.update(
+                          site.id,
+                          (d) => void (d.store_id = e.target.value)
+                        )
+                      }
+                      placeholder="store_xyz123"
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(site.store_id)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Blob storage identifier
+                  </p>
+                </div>
+              </div>
+
+              {site.primary_host && (
+                <div className="mt-4 p-3 bg-muted rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Primary URL:</span>
+                      <code className="text-sm bg-background px-2 py-0.5 rounded">
+                        https://{site.primary_host}
+                      </code>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        copyToClipboard(`https://${site.primary_host}`)
+                      }
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Content Tab */}
+        <TabsContent value="content" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Content Spaces</CardTitle>
+              <CardDescription>
+                Select and organize the spaces to include in your site
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Selected Spaces */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">
+                      Selected Spaces ({selected.length})
+                    </h4>
+                    {selected.length > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        {selected.length} space
+                        {selected.length !== 1 ? "s" : ""} selected
+                      </Badge>
+                    )}
+                  </div>
+
+                  {selected.length === 0 ? (
+                    <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                      <p className="text-muted-foreground text-sm">
+                        No spaces selected yet
+                      </p>
+                      <p className="text-muted-foreground text-xs mt-1">
+                        Add spaces from the available list
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {selected.map((space, idx) => (
+                        <div
+                          key={space.id}
+                          className="flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{space.name}</p>
+                            {space.description && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {space.description}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              disabled={
+                                !selectionLoaded || idx === 0 || isSaving
+                              }
+                              onClick={() => {
+                                const arr = selected.map((s) => s.id)
+                                const current = arr[idx]
+                                const swapWith = arr[idx - 1]
+                                if (!current || !swapWith) return
+                                arr[idx] = swapWith
+                                arr[idx - 1] = current
+                                applySelection(arr)
+                              }}
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              disabled={
+                                !selectionLoaded ||
+                                idx === selected.length - 1 ||
+                                isSaving
+                              }
+                              onClick={() => {
+                                const arr = selected.map((s) => s.id)
+                                const current = arr[idx]
+                                const next = arr[idx + 1]
+                                if (!current || !next) return
+                                arr[idx] = next
+                                arr[idx + 1] = current
+                                applySelection(arr)
+                              }}
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              disabled={!selectionLoaded || isSaving}
+                              onClick={() => {
+                                const arr = selected
+                                  .map((s) => s.id)
+                                  .filter((id) => id !== space.id)
+                                applySelection(arr)
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Available Spaces */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">
+                      Available Spaces ({available.length})
+                    </h4>
+                  </div>
+
+                  {available.length === 0 ? (
+                    <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                      <p className="text-muted-foreground text-sm">
+                        All spaces have been selected
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                      {available.map((space) => (
+                        <div
+                          key={space.id}
+                          className="flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{space.name}</p>
+                            {space.description && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {space.description}
+                              </p>
+                            )}
+                          </div>
+
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={!selectionLoaded || isSaving}
+                            onClick={() => {
+                              const arr = [
+                                ...selected.map((s) => s.id),
+                                space.id,
+                              ]
+                              applySelection(arr)
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Domains Tab */}
+        <TabsContent value="domains" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Custom Domains</CardTitle>
+              <CardDescription>
+                Configure custom domains for your documentation site
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Add domain form */}
+              <div className="flex gap-2">
+                <Input
+                  value={newDomain}
+                  onChange={(e) => setNewDomain(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addDomain()}
+                  placeholder="docs.example.com"
+                  className="flex-1"
+                />
+                <Button
+                  onClick={addDomain}
+                  disabled={!newDomain || isAddingDomain}
+                >
+                  {isAddingDomain ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  Add Domain
+                </Button>
+              </div>
+
+              {/* Domains list */}
+              {domains && domains.length > 0 ? (
+                <div className="space-y-2">
+                  {domains.map((domain) => (
+                    <div
+                      key={domain.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">{domain.domain}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {domain.verified ? (
+                              <Badge variant="outline" className="text-xs">
+                                <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" />
+                                Verified
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">
+                                <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />
+                                Pending verification
+                              </Badge>
+                            )}
+                            {domain.last_checked_at && (
+                              <span className="text-xs text-muted-foreground">
+                                Last checked{" "}
+                                {domain.last_checked_at.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDomainToDelete(domain.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Globe className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No custom domains configured</p>
+                  <p className="text-xs mt-1">Add a domain to get started</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Deploys Tab */}
+        <TabsContent value="deploys" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Deployment History</CardTitle>
+              <CardDescription>
+                View and manage your site deployments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Placeholder for publish functionality */}
+              <div className="mb-6 p-4 bg-muted rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Rocket className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="font-medium">Publish to Production</p>
+                    <p className="text-sm text-muted-foreground">
+                      Deployment functionality coming soon
+                    </p>
+                  </div>
+                  <Button disabled>
+                    <Rocket className="h-4 w-4 mr-2" />
+                    Publish
+                  </Button>
+                </div>
+              </div>
+
+              {/* Build history */}
+              {builds && builds.length > 0 ? (
+                <div className="space-y-2">
+                  {builds
+                    .sort(
+                      (a, b) => b.started_at.getTime() - a.started_at.getTime()
+                    )
+                    .slice(0, 10)
+                    .map((build) => (
+                      <div
+                        key={build.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          {build.operation === "publish" ? (
+                            <Rocket className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">
+                                {build.operation === "publish"
+                                  ? "Deploy"
+                                  : "Revert"}{" "}
+                                #{build.build_id}
+                              </p>
+                              <Badge
+                                variant={
+                                  build.status === "success"
+                                    ? "default"
+                                    : build.status === "failed"
+                                      ? "destructive"
+                                      : build.status === "running"
+                                        ? "secondary"
+                                        : "outline"
+                                }
+                                className="text-xs"
+                              >
+                                {build.status}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(build.started_at).toLocaleString()}
+                              </span>
+                              {build.finished_at && (
+                                <span>
+                                  Duration:{" "}
+                                  {Math.round(
+                                    (new Date(build.finished_at).getTime() -
+                                      new Date(build.started_at).getTime()) /
+                                      1000
+                                  )}
+                                  s
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {build.operation === "publish" &&
+                          build.status === "success" && (
+                            <Button size="sm" variant="outline" disabled>
+                              Revert
+                            </Button>
+                          )}
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No deployments yet</p>
+                  <p className="text-xs mt-1">
+                    Your deployment history will appear here
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Delete Domain Confirmation Dialog */}
+      <AlertDialog
+        open={!!domainToDelete}
+        onOpenChange={() => setDomainToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Domain</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this domain? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => domainToDelete && removeDomain(domainToDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}

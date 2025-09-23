@@ -366,3 +366,231 @@ export const emptyDocumentsCollection = createCollection(
     getKey: (d) => d.id,
   })
 )
+
+const sitesRawSchema = z.object({
+  id: z.string(),
+  organization_id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  store_id: z.string(),
+  base_url: z.string().url(),
+  primary_host: z.string().nullable().optional(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+  last_build_id: z.string().nullable().optional(),
+  last_published_at: z.coerce.date().nullable().optional(),
+})
+export type SiteRow = z.infer<typeof sitesRawSchema>
+
+function createSitesCollectionFor(url: string) {
+  return createCollection(
+    electricCollectionOptions({
+      id: `sites:${url}`,
+      shapeOptions: { url, parser: electricParsers },
+      schema: sitesRawSchema,
+      getKey: (s) => s.id,
+
+      onInsert: async ({ transaction }) => {
+        const { modified: s } = transaction.mutations[0]
+        const result = await trpc.sites.create.mutate({
+          id: s.id,
+          organizationId: s.organization_id,
+          name: s.name,
+          slug: s.slug,
+          baseUrl: s.base_url,
+          storeId: s.store_id,
+        })
+        return { txid: result.txid }
+      },
+
+      onUpdate: async ({ transaction }) => {
+        const { original: prev, modified: next } = transaction.mutations[0]
+        const payload: {
+          id: string
+          name?: string
+          slug?: string | undefined
+          baseUrl?: string
+          storeId?: string
+          primaryHost?: string | undefined
+        } = { id: prev.id }
+        if (next.name !== prev.name) payload.name = next.name
+        if (next.slug !== prev.slug) payload.slug = next.slug
+        if (next.base_url !== prev.base_url) payload.baseUrl = next.base_url
+        if (next.store_id !== prev.store_id) payload.storeId = next.store_id
+        if (next.primary_host !== prev.primary_host)
+          payload.primaryHost = next.primary_host ?? undefined
+        const result = await trpc.sites.update.mutate(payload)
+        return { txid: result.txid }
+      },
+
+      onDelete: async ({ transaction }) => {
+        const { original: prev } = transaction.mutations[0]
+        const result = await trpc.sites.delete.mutate({ id: prev.id })
+        return { txid: result.txid }
+      },
+    })
+  )
+}
+
+type SitesCollection = ReturnType<typeof createSitesCollectionFor>
+const sitesByOrg = new Map<string, SitesCollection>()
+
+export function getOrgSitesCollection(orgId: string): SitesCollection {
+  let col = sitesByOrg.get(orgId)
+  if (!col) {
+    col = createSitesCollectionFor(getApiUrl(`/api/sites?orgId=${orgId}`))
+    sitesByOrg.set(orgId, col)
+  }
+  return col
+}
+
+export const emptySitesCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-sites",
+    schema: sitesRawSchema,
+    getKey: (s) => s.id,
+  })
+)
+
+const siteSpacesRawSchema = z.object({
+  site_id: z.string(),
+  space_id: z.string(),
+  position: z.coerce.number(),
+  style: z.string(),
+})
+export type SiteSpaceRow = z.infer<typeof siteSpacesRawSchema>
+
+export function getSiteSpacesCollection(siteId: string) {
+  return createCollection(
+    electricCollectionOptions({
+      id: `site-spaces:${siteId}`,
+      shapeOptions: { url: getApiUrl(`/api/site-spaces?siteId=${siteId}`) },
+      schema: siteSpacesRawSchema,
+      getKey: (r) => `${r.site_id}:${r.space_id}`,
+      onInsert: async ({ transaction }) => {
+        const { modified: r } = transaction.mutations[0]
+        const res = await trpc.sites.siteSpacesCreate.mutate({
+          siteId: r.site_id,
+          spaceId: r.space_id,
+          position: r.position,
+          style: r.style,
+        })
+        return { txid: res.txid }
+      },
+      onUpdate: async ({ transaction }) => {
+        const { original: prev, modified: next } = transaction.mutations[0]
+        const payload: {
+          siteId: string
+          spaceId: string
+          position?: number
+          style?: string
+        } = {
+          siteId: prev.site_id,
+          spaceId: prev.space_id,
+        }
+        if (next.position !== prev.position) {
+          payload.position = next.position
+        }
+        if (next.style !== prev.style) {
+          payload.style = next.style
+        }
+        const res = await trpc.sites.siteSpacesUpdate.mutate(payload)
+        return { txid: res.txid }
+      },
+      onDelete: async ({ transaction }) => {
+        const { original: prev } = transaction.mutations[0]
+        const res = await trpc.sites.siteSpacesDelete.mutate({
+          siteId: prev.site_id,
+          spaceId: prev.space_id,
+        })
+        return { txid: res.txid }
+      },
+    })
+  )
+}
+
+const siteDomainsRawSchema = z.object({
+  id: z.string(),
+  site_id: z.string(),
+  domain: z.string(),
+  verified: z.coerce.boolean(),
+  last_checked_at: z.coerce.date().nullable(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+})
+export type SiteDomainRow = z.infer<typeof siteDomainsRawSchema>
+
+export function getSiteDomainsCollection(siteId: string) {
+  return createCollection(
+    electricCollectionOptions({
+      id: `site-domains:${siteId}`,
+      shapeOptions: {
+        url: getApiUrl(`/api/site-domains?siteId=${siteId}`),
+        parser: electricParsers,
+      },
+      schema: siteDomainsRawSchema,
+      getKey: (d) => d.id,
+
+      onInsert: async ({ transaction }) => {
+        const { modified: d } = transaction.mutations[0]
+        const res = await trpc.sites.addDomain.mutate({
+          id: d.id,
+          siteId: d.site_id,
+          domain: d.domain,
+        })
+        return { txid: res.txid }
+      },
+      onDelete: async ({ transaction }) => {
+        const { original: d } = transaction.mutations[0]
+        const res = await trpc.sites.removeDomain.mutate({
+          siteId: d.site_id,
+          domain: d.domain,
+        })
+        return { txid: res.txid }
+      },
+    })
+  )
+}
+
+const siteBuildsRawSchema = z.object({
+  id: z.coerce.number(),
+  site_id: z.string(),
+  build_id: z.string(),
+  status: z.string(),
+  operation: z.string(),
+  actor_user_id: z.string(),
+  // Electric can deliver this as text if stored as text in PG. Accept string and decode.
+  selected_space_ids_snapshot: z.union([
+    z.array(z.string()),
+    z.string().transform((s) => {
+      try {
+        const v = JSON.parse(s)
+        return Array.isArray(v) ? v : []
+      } catch {
+        return []
+      }
+    }),
+  ]),
+  target_build_id: z.string().nullable().optional(),
+  items_total: z.coerce.number(),
+  items_done: z.coerce.number(),
+  pages_written: z.coerce.number(),
+  bytes_written: z.coerce.number(),
+  started_at: z.coerce.date(),
+  finished_at: z.coerce.date().nullable(),
+})
+export type SiteBuildRow = z.infer<typeof siteBuildsRawSchema>
+
+export function getSiteBuildsCollection(siteId: string) {
+  return createCollection(
+    electricCollectionOptions({
+      id: `site-builds:${siteId}`,
+      shapeOptions: {
+        url: getApiUrl(`/api/site-builds?siteId=${siteId}`),
+        parser: electricParsers,
+      },
+      schema: siteBuildsRawSchema,
+      getKey: (b) => String(b.id),
+    })
+  )
+}

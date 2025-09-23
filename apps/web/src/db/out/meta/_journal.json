@@ -36,6 +36,13 @@
       "when": 1758275430573,
       "tag": "0004_chief_expediter",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1758623663630,
+      "tag": "0005_curvy_talisman",
+      "breakpoints": true
     }
   ]
 }
