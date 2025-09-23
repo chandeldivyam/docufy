@@ -29,6 +29,8 @@ import { ServerRoute as ApiSpacesServerRouteImport } from './routes/api/spaces'
 import { ServerRoute as ApiOrgUserProfilesServerRouteImport } from './routes/api/org-user-profiles'
 import { ServerRoute as ApiMyOrganizationsServerRouteImport } from './routes/api/my-organizations'
 import { ServerRoute as ApiInvitationsServerRouteImport } from './routes/api/invitations'
+import { ServerRoute as ApiInngestServerRouteImport } from './routes/api/inngest'
+import { ServerRoute as ApiHelloServerRouteImport } from './routes/api/hello'
 import { ServerRoute as ApiDocumentsServerRouteImport } from './routes/api/documents'
 import { ServerRoute as ApiDocumentUpdatesServerRouteImport } from './routes/api/document-updates'
 import { ServerRoute as ApiAwarenessUpdatesServerRouteImport } from './routes/api/awareness-updates'
@@ -135,6 +137,16 @@ const ApiMyOrganizationsServerRoute =
 const ApiInvitationsServerRoute = ApiInvitationsServerRouteImport.update({
   id: '/api/invitations',
   path: '/api/invitations',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
+const ApiInngestServerRoute = ApiInngestServerRouteImport.update({
+  id: '/api/inngest',
+  path: '/api/inngest',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
+const ApiHelloServerRoute = ApiHelloServerRouteImport.update({
+  id: '/api/hello',
+  path: '/api/hello',
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiDocumentsServerRoute = ApiDocumentsServerRouteImport.update({
@@ -268,6 +280,8 @@ export interface FileServerRoutesByFullPath {
   '/api/awareness-updates': typeof ApiAwarenessUpdatesServerRoute
   '/api/document-updates': typeof ApiDocumentUpdatesServerRoute
   '/api/documents': typeof ApiDocumentsServerRoute
+  '/api/hello': typeof ApiHelloServerRoute
+  '/api/inngest': typeof ApiInngestServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
@@ -282,6 +296,8 @@ export interface FileServerRoutesByTo {
   '/api/awareness-updates': typeof ApiAwarenessUpdatesServerRoute
   '/api/document-updates': typeof ApiDocumentUpdatesServerRoute
   '/api/documents': typeof ApiDocumentsServerRoute
+  '/api/hello': typeof ApiHelloServerRoute
+  '/api/inngest': typeof ApiInngestServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
@@ -297,6 +313,8 @@ export interface FileServerRoutesById {
   '/api/awareness-updates': typeof ApiAwarenessUpdatesServerRoute
   '/api/document-updates': typeof ApiDocumentUpdatesServerRoute
   '/api/documents': typeof ApiDocumentsServerRoute
+  '/api/hello': typeof ApiHelloServerRoute
+  '/api/inngest': typeof ApiInngestServerRoute
   '/api/invitations': typeof ApiInvitationsServerRoute
   '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
   '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
@@ -313,6 +331,8 @@ export interface FileServerRouteTypes {
     | '/api/awareness-updates'
     | '/api/document-updates'
     | '/api/documents'
+    | '/api/hello'
+    | '/api/inngest'
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
@@ -327,6 +347,8 @@ export interface FileServerRouteTypes {
     | '/api/awareness-updates'
     | '/api/document-updates'
     | '/api/documents'
+    | '/api/hello'
+    | '/api/inngest'
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
@@ -341,6 +363,8 @@ export interface FileServerRouteTypes {
     | '/api/awareness-updates'
     | '/api/document-updates'
     | '/api/documents'
+    | '/api/hello'
+    | '/api/inngest'
     | '/api/invitations'
     | '/api/my-organizations'
     | '/api/org-user-profiles'
@@ -356,6 +380,8 @@ export interface RootServerRouteChildren {
   ApiAwarenessUpdatesServerRoute: typeof ApiAwarenessUpdatesServerRoute
   ApiDocumentUpdatesServerRoute: typeof ApiDocumentUpdatesServerRoute
   ApiDocumentsServerRoute: typeof ApiDocumentsServerRoute
+  ApiHelloServerRoute: typeof ApiHelloServerRoute
+  ApiInngestServerRoute: typeof ApiInngestServerRoute
   ApiInvitationsServerRoute: typeof ApiInvitationsServerRoute
   ApiMyOrganizationsServerRoute: typeof ApiMyOrganizationsServerRoute
   ApiOrgUserProfilesServerRoute: typeof ApiOrgUserProfilesServerRoute
@@ -499,6 +525,20 @@ declare module '@tanstack/react-start/server' {
       preLoaderRoute: typeof ApiInvitationsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
+    '/api/inngest': {
+      id: '/api/inngest'
+      path: '/api/inngest'
+      fullPath: '/api/inngest'
+      preLoaderRoute: typeof ApiInngestServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/hello': {
+      id: '/api/hello'
+      path: '/api/hello'
+      fullPath: '/api/hello'
+      preLoaderRoute: typeof ApiHelloServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
     '/api/documents': {
       id: '/api/documents'
       path: '/api/documents'
@@ -628,6 +668,8 @@ const rootServerRouteChildren: RootServerRouteChildren = {
   ApiAwarenessUpdatesServerRoute: ApiAwarenessUpdatesServerRoute,
   ApiDocumentUpdatesServerRoute: ApiDocumentUpdatesServerRoute,
   ApiDocumentsServerRoute: ApiDocumentsServerRoute,
+  ApiHelloServerRoute: ApiHelloServerRoute,
+  ApiInngestServerRoute: ApiInngestServerRoute,
   ApiInvitationsServerRoute: ApiInvitationsServerRoute,
   ApiMyOrganizationsServerRoute: ApiMyOrganizationsServerRoute,
   ApiOrgUserProfilesServerRoute: ApiOrgUserProfilesServerRoute,

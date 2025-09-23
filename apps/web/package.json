@@ -46,6 +46,7 @@
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.3",
     "drizzle-zod": "^0.7.1",
+    "inngest": "^3.41.0",
     "lib0": "^0.2.114",
     "lucide-react": "^0.542.0",
     "pg": "^8.16.3",
