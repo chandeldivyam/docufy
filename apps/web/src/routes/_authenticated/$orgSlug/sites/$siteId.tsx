@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   Card,
   CardContent,
@@ -100,11 +100,27 @@ function SiteDetailPage() {
     [domainsCol]
   )
 
-  const buildsCol = useMemo(() => getSiteBuildsCollection(siteId), [siteId])
-  const { data: builds } = useLiveQuery(
-    (q) => q.from({ builds: buildsCol }),
-    [buildsCol]
+  const siteBuildsCol = useMemo(() => getSiteBuildsCollection(siteId), [siteId])
+  const { data: buildsRaw } = useLiveQuery(
+    (q) => q.from({ builds: siteBuildsCol }),
+    [siteBuildsCol]
   )
+  const builds = (buildsRaw ?? [])
+    .slice()
+    .sort((a, b) => b.started_at.getTime() - a.started_at.getTime())
+  useEffect(() => {
+    const synthetic = (builds ?? []).filter((b) => Number(b.id) < 0)
+    const hasReal = (builds ?? []).some(
+      (b) =>
+        Number(b.id) > 0 && (b.status === "queued" || b.status === "running")
+    )
+    if (hasReal && synthetic.length) {
+      // Best-effort cleanup to hide the synthetic row once real row is visible
+      synthetic.forEach((s) => {
+        siteBuildsCol.delete(String(s.id))
+      })
+    }
+  }, [builds, siteBuildsCol])
 
   const [newDomain, setNewDomain] = useState("")
   const [isAddingDomain, setIsAddingDomain] = useState(false)
@@ -619,10 +635,24 @@ function SiteDetailPage() {
                                 Verified
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-xs">
-                                <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />
-                                Pending verification
-                              </Badge>
+                              <>
+                                <Badge variant="outline" className="text-xs">
+                                  <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />
+                                  Pending verification
+                                </Badge>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() =>
+                                    domainsCol.update(domain.id, (d) => {
+                                      // Trigger verify via onUpdate; we don't flip 'verified' here
+                                      d.last_checked_at = new Date()
+                                    })
+                                  }
+                                >
+                                  Check now
+                                </Button>
+                              </>
                             )}
                             {domain.last_checked_at && (
                               <span className="text-xs text-muted-foreground">
@@ -676,7 +706,40 @@ function SiteDetailPage() {
                       Deployment functionality coming soon
                     </p>
                   </div>
-                  <Button disabled>
+                  <Button
+                    onClick={async () => {
+                      // Block if another build is running/queued
+                      const busy = (builds ?? []).some(
+                        (b) => b.status === "running" || b.status === "queued"
+                      )
+                      if (busy || selected.length === 0) return
+
+                      // Insert a client-only synthetic row with negative id
+                      await siteBuildsCol.insert({
+                        id: -Date.now(),
+                        site_id: siteId,
+                        build_id: `local:${crypto.randomUUID()}`,
+                        status: "running",
+                        operation: "publish",
+                        actor_user_id: "me", // or from session
+                        selected_space_ids_snapshot: selected.map((s) => s.id),
+                        target_build_id: null,
+                        items_total: selected.length || 1,
+                        items_done: 0,
+                        pages_written: 0,
+                        bytes_written: 0,
+                        started_at: new Date(),
+                        finished_at: null,
+                      })
+                      // onInsert on the collection will enqueue the real publish
+                    }}
+                    disabled={
+                      selected.length === 0 ||
+                      (builds ?? []).some(
+                        (b) => b.status === "running" || b.status === "queued"
+                      )
+                    }
+                  >
                     <Rocket className="h-4 w-4 mr-2" />
                     Publish
                   </Button>
@@ -747,7 +810,34 @@ function SiteDetailPage() {
 
                         {build.operation === "publish" &&
                           build.status === "success" && (
-                            <Button size="sm" variant="outline" disabled>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                const busy = (builds ?? []).some(
+                                  (b) =>
+                                    b.status === "running" ||
+                                    b.status === "queued"
+                                )
+                                if (busy) return
+                                await siteBuildsCol.insert({
+                                  id: -Date.now(),
+                                  site_id: siteId,
+                                  build_id: `local:${crypto.randomUUID()}`,
+                                  status: "running",
+                                  operation: "revert",
+                                  actor_user_id: "me",
+                                  selected_space_ids_snapshot: [],
+                                  target_build_id: build.build_id,
+                                  items_total: 1,
+                                  items_done: 0,
+                                  pages_written: 0,
+                                  bytes_written: 0,
+                                  started_at: new Date(),
+                                  finished_at: null,
+                                })
+                              }}
+                            >
                               Revert
                             </Button>
                           )}

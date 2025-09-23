@@ -11,6 +11,7 @@ import {
 } from "@/db/schema"
 import { members as membersTable } from "@/db/auth-schema"
 import crypto from "node:crypto"
+import { inngest } from "@/inngest"
 
 const slugify = (input: string) =>
   input
@@ -446,7 +447,7 @@ export const sitesRouter = router({
       const id = input.id ?? crypto.randomUUID()
       const d = input.domain.trim().toLowerCase()
 
-      return await ctx.db.transaction(async (tx) => {
+      const res = await ctx.db.transaction(async (tx) => {
         await tx.insert(siteDomainsTable).values({
           id,
           siteId: input.siteId,
@@ -454,10 +455,18 @@ export const sitesRouter = router({
           verified: false,
           organizationId: s.organizationId,
         })
-        // TODO: kick Vercel domain add + verify via Inngest
-        const txid = await generateTxId(tx)
-        return { txid }
+        return await generateTxId(tx)
       })
+
+      // enqueue connect
+      await inngest.send({
+        name: "domain/connect",
+        data: {
+          siteId: input.siteId,
+          domain: input.domain.trim().toLowerCase(),
+        },
+      })
+      return { txid: res }
     }),
 
   removeDomain: authedProcedure
@@ -485,6 +494,10 @@ export const sitesRouter = router({
             )
           )
         // TODO: best effort remove from Vercel via Inngest
+        await inngest.send({
+          name: "domain/remove",
+          data: { domain: input.domain.trim().toLowerCase() },
+        })
         const txid = await generateTxId(tx)
         return { txid }
       })
@@ -535,8 +548,11 @@ export const sitesRouter = router({
           organizationId: site.orgId,
         })
 
-        // TODO: enqueue Inngest job site.publish with { siteId, buildId, actorUserId }
-        // For now we leave it in "queued" state
+        // enqueue Inngest job site.publish with { siteId, buildId, actorUserId }
+        await inngest.send({
+          name: "site/publish",
+          data: { siteId: input.siteId, buildId, actorUserId: userId },
+        })
 
         const txid = await generateTxId(tx)
         return { txid, buildId }
@@ -571,12 +587,54 @@ export const sitesRouter = router({
           selectedSpaceIdsSnapshot: [],
           targetBuildId: input.targetBuildId,
           organizationId: site.orgId,
+          itemsTotal: 0,
+          itemsDone: 0,
+          pagesWritten: 0,
+          bytesWritten: 0,
         })
 
-        // TODO: enqueue Inngest job site.revert with { siteId, buildId, targetBuildId }
+        // enqueue Inngest job site.revert with { siteId, buildId, targetBuildId }
+        await inngest.send({
+          name: "site/revert",
+          data: {
+            siteId: input.siteId,
+            buildId,
+            targetBuildId: input.targetBuildId,
+          },
+        })
 
         const txid = await generateTxId(tx)
         return { txid, buildId }
       })
+    }),
+
+  verifyDomain: authedProcedure
+    .input(z.object({ domain: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id
+      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" })
+
+      const domain = input.domain.trim().toLowerCase()
+
+      // Find the domain and its owning org
+      const row = (
+        await ctx.db
+          .select({
+            siteId: siteDomainsTable.siteId,
+            orgId: sitesTable.organizationId,
+          })
+          .from(siteDomainsTable)
+          .innerJoin(sitesTable, eq(siteDomainsTable.siteId, sitesTable.id))
+          .where(eq(siteDomainsTable.domain, domain))
+          .limit(1)
+      )[0]
+      if (!row)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Domain not found" })
+
+      await assertOrgRole(ctx.db, userId, row.orgId, ["owner", "admin"])
+
+      // Enqueue Inngest domain verify job (your Inngest function will update DB)
+      await inngest.send({ name: "domain/verify", data: { domain } })
+      return { enqueued: true }
     }),
 })

@@ -540,6 +540,26 @@ export function getSiteDomainsCollection(siteId: string) {
         })
         return { txid: res.txid }
       },
+
+      // NEW: trigger verify when last_checked_at is changed locally
+      onUpdate: async ({ transaction }) => {
+        const { original: prev, modified: next } = transaction.mutations[0]
+        const lastCheckedChanged =
+          (prev.last_checked_at?.getTime?.() ?? 0) !==
+          (next.last_checked_at?.getTime?.() ?? 0)
+
+        // Only treat this as a "verify" command if verified wasn't manually toggled
+        const verifiedChanged = prev.verified !== next.verified
+
+        if (lastCheckedChanged && !verifiedChanged) {
+          await trpc.sites.verifyDomain.mutate({ domain: next.domain })
+          return { txid: 0 }
+        }
+
+        // If later you support editing 'verified' or 'domain', handle here.
+        return { txid: 0 }
+      },
+
       onDelete: async ({ transaction }) => {
         const { original: d } = transaction.mutations[0]
         const res = await trpc.sites.removeDomain.mutate({
@@ -591,6 +611,38 @@ export function getSiteBuildsCollection(siteId: string) {
       },
       schema: siteBuildsRawSchema,
       getKey: (b) => String(b.id),
+
+      // NEW: treat "negative id" inserts as client commands
+      onInsert: async ({ transaction }) => {
+        const { modified: b } = transaction.mutations[0]
+
+        // Only react to purely client-optimistic inserts with negative ids
+        if (typeof b.id === "number" && b.id < 0) {
+          if (b.operation === "publish") {
+            // just enqueue; real row will appear via Electric
+            const result = await trpc.sites.publish.mutate({
+              siteId: b.site_id,
+            })
+            // Use the actual txid from the result if available
+            return { txid: result.txid ?? 0 }
+          } else if (b.operation === "revert" && b.target_build_id) {
+            const result = await trpc.sites.revert.mutate({
+              siteId: b.site_id,
+              targetBuildId: b.target_build_id,
+            })
+            // Use the actual txid from the result if available
+            return { txid: result.txid ?? 0 }
+          }
+          // Do not delete the synthetic row here. We'll remove it in the component
+          // when the real running/queued row appears, to avoid a visual gap.
+          // Return 0 for operations that don't match
+          return { txid: 0 }
+        }
+
+        // Ignore accidental attempts to "create real builds" from client
+        // Return 0 to indicate a no-op
+        return { txid: 0 }
+      },
     })
   )
 }
