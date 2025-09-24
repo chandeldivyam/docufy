@@ -24,10 +24,8 @@ const config = defineConfig({
     }),
   ],
   ssr: {
-    noExternal: ["zod"],
-    external: ["json-stringify-safe"],
+    noExternal: ["zod", "inngest", "json-stringify-safe"],
   },
-  optimizeDeps: { needsInterop: ["json-stringify-safe"] },
 })
 
 export default config
