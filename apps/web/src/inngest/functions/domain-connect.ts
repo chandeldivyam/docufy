@@ -1,9 +1,9 @@
 // apps/web/src/inngest/functions/domain-connect.ts
 import { inngest } from "../client"
 import { db } from "@/db/connection"
-import { sitesTable, siteDomainsTable } from "@/db/schema"
+import { sitesTable } from "@/db/schema"
 import { eq } from "drizzle-orm"
-import { connectDomainOnVercel, verifyDomainOnVercel } from "../helpers/domains"
+import { connectDomainOnVercel } from "../helpers/domains"
 import { writeDomainPointers } from "../helpers/blob"
 
 export const domainConnect = inngest.createFunction(
@@ -17,18 +17,8 @@ export const domainConnect = inngest.createFunction(
       .where(eq(sitesTable.id, siteId))
       .limit(1)
     if (!site) throw new Error("Site not found")
-    await connectDomainOnVercel(domain)
 
-    // Best effort verify and update DB
-    const status = await verifyDomainOnVercel(domain).catch(() => ({}))
-    const verified = Boolean(status?.verified || status?.configured)
-    await db
-      .update(siteDomainsTable)
-      .set({
-        verified,
-        lastCheckedAt: new Date(),
-      })
-      .where(eq(siteDomainsTable.domain, domain))
+    await connectDomainOnVercel(domain)
 
     // Mirror pointer to the new domain if site has a build
     if (site.lastBuildId) {
@@ -41,6 +31,6 @@ export const domainConnect = inngest.createFunction(
       })
     }
 
-    return { domain, verified }
+    return { domain, verified: false }
   }
 )

@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   index,
   bigserial,
+  boolean,
 } from "drizzle-orm/pg-core"
 
 const { createSelectSchema, createInsertSchema } = createSchemaFactory({
@@ -182,7 +183,7 @@ export const siteDomainsTable = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
-    verified: text("verified").$type<boolean>().default(false).notNull(),
+    verified: boolean("verified").default(false).notNull(),
     lastCheckedAt: timestamp("last_checked_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

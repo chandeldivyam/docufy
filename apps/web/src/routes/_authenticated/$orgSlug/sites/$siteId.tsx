@@ -48,6 +48,7 @@ import {
   ExternalLink,
   Copy,
   Loader2,
+  ChevronDown,
 } from "lucide-react"
 // import { toast } from "sonner"
 // import { cn } from "@/lib/utils"
@@ -332,61 +333,6 @@ function SiteDetailPage() {
                     URL-friendly identifier
                   </p>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="base-url">Base URL</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="base-url"
-                      value={site.base_url}
-                      onChange={(e) =>
-                        sitesCol?.update(
-                          site.id,
-                          (d) => void (d.base_url = e.target.value)
-                        )
-                      }
-                      placeholder="https://cdn.example.com"
-                    />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => copyToClipboard(site.base_url)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    CDN endpoint for your content
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="store-id">Store ID</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="store-id"
-                      value={site.store_id}
-                      onChange={(e) =>
-                        sitesCol?.update(
-                          site.id,
-                          (d) => void (d.store_id = e.target.value)
-                        )
-                      }
-                      placeholder="store_xyz123"
-                      className="font-mono text-sm"
-                    />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => copyToClipboard(site.store_id)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Blob storage identifier
-                  </p>
-                </div>
               </div>
 
               {site.primary_host && (
@@ -622,56 +568,197 @@ function SiteDetailPage() {
                   {domains.map((domain) => (
                     <div
                       key={domain.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
+                      className="border rounded-lg overflow-hidden"
                     >
-                      <div className="flex items-center gap-3">
-                        <Globe className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{domain.domain}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            {domain.verified ? (
-                              <Badge variant="outline" className="text-xs">
-                                <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" />
-                                Verified
-                              </Badge>
-                            ) : (
-                              <>
+                      {/* Main domain info */}
+                      <div className="flex items-center justify-between p-3">
+                        <div className="flex items-center gap-3">
+                          <Globe className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">{domain.domain}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {domain.verified ? (
+                                <Badge variant="outline" className="text-xs">
+                                  <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" />
+                                  Verified
+                                </Badge>
+                              ) : (
                                 <Badge variant="outline" className="text-xs">
                                   <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />
                                   Pending verification
                                 </Badge>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  onClick={() =>
-                                    domainsCol.update(domain.id, (d) => {
-                                      // Trigger verify via onUpdate; we don't flip 'verified' here
-                                      d.last_checked_at = new Date()
-                                    })
-                                  }
-                                >
-                                  Check now
-                                </Button>
-                              </>
-                            )}
-                            {domain.last_checked_at && (
-                              <span className="text-xs text-muted-foreground">
-                                Last checked{" "}
-                                {domain.last_checked_at.toLocaleString()}
-                              </span>
-                            )}
+                              )}
+                              {domain.last_checked_at && (
+                                <span className="text-xs text-muted-foreground">
+                                  Last checked{" "}
+                                  {domain.last_checked_at.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
                           </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {!domain.verified && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() =>
+                                domainsCol.update(domain.id, (d) => {
+                                  d.last_checked_at = new Date()
+                                })
+                              }
+                            >
+                              <RefreshCw className="h-4 w-4 mr-1" />
+                              Check now
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDomainToDelete(domain.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            Remove
+                          </Button>
                         </div>
                       </div>
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDomainToDelete(domain.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        Remove
-                      </Button>
+                      {/* DNS Instructions for unverified domains */}
+                      {!domain.verified && (
+                        <div className="border-t bg-muted/30 p-4">
+                          <div className="space-y-3">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                                  DNS Configuration Required
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Add this CNAME record to your DNS provider to
+                                  verify domain ownership
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="bg-background rounded-lg border p-3 space-y-3">
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-1">
+                                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                    Record Type
+                                  </Label>
+                                  <div className="flex items-center gap-2">
+                                    <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
+                                      CNAME
+                                    </code>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 w-6 p-0"
+                                      onClick={() => copyToClipboard("CNAME")}
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                    Name/Host
+                                  </Label>
+                                  <div className="flex items-center gap-2">
+                                    <code className="text-sm bg-muted px-2 py-1 rounded font-mono flex-1 min-w-0 truncate">
+                                      {(() => {
+                                        const parts = domain.domain.split(".")
+                                        // If it's an apex domain (e.g., example.com), use @ or blank
+                                        if (parts.length <= 2) return "@"
+                                        // Otherwise, return just the subdomain part (e.g., 'test' from 'test.learno.fun')
+                                        return parts[0]
+                                      })()}
+                                    </code>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 w-6 p-0 flex-shrink-0"
+                                      onClick={() => {
+                                        const parts = domain.domain.split(".")
+                                        const nameValue =
+                                          parts.length <= 2 ? "@" : parts[0]
+                                        copyToClipboard(nameValue!)
+                                      }}
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    {(() => {
+                                      const parts = domain.domain.split(".")
+                                      if (parts.length <= 2) {
+                                        return "Use @ for apex domain or leave blank if @ is not supported"
+                                      }
+                                      return `Just the subdomain part of ${domain.domain}`
+                                    })()}
+                                  </p>
+                                </div>
+
+                                <div className="space-y-1 sm:col-span-2">
+                                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                    Value/Target
+                                  </Label>
+                                  <div className="flex items-center gap-2">
+                                    <code className="text-sm bg-muted px-2 py-1 rounded font-mono flex-1 min-w-0">
+                                      cname.vercel-dns.com.
+                                    </code>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 w-6 p-0 flex-shrink-0"
+                                      onClick={() =>
+                                        copyToClipboard("cname.vercel-dns.com.")
+                                      }
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="pt-2 border-t">
+                                <details className="group">
+                                  <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
+                                    <span>
+                                      Need help with DNS configuration?
+                                    </span>
+                                    <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
+                                  </summary>
+                                  <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                                    <p>
+                                      1. Log in to your domain registrar or DNS
+                                      provider
+                                    </p>
+                                    <p>
+                                      2. Navigate to DNS management or DNS
+                                      records
+                                    </p>
+                                    <p>
+                                      3. Add a new CNAME record with the values
+                                      above
+                                    </p>
+                                    <p>
+                                      4. Save the changes and wait for
+                                      propagation (up to 24 hours)
+                                    </p>
+                                    <p>
+                                      5. Click "Check now" to verify the
+                                      configuration
+                                    </p>
+                                  </div>
+                                </details>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -875,7 +962,7 @@ function SiteDetailPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => domainToDelete && removeDomain(domainToDelete)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive hover:bg-destructive/90"
             >
               Remove
             </AlertDialogAction>

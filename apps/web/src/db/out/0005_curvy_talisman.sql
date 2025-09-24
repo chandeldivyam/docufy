@@ -32,7 +32,7 @@ CREATE TABLE "site_domains" (
 	"site_id" text NOT NULL,
 	"domain" text NOT NULL,
 	"organization_id" text NOT NULL,
-	"verified" text DEFAULT false NOT NULL,
+	"verified" boolean DEFAULT false NOT NULL,
 	"last_checked_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL

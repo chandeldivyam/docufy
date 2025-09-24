@@ -10,15 +10,24 @@ export const domainVerify = inngest.createFunction(
   { event: "domain/verify" },
   async ({ event }) => {
     const { domain } = event.data as { domain: string }
-    const status = await verifyDomainOnVercel(domain)
-    const verified = Boolean(status?.verified || status?.configured)
+
+    const { projectDomain, dns, ready } = await verifyDomainOnVercel(domain)
+
     await db
       .update(siteDomainsTable)
       .set({
-        verified,
+        verified: ready,
         lastCheckedAt: new Date(),
       })
       .where(eq(siteDomainsTable.domain, domain))
-    return { domain, verified, status }
+
+    return {
+      domain,
+      verified: ready,
+      status: {
+        projectDomain,
+        dns,
+      },
+    }
   }
 )

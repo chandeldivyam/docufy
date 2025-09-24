@@ -513,7 +513,7 @@ const siteDomainsRawSchema = z.object({
   id: z.string(),
   site_id: z.string(),
   domain: z.string(),
-  verified: z.coerce.boolean(),
+  verified: z.boolean(),
   last_checked_at: z.coerce.date().nullable(),
   created_at: z.coerce.date(),
   updated_at: z.coerce.date(),
