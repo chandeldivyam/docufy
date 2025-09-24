@@ -50,8 +50,7 @@ import {
   Loader2,
   ChevronDown,
 } from "lucide-react"
-// import { toast } from "sonner"
-// import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug/sites/$siteId")({
   ssr: false,
@@ -206,11 +205,11 @@ function SiteDetailPage() {
         created_at: new Date(),
         updated_at: new Date(),
       })
-      // toast.success("Domain added successfully")
-      console.log("Domain added successfully")
+      toast.success("Domain added successfully")
       setNewDomain("")
     } catch (error) {
       console.error("Failed to add domain", error)
+      toast.error("Failed to add domain")
     } finally {
       setIsAddingDomain(false)
     }
@@ -219,18 +218,17 @@ function SiteDetailPage() {
   async function removeDomain(domainId: string) {
     try {
       await domainsCol.delete(domainId)
-      // toast.success("Domain removed")
-      console.log("Domain removed")
+      toast.success("Domain removed")
       setDomainToDelete(null)
     } catch (error) {
       console.error("Failed to remove domain", error)
+      toast.error("Failed to remove domain")
     }
   }
 
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text)
-    // toast.success("Copied to clipboard")
-    console.log("Copied to clipboard")
+    toast.success("Copied to clipboard")
   }
 
   const latestBuild = builds?.sort(
@@ -603,11 +601,12 @@ function SiteDetailPage() {
                             <Button
                               size="sm"
                               variant="secondary"
-                              onClick={() =>
+                              onClick={() => {
+                                toast.info("Verifying domain...")
                                 domainsCol.update(domain.id, (d) => {
                                   d.last_checked_at = new Date()
                                 })
-                              }
+                              }}
                             >
                               <RefreshCw className="h-4 w-4 mr-1" />
                               Check now
