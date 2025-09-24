@@ -34,6 +34,8 @@ import {
   myOrganizationsCollection,
   slugify as slugifySpace,
   type SpaceRow,
+  getOrgSitesCollection,
+  emptySitesCollection,
 } from "@/lib/collections"
 import {
   Dialog,
@@ -62,7 +64,7 @@ import {
 export const Route = createFileRoute("/_authenticated/$orgSlug")({
   ssr: false,
   loader: async () => {
-    await myOrganizationsCollection.preload()
+    await Promise.all([myOrganizationsCollection.preload()])
     return null
   },
   component: OrgSlugLayout,
@@ -184,6 +186,10 @@ function MainNavContent({ orgSlug }: { orgSlug: string }) {
             Settings
           </NavItem>
         </nav>
+
+        <div className="px-2 py-3">
+          <SitesSection currentSlug={orgSlug} />
+        </div>
 
         <div className="px-2 py-3">
           <SpacesSection currentSlug={orgSlug} />
@@ -690,6 +696,176 @@ function SpacesSection({ currentSlug }: { currentSlug: string }) {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+function SitesSection({ currentSlug }: { currentSlug: string }) {
+  const navigate = useNavigate()
+  const routerState = useRouterState()
+  const pathname = routerState.location.pathname
+
+  const { data: myOrgs } = useLiveQuery((q) =>
+    q.from({ myOrganizations: myOrganizationsCollection })
+  )
+  const orgId = myOrgs?.find((o) => o.org_slug === currentSlug)?.organization_id
+
+  const sitesCollection = orgId
+    ? getOrgSitesCollection(orgId)
+    : emptySitesCollection
+
+  const { data: sites } = useLiveQuery(
+    (q) => q.from({ sites: sitesCollection }),
+    [sitesCollection]
+  )
+
+  // Create dialog state
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [slug, setSlug] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function slugify(input: string) {
+    return input
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "")
+  }
+
+  useEffect(() => {
+    setSlug((s) => (name && !s ? slugify(name) : s))
+  }, [name])
+
+  async function createSite(e: React.FormEvent) {
+    e.preventDefault()
+    if (!orgId || !name.trim()) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const siteId =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}`
+
+      const blobStoreId = import.meta.env.VITE_PUBLIC_VERCEL_BLOB_STORE_ID ?? ""
+      const blobStoreUrl =
+        import.meta.env.VITE_PUBLIC_VERCEL_BLOB_BASE_URL ?? ""
+
+      console.log(blobStoreId, blobStoreUrl)
+
+      if (!blobStoreId || !blobStoreUrl) {
+        throw new Error("Blob store ID or URL not found")
+      }
+
+      console.log("trying to insert site")
+
+      await sitesCollection.insert({
+        id: siteId,
+        organization_id: orgId,
+        name: name.trim(),
+        slug: slug || slugify(name),
+        base_url: blobStoreUrl,
+        store_id: blobStoreId,
+        primary_host: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+        last_build_id: null,
+        last_published_at: null,
+      })
+      setOpen(false)
+      setName("")
+      setSlug("")
+      navigate({
+        to: "/$orgSlug/sites/$siteId",
+        params: { orgSlug: currentSlug, siteId },
+      })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create site")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between px-2">
+        <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+          Sites
+        </h3>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-6 w-6">
+              <Plus className="h-3 w-3" />
+              <span className="sr-only">Create site</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent aria-label="Create site">
+            <DialogHeader>
+              <DialogTitle>Create site</DialogTitle>
+              <DialogDescription>
+                Publish selected spaces to a public site.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={createSite} className="space-y-3">
+              <div className="grid gap-2">
+                <Label>Name</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Slug</Label>
+                <Input value={slug} onChange={(e) => setSlug(e.target.value)} />
+              </div>
+              {error ? (
+                <p className="text-sm text-destructive">{error}</p>
+              ) : null}
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submitting || !name}>
+                  {submitting ? "Creating…" : "Create"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {sites && sites.length > 0 ? (
+        <ul className="space-y-1">
+          {sites.map((s) => (
+            <li key={s.id}>
+              <Link
+                to="/$orgSlug/sites/$siteId"
+                params={{ orgSlug: currentSlug, siteId: s.id }}
+                className={cn(
+                  "flex items-center gap-2 rounded px-2 py-2 text-sm hover:bg-accent hover:text-accent-foreground",
+                  pathname.startsWith(`/${currentSlug}/sites/${s.id}`) &&
+                    "bg-accent text-accent-foreground"
+                )}
+                title={s.name}
+              >
+                <HomeIcon className="h-4 w-4" />
+                <span className="truncate">{s.name}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="px-2 py-3 text-muted-foreground text-sm">
+          No sites yet
+        </div>
+      )}
     </div>
   )
 }

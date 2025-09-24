@@ -6,11 +6,13 @@ import { spacesRouter } from "@/lib/trpc/spaces"
 import { documentsRouter } from "@/lib/trpc/documents"
 import { db } from "@/db/connection"
 import { auth } from "@/lib/auth"
+import { sitesRouter } from "@/lib/trpc/sites"
 
 export const appRouter = router({
   users: usersRouter,
   spaces: spacesRouter,
   documents: documentsRouter,
+  sites: sitesRouter,
 })
 
 export type AppRouter = typeof appRouter

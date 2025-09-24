@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router"
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 import { ThemeProvider, ThemeScript } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -44,6 +45,7 @@ export const Route = createRootRoute({
       <RootDocument>
         <Outlet />
         <TanStackRouterDevtools />
+        <Toaster />
       </RootDocument>
     </ThemeProvider>
   ),
