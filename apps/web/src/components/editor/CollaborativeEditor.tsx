@@ -5,6 +5,15 @@ import { ElectricYjsProvider } from "@/lib/y-electric/provider"
 import { createTiptapExtensions } from "./tiptap-extensions"
 import { usePresenceUser } from "@/lib/use-presence-user"
 import { ImageResizer } from "./ImageResizer"
+import {
+  EditorRoot,
+  EditorCommand,
+  EditorCommandList,
+  EditorCommandItem,
+  EditorCommandEmpty,
+  handleCommandNavigation,
+} from "@docufy/content-kit"
+import { suggestionItems } from "./slash-command"
 
 const yDocs = new Map<string, Y.Doc>()
 const providers = new Map<string, ElectricYjsProvider>()
@@ -51,6 +60,9 @@ export function CollaborativeEditor({
           class:
             "tiptap prose dark:prose-invert focus:outline-none max-w-full h-full",
         },
+        handleDOMEvents: {
+          keydown: (_view, event) => handleCommandNavigation(event),
+        },
       },
     },
     // Any of these will work; documentId is simplest and stable.
@@ -79,14 +91,45 @@ export function CollaborativeEditor({
   ])
 
   return (
-    <div className="relative h-full">
-      <EditorContent
-        key={documentId}
-        editor={editor}
-        className="h-full p-4 sm:p-6"
-        autoFocus
-      />
-      <ImageResizer editor={editor} />
-    </div>
+    <EditorRoot>
+      <div className="relative h-full">
+        <EditorContent
+          key={documentId}
+          editor={editor}
+          className="h-full p-4 sm:p-6"
+          autoFocus
+        />
+        <ImageResizer editor={editor} />
+
+        {/* Slash Command palette (styled similar to Novel’s) */}
+        <EditorCommand className="z-50 h-auto max-h-80 overflow-y-auto rounded-md border bg-card px-1 py-2 shadow-md">
+          <EditorCommandEmpty className="px-2 text-muted-foreground">
+            No results
+          </EditorCommandEmpty>
+          <EditorCommandList>
+            {suggestionItems.map((item) => (
+              <EditorCommandItem
+                key={item.title}
+                value={item.title}
+                onCommand={(val) => item.command?.(val)}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent aria-selected:bg-accent"
+              >
+                {item.icon ? (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-md border bg-background">
+                    {item.icon}
+                  </div>
+                ) : null}
+                <div>
+                  <p className="font-medium">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.description}
+                  </p>
+                </div>
+              </EditorCommandItem>
+            ))}
+          </EditorCommandList>
+        </EditorCommand>
+      </div>
+    </EditorRoot>
   )
 }

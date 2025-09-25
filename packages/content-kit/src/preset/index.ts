@@ -8,6 +8,7 @@ import { ResizableImage, StaticImage } from '../extensions/image/index.js';
 import CustomKeymap from '../extensions/custom-keymap/index.js';
 import { UploadImagesExtension } from '../plugins/upload-images.js';
 import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
+import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details';
 
 type Mode = 'editor' | 'static';
 
@@ -34,6 +35,14 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       undoRedo: false,
     }),
     AutoJoiner,
+    Details.configure({
+      persist: true,
+      HTMLAttributes: {
+        class: 'details',
+      },
+    }),
+    DetailsSummary,
+    DetailsContent,
   ];
 
   const extra = opts.extra ?? [];
