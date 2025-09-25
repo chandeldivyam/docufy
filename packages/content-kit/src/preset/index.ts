@@ -9,6 +9,8 @@ import CustomKeymap from '../extensions/custom-keymap/index.js';
 import { UploadImagesExtension } from '../plugins/upload-images.js';
 import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
 import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details';
+import { TaskItem } from '@tiptap/extension-task-item';
+import { TaskList } from '@tiptap/extension-task-list';
 
 type Mode = 'editor' | 'static';
 
@@ -43,6 +45,14 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
     }),
     DetailsSummary,
     DetailsContent,
+    TaskItem.configure({
+      nested: true,
+    }),
+    TaskList.configure({
+      HTMLAttributes: {
+        class: 'taskList',
+      },
+    }),
   ];
 
   const extra = opts.extra ?? [];

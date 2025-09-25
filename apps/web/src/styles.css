@@ -285,35 +285,36 @@ html {
   /* Task list */
   ul[data-type="taskList"] {
     list-style: none;
-    padding-left: 0;
-    margin: 0.85rem 0;
-  }
-  ul[data-type="taskList"] li {
-    display: flex;
-    gap: 0.6rem;
-    align-items: flex-start;
-    margin: 0.45rem 0;
-  }
-  ul[data-type="taskList"] li > label {
-    display: flex;
-    gap: 0.6rem;
-    align-items: flex-start;
-    cursor: pointer;
-    user-select: none;
-  }
-  ul[data-type="taskList"] li input[type="checkbox"] {
-    accent-color: var(--primary);
-    margin-top: 0.25rem;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 0.25rem;
-  }
-  ul[data-type="taskList"] li[data-checked="true"] > div,
-  ul[data-type="taskList"] li[data-checked="true"] p {
-    color: color-mix(in oklch, var(--foreground) 65%, transparent);
-    text-decoration: line-through;
-  }
+    margin-left: 0;
+    padding: 0;
 
+    li {
+      align-items: flex-start;
+      display: flex;
+
+      > label {
+        flex: 0 0 auto;
+        margin-right: 0.5rem;
+        user-select: none;
+      }
+
+      > div {
+        flex: 1 1 auto;
+      }
+    }
+
+    input[type="checkbox"] {
+      cursor: pointer;
+    }
+
+    ul[data-type="taskList"] {
+      margin: 0;
+    }
+
+    p {
+      margin: 0;
+    }
+  }
   /* Blockquote - subtle card look */
   blockquote {
     position: relative;
@@ -825,7 +826,21 @@ html {
     }
   }
 
-  .details {
+  &.details {
     margin: 0;
+  }
+
+  p {
+    margin: 0.15rem 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-top: 0.35rem;
+    margin-bottom: 0.15rem;
   }
 }

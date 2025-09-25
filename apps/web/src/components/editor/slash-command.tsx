@@ -8,12 +8,14 @@ import {
 } from "@docufy/content-kit"
 import {
   ArrowRight,
+  CheckSquare,
   Code,
   Heading1,
   Heading2,
   Heading3,
   List,
   ListOrdered,
+  Minus,
   Text,
   TextQuote,
 } from "lucide-react"
@@ -96,17 +98,27 @@ export const suggestionItems: SuggestionItem[] = createSuggestionItems([
     },
   },
   {
+    title: "To-do List",
+    description: "Track tasks with a to-do list.",
+    searchTerms: ["todo", "task", "list", "check", "checkbox"],
+    icon: <CheckSquare size={18} />,
+    command: ({ editor, range }) => {
+      // @ts-expect-error the toggleTaskList exists as per tiptap official documentation
+      editor.chain().focus().deleteRange(range).toggleTaskList().run()
+    },
+  },
+  {
     title: "Quote",
     description: "Capture a quote.",
     searchTerms: ["blockquote"],
     icon: <TextQuote size={18} />,
     command: ({ editor, range }) => {
       editor
-      .chain()
-      .focus()
-      .deleteRange(range)
-      .toggleNode("paragraph", "paragraph")
-      // @ts-expect-error the toggleBlockquote exists as per tiptap official documentation
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .toggleNode("paragraph", "paragraph")
+        // @ts-expect-error the toggleBlockquote exists as per tiptap official documentation
         .toggleBlockquote()
         .run()
     },
@@ -129,6 +141,16 @@ export const suggestionItems: SuggestionItem[] = createSuggestionItems([
     command: ({ editor, range }) => {
       // @ts-expect-error the setDetails exists as per tiptap official documentation
       editor.chain().focus().deleteRange(range).setDetails().run()
+    },
+  },
+  {
+    title: "Divider",
+    description: "Add a horizontal rule.",
+    searchTerms: ["hr", "horizontalrule"],
+    icon: <Minus size={18} />,
+    command: ({ editor, range }) => {
+      // @ts-expect-error the setHorizontalRule exists as per tiptap official documentation
+      editor.chain().focus().deleteRange(range).setHorizontalRule().run()
     },
   },
 ])

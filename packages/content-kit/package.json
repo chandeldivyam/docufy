@@ -60,6 +60,9 @@
   "dependencies": {
     "@convex-dev/prosemirror-sync": "^0.1.28",
     "@tiptap/extension-details": "^3.5.2",
+    "@tiptap/extension-table": "^3.5.3",
+    "@tiptap/extension-task-item": "^3.4.4",
+    "@tiptap/extension-task-list": "^3.4.4",
     "@tiptap/suggestion": "^3.5.2",
     "cmdk": "^1.1.1",
     "highlight.js": "^11.11.1",
