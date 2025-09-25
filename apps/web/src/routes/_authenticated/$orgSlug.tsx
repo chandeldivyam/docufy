@@ -60,6 +60,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { CommandPalette } from "@/components/command-palette"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug")({
   ssr: false,
@@ -115,6 +116,7 @@ function OrgSlugLayout() {
 
       {/* Main */}
       <main className="min-w-0 min-h-0 flex flex-col overflow-hidden">
+        <CommandPalette orgSlug={orgSlug} />
         {/* Mobile top bar */}
         <div className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur md:hidden">
           <div className="flex items-center gap-2 p-2">
@@ -855,7 +857,6 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
                 )}
                 title={s.name}
               >
-                <HomeIcon className="h-4 w-4" />
                 <span className="truncate">{s.name}</span>
               </Link>
             </li>
