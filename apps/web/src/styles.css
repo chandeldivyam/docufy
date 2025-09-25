@@ -12,11 +12,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family:
-    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -88,6 +83,10 @@ code {
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
+  --sb-size: 10px;
+  --sb-track: color-mix(in oklch, var(--muted) 60%, var(--background));
+  --sb-thumb: color-mix(in oklch, var(--foreground) 20%, var(--muted));
+  --sb-thumb-hover: color-mix(in oklch, var(--foreground) 35%, var(--muted));
 }
 
 .dark {
@@ -122,6 +121,17 @@ code {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
+  --sb-track: color-mix(in oklch, var(--secondary) 35%, var(--background));
+  --sb-thumb: color-mix(in oklch, var(--foreground) 45%, var(--secondary));
+  --sb-thumb-hover: color-mix(
+    in oklch,
+    var(--foreground) 60%,
+    var(--secondary)
+  );
+}
+
+html {
+  scrollbar-gutter: stable both-edges; /* modern CSS */
 }
 
 @layer base {
@@ -131,6 +141,32 @@ code {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+html {
+  scrollbar-gutter: stable both-edges; /* modern CSS */
+}
+
+/* 3) Standards-based styling first (Firefox, modern UAs) */
+* {
+  scrollbar-width: thin; /* thin | auto */
+  scrollbar-color: var(--sb-thumb) var(--sb-track);
+}
+
+/* 4) WebKit fallback (Chromium, Safari) */
+*::-webkit-scrollbar {
+  width: var(--sb-size);
+  height: var(--sb-size);
+}
+*::-webkit-scrollbar-track {
+  background: var(--sb-track);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--sb-thumb-hover);
 }
 
 .tiptap {
