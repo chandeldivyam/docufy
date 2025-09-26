@@ -63,7 +63,20 @@ export function CollaborativeEditor({
             "tiptap prose dark:prose-invert focus:outline-none max-w-full h-full",
         },
         handleDOMEvents: {
-          keydown: (_view, event) => handleCommandNavigation(event),
+          keydown: (_view, event) => {
+            const isMod = event.metaKey || event.ctrlKey
+            if (
+              isMod &&
+              event.key.toLowerCase() === "k" &&
+              !event.isComposing
+            ) {
+              event.preventDefault()
+              event.stopPropagation()
+              window.dispatchEvent(new Event("docufy:toggle-cmdk"))
+              return true // tell ProseMirror we handled it
+            }
+            return handleCommandNavigation(event)
+          },
         },
       },
     },

@@ -161,10 +161,10 @@ export const suggestionItems: SuggestionItem[] = createSuggestionItems([
     icon: <Table size={18} />,
     command: ({ editor, range }) => {
       editor
-      .chain()
-      .focus()
-      .deleteRange(range)
-      // @ts-expect-error the insertTable exists as per tiptap official documentation
+        .chain()
+        .focus()
+        .deleteRange(range)
+        // @ts-expect-error the insertTable exists as per tiptap official documentation
         .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
         .run()
     },

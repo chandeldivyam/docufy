@@ -44,6 +44,7 @@ import { DynamicIcon } from "lucide-react/dynamic"
 import type { IconName } from "lucide-react/dynamic"
 import { IconPickerGrid } from "@/components/icons/icon-picker"
 import { rankBetween } from "@/lib/rank"
+import { toast } from "sonner"
 
 export const Route = createFileRoute(
   "/_authenticated/$orgSlug/spaces/$spaceId"
@@ -258,6 +259,14 @@ function DocumentsTree({
     return map
   }, [docs])
 
+  const typeById = useMemo(() => {
+    const map = new Map<string, DocumentRow["type"]>()
+    for (const doc of docs) {
+      map.set(doc.id, doc.type)
+    }
+    return map
+  }, [docs])
+
   const visibleIds = useMemo(() => {
     if (!query.trim()) return new Set(docs.map((doc) => doc.id))
     const q = query.trim().toLowerCase()
@@ -322,6 +331,12 @@ function DocumentsTree({
     newParentId: string | null,
     indexHint?: { beforeId?: string; afterId?: string }
   ) => {
+    const docType = typeById.get(docId)
+    if (docType === "group" && newParentId !== null) {
+      toast.error("Groups can only live at the top level")
+      return
+    }
+
     const list = siblings(newParentId, docId)
     const oldParentId = parentById.get(docId) ?? null
     if (oldParentId === newParentId) {
@@ -759,6 +774,10 @@ function TreeNode(props: {
             }}
             onBlur={() => onCommitRename(node.id, editTitle)}
           />
+        ) : isGroup ? (
+          <span className="flex-1 truncate" title={node.title}>
+            {node.title}
+          </span>
         ) : (
           <Link
             to="/$orgSlug/spaces/$spaceId/document/$docId"
