@@ -727,6 +727,7 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
   const [slug, setSlug] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [slugTouched, setSlugTouched] = useState(false)
 
   function slugify(input: string) {
     return input
@@ -737,8 +738,10 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
   }
 
   useEffect(() => {
-    setSlug((s) => (name && !s ? slugify(name) : s))
-  }, [name])
+    if (!slugTouched) {
+      setSlug(name ? slugify(name) : "")
+    }
+  }, [name, slugTouched])
 
   async function createSite(e: React.FormEvent) {
     e.preventDefault()
@@ -821,7 +824,15 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
               </div>
               <div className="grid gap-2">
                 <Label>Slug</Label>
-                <Input value={slug} onChange={(e) => setSlug(e.target.value)} />
+                <Input
+                  value={slug}
+                  disabled
+                  onChange={(e) => {
+                    const v = slugify(e.target.value)
+                    setSlug(v)
+                    setSlugTouched(v.length > 0) // if cleared, re-enable auto-sync
+                  }}
+                />
               </div>
               {error ? (
                 <p className="text-sm text-destructive">{error}</p>
@@ -830,7 +841,12 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setOpen(false)}
+                  onClick={() => {
+                    setOpen(false)
+                    setName("")
+                    setSlug("")
+                    setSlugTouched(false)
+                  }}
                 >
                   Cancel
                 </Button>

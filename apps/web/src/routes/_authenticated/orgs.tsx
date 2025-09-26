@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { toast } from "sonner"
 
 export const Route = createFileRoute("/_authenticated/orgs")({
   loader: async () => {
@@ -48,9 +49,9 @@ function OrgsPage() {
   const [name, setName] = useState("")
   const [slug, setSlug] = useState("")
   const [checking, setChecking] = useState(false)
-  const [available, setAvailable] = useState<boolean | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [slugTouched, setSlugTouched] = useState(false)
 
   function slugify(input: string) {
     return input
@@ -61,14 +62,23 @@ function OrgsPage() {
   }
 
   useEffect(() => {
-    setSlug((s) => (name && !s ? slugify(name) : s))
-  }, [name])
+    if (!slugTouched) {
+      setSlug(name ? slugify(name) : "")
+    }
+  }, [name, slugTouched])
 
   async function checkSlug(s: string) {
     setChecking(true)
     const { data, error } = await authClient.organization.checkSlug({ slug: s })
     setChecking(false)
-    setAvailable(error ? null : !!data?.status)
+    if (error) {
+      toast.error(error.message)
+    }
+    if (data?.status) {
+      toast.success("Slug is available")
+    } else {
+      toast.error("Slug is not available")
+    }
   }
 
   async function createOrg() {
@@ -76,9 +86,10 @@ function OrgsPage() {
     setError(null)
     try {
       const finalSlug = slug || slugify(name)
-      if (!finalSlug) throw new Error("Please provide a valid name or slug")
-
-      if (available === false) throw new Error("Slug is already taken")
+      if (!finalSlug) {
+        toast.error("Please provide a valid name or slug")
+        return
+      }
 
       // create
       const { data, error } = await authClient.organization.create({
@@ -86,15 +97,17 @@ function OrgsPage() {
         slug: finalSlug,
         keepCurrentActiveOrganization: false,
       })
-      if (error || !data)
-        throw new Error(error?.message ?? "Failed to create organization")
+      if (error || !data) {
+        toast.error(error?.message ?? "Failed to create organization")
+        return
+      }
 
       // set active and enter app at slugged URL
       await authClient.organization.setActive({ organizationId: data.id })
       navigate({ to: `/${finalSlug}` })
     } catch (e) {
       console.error(e)
-      setError("Unable to create organization")
+      toast.error("Unable to create organization")
     } finally {
       setSubmitting(false)
     }
@@ -249,7 +262,6 @@ function OrgsPage() {
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value)
-                    setAvailable(null)
                   }}
                 />
               </div>
@@ -259,10 +271,12 @@ function OrgsPage() {
                   <Input
                     id="org-slug"
                     placeholder="acme"
+                    disabled
                     value={slug}
                     onChange={(e) => {
-                      setSlug(slugify(e.target.value))
-                      setAvailable(null)
+                      const v = slugify(e.target.value)
+                      setSlug(v)
+                      setSlugTouched(v.length > 0)
                     }}
                     onBlur={() => slug && checkSlug(slug)}
                   />
@@ -275,12 +289,6 @@ function OrgsPage() {
                     {checking ? "Checking…" : "Check"}
                   </Button>
                 </div>
-                {available === true && (
-                  <p className="text-sm text-emerald-600">Slug available</p>
-                )}
-                {available === false && (
-                  <p className="text-sm text-destructive">Slug taken</p>
-                )}
               </div>
 
               {error ? (

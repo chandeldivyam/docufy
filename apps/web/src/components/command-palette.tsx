@@ -56,6 +56,12 @@ export function CommandPalette({ orgSlug }: { orgSlug?: string }) {
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [])
 
+  React.useEffect(() => {
+    const onToggle = () => setOpen((v) => !v)
+    window.addEventListener("docufy:toggle-cmdk", onToggle)
+    return () => window.removeEventListener("docufy:toggle-cmdk", onToggle)
+  }, [])
+
   // Resolve orgId so we can query spaces/sites
   const { data: myOrgs } = useLiveQuery((q) =>
     q.from({ myOrganizations: myOrganizationsCollection })

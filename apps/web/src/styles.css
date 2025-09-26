@@ -87,6 +87,16 @@ body {
   --sb-track: color-mix(in oklch, var(--muted) 60%, var(--background));
   --sb-thumb: color-mix(in oklch, var(--foreground) 20%, var(--muted));
   --sb-thumb-hover: color-mix(in oklch, var(--foreground) 35%, var(--muted));
+  --syntax-base: oklch(0.3 0 0);
+  --syntax-comment: oklch(0.52 0 0);
+  --syntax-keyword: oklch(0.55 0.12 250);
+  --syntax-string: oklch(0.55 0.12 145);
+  --syntax-number: oklch(0.55 0.11 75);
+  --syntax-title: oklch(0.45 0.1 200);
+  --syntax-attr: oklch(0.45 0.12 30);
+  --syntax-meta: oklch(0.45 0.07 260);
+  --syntax-emph: var(--syntax-base);
+  --syntax-strong: var(--syntax-base);
 }
 
 .dark {
@@ -128,6 +138,16 @@ body {
     var(--foreground) 60%,
     var(--secondary)
   );
+  --syntax-base: oklch(0.9 0 0);
+  --syntax-comment: oklch(0.7 0 0);
+  --syntax-keyword: oklch(0.8 0.12 230); /* cyan/blue */
+  --syntax-string: oklch(0.86 0.11 145); /* green */
+  --syntax-number: oklch(0.82 0.12 80); /* amber */
+  --syntax-title: oklch(0.95 0.12 105); /* yellow */
+  --syntax-attr: oklch(0.78 0.2 25); /* pink/red */
+  --syntax-meta: oklch(0.78 0.08 260); /* subtle blue */
+  --syntax-emph: var(--syntax-base);
+  --syntax-strong: var(--syntax-base);
 }
 
 html {

@@ -17,7 +17,6 @@ import {
   handleImagePaste,
   type UploadFn,
 } from '@docufy/content-kit/plugins/upload-images';
-import '@docufy/content-kit/styles.css';
 
 import { useMutation } from 'convex/react';
 import { toast } from 'sonner';
