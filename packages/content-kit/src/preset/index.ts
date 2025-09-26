@@ -11,6 +11,8 @@ import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
 import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details';
 import { TaskItem } from '@tiptap/extension-task-item';
 import { TaskList } from '@tiptap/extension-task-list';
+import Emoji, { gitHubEmojis } from '@tiptap/extension-emoji';
+import suggestion from '../extensions/emoji/suggestion.js';
 
 type Mode = 'editor' | 'static';
 
@@ -69,6 +71,10 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       }),
       CustomKeymap,
       GlobalDragHandle,
+      Emoji.configure({
+        emojis: gitHubEmojis,
+        suggestion,
+      }),
       ...extra,
     ];
   }
