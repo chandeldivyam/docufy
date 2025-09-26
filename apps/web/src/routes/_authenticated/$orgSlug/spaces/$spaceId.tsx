@@ -98,6 +98,108 @@ function SpacePage() {
     [docsCollection]
   )
 
+  /** ---------- Keyboard nav: compute visible order (pre-order, rank-sorted) ---------- **/
+  const pagesInOrder = useMemo(() => {
+    if (!docs) return [] as DocumentRow[]
+    // Build children map (skip archived), sort each sibling list by rank
+    const byParent = new Map<string | null, DocumentRow[]>()
+    for (const d of docs) {
+      if (d.archived_at) continue
+      const list = byParent.get(d.parent_id) ?? []
+      list.push(d)
+      byParent.set(d.parent_id, list)
+    }
+    for (const list of byParent.values()) list.sort(byRank)
+    // Pre-order DFS from root (null), push only type === "page"
+    const out: DocumentRow[] = []
+    const walk = (parentId: string | null) => {
+      const list = byParent.get(parentId) ?? []
+      for (const node of list) {
+        if (node.type === "page") out.push(node)
+        walk(node.id)
+      }
+    }
+    walk(null)
+    return out
+  }, [docs])
+
+  // Extract current docId (if we're on a document route)
+  const currentDocId = useMemo(() => {
+    const pathname = routerState.location.pathname
+    const m = pathname.match(/\/document\/([^/]+)/)
+    return m?.[1] ?? null
+  }, [routerState.location.pathname])
+
+  // Imperative navigation helper
+  const navigateRelative = useMemo(() => {
+    return (direction: "prev" | "next") => {
+      const ids = pagesInOrder.map((d) => d.id)
+      if (!ids.length) return
+      const cur = currentDocId
+      let targetId: string | undefined
+      if (!cur) {
+        // nothing selected -> top/bottom
+        targetId = direction === "next" ? ids[0] : ids[ids.length - 1]
+      } else {
+        const idx = ids.indexOf(cur)
+        if (idx === -1) {
+          targetId = ids[0]
+        } else {
+          const nextIdx =
+            direction === "next"
+              ? Math.min(idx + 1, ids.length - 1)
+              : Math.max(idx - 1, 0)
+          if (nextIdx === idx) return
+          targetId = ids[nextIdx]
+        }
+      }
+      if (!targetId) return
+      navigate({
+        to: "/$orgSlug/spaces/$spaceId/document/$docId",
+        params: { orgSlug, spaceId, docId: targetId },
+      })
+    }
+  }, [pagesInOrder, currentDocId, navigate, orgSlug, spaceId])
+
+  // Global listeners:
+  // - keydown for Alt+ArrowUp/Down when NOT in an input/textarea/contenteditable
+  // - custom "docufy:docnav" forwarded from the TipTap editor
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      // Let focused text fields & contenteditable handle their own Alt navigation
+      const target = event.target as HTMLElement | null
+      const inTextField =
+        target &&
+        ((target.tagName === "INPUT" &&
+          (target as HTMLInputElement).type !== "checkbox") ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      if (inTextField) return
+
+      if (
+        event.altKey && // Option/Alt on macOS/Windows
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.shiftKey &&
+        (event.key === "ArrowUp" || event.key === "ArrowDown")
+      ) {
+        event.preventDefault()
+        navigateRelative(event.key === "ArrowUp" ? "prev" : "next")
+      }
+    }
+    const onCustom = (e: Event) => {
+      const detail = (e as CustomEvent<{ direction: "prev" | "next" }>).detail
+      if (!detail) return
+      navigateRelative(detail.direction)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    window.addEventListener("docufy:docnav", onCustom as EventListener)
+    return () => {
+      window.removeEventListener("keydown", onKeyDown)
+      window.removeEventListener("docufy:docnav", onCustom as EventListener)
+    }
+  }, [navigateRelative])
+
   async function createTopLevelPage() {
     if (!orgId) return
     const now = new Date()

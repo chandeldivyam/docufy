@@ -56,6 +56,7 @@ export function CollaborativeEditor({
         },
         { orgSlug, documentId }
       ),
+      autofocus: "start",
       shouldRerenderOnTransaction: true,
       editorProps: {
         attributes: {
@@ -74,6 +75,23 @@ export function CollaborativeEditor({
               event.stopPropagation()
               window.dispatchEvent(new Event("docufy:toggle-cmdk"))
               return true // tell ProseMirror we handled it
+            }
+            if (
+              event.altKey &&
+              !isMod &&
+              !event.shiftKey &&
+              (event.key === "ArrowUp" || event.key === "ArrowDown")
+            ) {
+              event.preventDefault()
+              event.stopPropagation()
+              window.dispatchEvent(
+                new CustomEvent("docufy:docnav", {
+                  detail: {
+                    direction: event.key === "ArrowUp" ? "prev" : "next",
+                  },
+                })
+              )
+              return true
             }
             return handleCommandNavigation(event)
           },
