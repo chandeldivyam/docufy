@@ -13,6 +13,7 @@ import { TaskItem } from '@tiptap/extension-task-item';
 import { TaskList } from '@tiptap/extension-task-list';
 import Emoji, { gitHubEmojis } from '@tiptap/extension-emoji';
 import suggestion from '../extensions/emoji/suggestion.js';
+import { TableKit } from '@tiptap/extension-table';
 
 type Mode = 'editor' | 'static';
 
@@ -54,6 +55,9 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       HTMLAttributes: {
         class: 'taskList',
       },
+    }),
+    TableKit.configure({
+      table: { resizable: true },
     }),
   ];
 

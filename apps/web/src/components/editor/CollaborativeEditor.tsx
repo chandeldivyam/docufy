@@ -14,6 +14,7 @@ import {
   handleCommandNavigation,
 } from "@docufy/content-kit"
 import { suggestionItems } from "./slash-command"
+import { TableBubbleMenu } from "./TableBubbleMenu"
 
 const yDocs = new Map<string, Y.Doc>()
 const providers = new Map<string, ElectricYjsProvider>()
@@ -55,6 +56,7 @@ export function CollaborativeEditor({
         },
         { orgSlug, documentId }
       ),
+      shouldRerenderOnTransaction: true,
       editorProps: {
         attributes: {
           class:
@@ -93,6 +95,7 @@ export function CollaborativeEditor({
   return (
     <EditorRoot>
       <div className="relative h-full">
+        {editor ? <TableBubbleMenu editor={editor} /> : null}
         <EditorContent
           key={documentId}
           editor={editor}

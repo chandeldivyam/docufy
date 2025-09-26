@@ -376,31 +376,62 @@ html {
 
   /* Tables */
   table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin: 1.2rem 0;
+    border-collapse: collapse;
+    margin: 0;
     overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    table-layout: fixed;
+    width: 100%;
+
+    td,
+    th {
+      border: 1px solid var(--border);
+      min-width: 1em;
+      padding: 6px 8px;
+      position: relative;
+      vertical-align: top;
+
+      > * {
+        margin-bottom: 0;
+      }
+    }
+
+    th {
+      background-color: var(--muted);
+      font-weight: bold;
+      text-align: left;
+    }
+
+    .selectedCell:after {
+      background: var(--muted-foreground);
+      content: "";
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      pointer-events: none;
+      position: absolute;
+      z-index: 2;
+    }
+
+    .column-resize-handle {
+      background-color: var(--ring);
+      bottom: -2px;
+      pointer-events: none;
+      position: absolute;
+      right: -2px;
+      top: 0;
+      width: 4px;
+    }
   }
-  thead {
-    background: color-mix(in oklch, var(--muted) 60%, var(--background));
+
+  .tableWrapper {
+    margin: 1.5rem 0;
+    overflow-x: auto;
   }
-  th,
-  td {
-    text-align: left;
-    padding: 0.65rem 0.8rem;
-    border-bottom: 1px solid var(--border);
-  }
-  tr:last-child td {
-    border-bottom: 0;
-  }
-  tbody tr:nth-child(odd) {
-    background: color-mix(in oklch, var(--muted) 35%, var(--background));
-  }
-  tbody tr:hover {
-    background: color-mix(in oklch, var(--muted) 50%, var(--background));
+
+  &.resize-cursor {
+    cursor: ew-resize;
+    cursor: col-resize;
   }
 
   /* Images and media */

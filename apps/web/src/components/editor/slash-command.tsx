@@ -16,6 +16,7 @@ import {
   List,
   ListOrdered,
   Minus,
+  Table,
   Text,
   TextQuote,
 } from "lucide-react"
@@ -151,6 +152,21 @@ export const suggestionItems: SuggestionItem[] = createSuggestionItems([
     command: ({ editor, range }) => {
       // @ts-expect-error the setHorizontalRule exists as per tiptap official documentation
       editor.chain().focus().deleteRange(range).setHorizontalRule().run()
+    },
+  },
+  {
+    title: "Table",
+    description: "Add a table.",
+    searchTerms: ["table"],
+    icon: <Table size={18} />,
+    command: ({ editor, range }) => {
+      editor
+      .chain()
+      .focus()
+      .deleteRange(range)
+      // @ts-expect-error the insertTable exists as per tiptap official documentation
+        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+        .run()
     },
   },
 ])
