@@ -108,7 +108,7 @@ function TreeItem({
   const Row =
     node.kind === 'group' ? (
       <div className="dfy-row" style={{ paddingLeft: depth * 12 }}>
-        {hasChildren ? (
+        {hasChildren && (
           <button
             type="button"
             aria-expanded={open}
@@ -116,8 +116,6 @@ function TreeItem({
             onClick={() => setOpen((v) => !v)}
             onKeyDown={onKeyDown}
           />
-        ) : (
-          <span className="dfy-leaf" />
         )}
         <div role="heading" aria-level={Math.min(6, depth + 2)} className="dfy-group">
           {node.title}
@@ -125,7 +123,7 @@ function TreeItem({
       </div>
     ) : (
       <div className="dfy-row" style={{ paddingLeft: depth * 12 }}>
-        {hasChildren ? (
+        {hasChildren && (
           <button
             type="button"
             aria-expanded={open}
@@ -133,8 +131,6 @@ function TreeItem({
             onClick={() => setOpen((v) => !v)}
             onKeyDown={onKeyDown}
           />
-        ) : (
-          <span className="dfy-leaf" />
         )}
         <Link
           prefetch

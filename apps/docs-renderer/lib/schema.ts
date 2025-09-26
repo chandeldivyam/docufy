@@ -13,7 +13,8 @@ export const NavSpaceZ = z.object({
 export const PageIndexEntryZ = z.object({
   title: z.string(),
   space: z.string(),
-  iconName: z.string().optional(),
+  // icon name could be undefined so be careful
+  iconName: z.string().optional().nullable(),
   blob: z.string(),
   hash: z.string(),
   size: z.number(),
@@ -27,7 +28,7 @@ export const ManifestZ = z.object({
   buildId: z.string(),
   publishedAt: z.number(),
   site: z.object({
-    projectId: z.string(),
+    projectId: z.string().optional(),
     layout: z.enum(['sidebar-dropdown', 'sidebar-tabs']),
     baseUrl: z.string().url(),
     name: z.string().nullable().optional(),
@@ -41,7 +42,6 @@ export const ManifestZ = z.object({
 
 export const TreeZ = z.object({
   version: z.literal(2),
-  projectId: z.string(),
   buildId: z.string(),
   publishedAt: z.number(),
   nav: z.object({

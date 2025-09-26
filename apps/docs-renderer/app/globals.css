@@ -1,46 +1,49 @@
-/* Design tokens */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* ---------- Design Tokens (scalable) ---------- */
 :root {
-  --bg: #ffffff;
-  --fg: #0b1220;
-  --muted: #667085;
-  --border: #e5e7eb;
-  --sidebar-bg: #fafafa;
-  --accent: #2563eb;
-  --accent-fg: #ffffff;
   --radius: 10px;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
 
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
-    'Apple Color Emoji', 'Segoe UI Emoji';
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
-    monospace;
+  /* surfaces */
+  --bg: oklch(1 0 0);
+  --fg: oklch(0.18 0 0);
+  --muted: oklch(0.58 0 0);
+  --border: oklch(0.92 0 0);
 
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
+  /* brand / accents */
+  --primary: oklch(0.38 0.07 240);
+  --primary-fg: oklch(0.98 0 0);
 
-  --header-h: 52px;
+  /* sidebar */
+  --sidebar-bg: oklch(0.985 0 0);
+  --sidebar-fg: oklch(0.18 0 0);
+  --sidebar-border: oklch(0.92 0 0);
+  --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 4%, var(--sidebar-bg));
+
+  /* code */
+  --code-bg: #0e1111;
+  --code-fg: #e6edf3;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0c1015;
-    --fg: #e7edf3;
-    --muted: #9aa4b2;
-    --border: #1f2937;
-    --sidebar-bg: #0e141b;
-    --accent: #3b82f6;
-    --accent-fg: #e7edf3;
+    --bg: oklch(0.17 0 0);
+    --fg: oklch(0.97 0 0);
+    --muted: oklch(0.7 0 0);
+    --border: oklch(0.28 0 0);
+    --primary: oklch(0.75 0.12 260);
+    --primary-fg: oklch(0.14 0 0);
+    --sidebar-bg: oklch(0.2 0 0);
+    --sidebar-fg: oklch(0.98 0 0);
+    --sidebar-border: oklch(0.3 0 0);
+    --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 10%, var(--sidebar-bg));
+    --code-bg: #0a0c10;
+    --code-fg: #e6edf3;
   }
 }
 
-/* Base */
+/* ---------- Base ---------- */
 html,
 body,
 #__next {
@@ -48,169 +51,192 @@ body,
 }
 body {
   margin: 0;
-  font-family: var(--font-sans);
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    'Apple Color Emoji',
+    'Segoe UI Emoji';
   background: var(--bg);
   color: var(--fg);
-  scroll-behavior: smooth;
   text-rendering: optimizeLegibility;
 }
 
-main,
-article {
-  max-width: 980px;
-  margin: 0 auto;
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
-/* Typography */
-h1 {
-  font-size: clamp(24px, 2.2vw, 32px);
-  margin: var(--space-4) 0;
-}
-h2 {
-  font-size: clamp(20px, 1.6vw, 24px);
-  margin: var(--space-4) 0;
-}
-h3 {
-  font-size: 18px;
-  margin: var(--space-3) 0;
-}
-p {
-  line-height: 1.75;
-  color: var(--fg);
-}
-a {
-  color: var(--accent);
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-code {
-  font-family: var(--font-mono);
-  font-size: 0.95em;
-}
-
-/* Layout */
+/* ---------- Layout ---------- */
 .dfy-root {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: 100vh;
+  min-height: 0;
+}
+.dfy-sidebar {
+  border-right: 1px solid var(--sidebar-border);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  gap: 12px;
 }
-.dfy-header {
-  height: var(--header-h);
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 0 var(--space-4);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+.dfy-nav-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 .dfy-main {
-  display: flex;
+  min-width: 0;
   min-height: 0;
-  flex: 1;
+  overflow: hidden;
+}
+.dfy-content {
+  height: 100vh;
+  overflow: auto;
+  padding: 28px;
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
 }
 
-/* Sidebar */
-.dfy-sidebar {
-  width: 300px;
-  overflow: auto;
-  border-right: 1px solid var(--border);
-  background: var(--sidebar-bg);
-  padding: var(--space-3);
-  position: sticky;
-  top: 0;
+/* ---------- Sidebar nav ---------- */
+
+.dfy-space-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-.dfy-space-select {
-  margin-bottom: var(--space-3);
-}
-.dfy-space-select select {
+.dfy-select {
   width: 100%;
+  appearance: none;
   background: var(--bg);
   color: var(--fg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--sidebar-border);
   border-radius: var(--radius);
   padding: 8px 10px;
-  box-shadow: var(--shadow-sm);
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
-.dfy-space-title {
-  font-size: 12px;
+.dfy-select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.dfy-group-label {
+  margin: 18px 6px 6px;
+  padding: 4px 8px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--muted);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin: var(--space-2) 0 var(--space-2);
+  color: var(--muted);
+  background: color-mix(in oklab, var(--sidebar-fg) 5%, var(--sidebar-bg));
+  border-radius: 6px;
 }
-.dfy-tree a,
-.dfy-group {
-  display: block;
-  padding: 6px 10px;
-  border-radius: 8px;
-  color: var(--fg);
-  text-decoration: none;
+
+.dfy-space-title {
+  display: none;
 }
-.dfy-tree a:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-@media (prefers-color-scheme: dark) {
-  .dfy-tree a:hover {
-    background: rgba(255, 255, 255, 0.06);
-  }
-}
-.dfy-tree a.active {
-  background: var(--accent);
-  color: var(--accent-fg);
-  box-shadow: var(--shadow-sm);
+.dfy-tree {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .dfy-row {
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.dfy-disclosure {
-  width: 16px;
-  height: 16px;
+.dfy-toggle {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   background: transparent;
   cursor: pointer;
-  position: relative;
+  border-radius: 4px;
 }
-.dfy-disclosure::before {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  border-left: 2px solid #888;
-  border-bottom: 2px solid #888;
-  transform: rotate(-45deg);
-  transition: transform 0.12s ease-in-out;
+.dfy-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
-.dfy-disclosure[aria-expanded='true']::before {
-  transform: rotate(45deg);
+.dfy-toggle::before {
+  content: '▸';
+  transform: rotate(0deg);
+  transition: transform 160ms ease;
+  font-size: 12px;
+  line-height: 1;
+}
+[aria-expanded='true'] > .dfy-row > .dfy-toggle::before {
+  transform: rotate(90deg);
+}
+.dfy-children {
+  border-left: 1px solid var(--border);
+  margin-left: 14px;
+  padding-left: 10px;
 }
 .dfy-leaf {
-  width: 16px;
-  height: 16px;
-  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.4;
+}
+.dfy-link {
+  display: block;
+  padding: 6px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+.dfy-link:hover {
+  background: var(--sidebar-hover);
+}
+.dfy-link.active {
+  background: var(--primary);
+  color: var(--primary-fg);
 }
 
-.dfy-children {
-  margin-left: 12px;
-  border-left: 1px dashed var(--border);
-  padding-left: 12px;
+/* ---------- Article ---------- */
+.dfy-article {
+  max-width: 980px;
+  margin: 0 auto;
 }
-
-/* Content */
-.dfy-content {
-  flex: 1;
-  overflow: auto;
-  padding: var(--space-5);
-  content-visibility: auto;
-  contain-intrinsic-size: 800px;
+.dfy-article h1 {
+  font-size: clamp(24px, 2.2vw, 32px);
+  margin: 16px 0;
 }
-
-/* Article primitives */
+.dfy-article h2 {
+  font-size: clamp(20px, 1.6vw, 24px);
+  margin: 16px 0;
+}
+.dfy-article h3 {
+  font-size: 18px;
+  margin: 12px 0;
+}
+.dfy-article p {
+  line-height: 1.75;
+}
+.dfy-article a {
+  color: var(--primary);
+  text-decoration: none;
+}
+.dfy-article a:hover {
+  text-decoration: underline;
+}
 .dfy-article blockquote {
   margin: 16px 0;
   padding-left: 12px;
@@ -236,23 +262,15 @@ code {
   text-align: left;
 }
 
-/* Code blocks */
 pre {
-  background: #0e1111;
-  color: #e6edf3;
+  background: var(--code-bg);
+  color: var(--code-fg);
   padding: 12px;
   border-radius: 8px;
   overflow: auto;
-  box-shadow: var(--shadow-sm);
 }
 
-/* Focus rings */
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* Visually hidden */
+/* visually hidden helper */
 .sr-only {
   position: absolute;
   width: 1px;

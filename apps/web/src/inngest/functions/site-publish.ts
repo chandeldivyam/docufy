@@ -415,7 +415,6 @@ export const sitePublish = inngest.createFunction(
       buildId,
       publishedAt: now,
       site: {
-        projectId: null,
         name: null,
         logoUrl: null,
         layout: "sidebar-dropdown",
