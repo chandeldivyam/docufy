@@ -6,6 +6,7 @@ import * as Y from "yjs"
 import { getExtensions } from "@docufy/content-kit/preset"
 import { uploadImageToBlob } from "@/lib/blob-uploader"
 import "@docufy/content-kit/styles.css"
+import { slashCommand } from "./slash-command" // <-- add
 
 export function createTiptapExtensions(
   doc: Y.Doc,
@@ -21,7 +22,7 @@ export function createTiptapExtensions(
         uploader: uploadImageToBlob,
         context: { orgSlug: ctx?.orgSlug, documentId: ctx?.documentId },
       },
-      extra: [],
+      extra: [slashCommand],
     }),
     Collaboration.configure({ document: doc }),
     CollaborationCaret.configure({

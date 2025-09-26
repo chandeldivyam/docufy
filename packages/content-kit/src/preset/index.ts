@@ -8,6 +8,12 @@ import { ResizableImage, StaticImage } from '../extensions/image/index.js';
 import CustomKeymap from '../extensions/custom-keymap/index.js';
 import { UploadImagesExtension } from '../plugins/upload-images.js';
 import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
+import { Details, DetailsContent, DetailsSummary } from '@tiptap/extension-details';
+import { TaskItem } from '@tiptap/extension-task-item';
+import { TaskList } from '@tiptap/extension-task-list';
+import Emoji, { gitHubEmojis } from '@tiptap/extension-emoji';
+import suggestion from '../extensions/emoji/suggestion.js';
+import { TableKit } from '@tiptap/extension-table';
 
 type Mode = 'editor' | 'static';
 
@@ -34,6 +40,25 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       undoRedo: false,
     }),
     AutoJoiner,
+    Details.configure({
+      persist: true,
+      HTMLAttributes: {
+        class: 'details',
+      },
+    }),
+    DetailsSummary,
+    DetailsContent,
+    TaskItem.configure({
+      nested: true,
+    }),
+    TaskList.configure({
+      HTMLAttributes: {
+        class: 'taskList',
+      },
+    }),
+    TableKit.configure({
+      table: { resizable: true },
+    }),
   ];
 
   const extra = opts.extra ?? [];
@@ -50,6 +75,10 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       }),
       CustomKeymap,
       GlobalDragHandle,
+      Emoji.configure({
+        emojis: gitHubEmojis,
+        suggestion,
+      }),
       ...extra,
     ];
   }
