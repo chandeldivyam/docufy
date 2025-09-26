@@ -657,10 +657,16 @@ function TreeNode(props: {
 
   const inputRef = useRef<HTMLInputElement | null>(null)
   useEffect(() => {
-    if (isEditing) {
-      inputRef.current?.focus()
-      inputRef.current?.select()
+    if (!isEditing) return
+    const input = inputRef.current
+    if (!input) return
+    const focus = () => {
+      input.focus()
+      input.select()
     }
+    focus()
+    const timeout = window.setTimeout(focus)
+    return () => window.clearTimeout(timeout)
   }, [isEditing])
 
   return (
@@ -819,8 +825,7 @@ function TreeNode(props: {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem
-                onClick={(event) => {
-                  event.preventDefault()
+                onClick={() => {
                   onStartRename(node.id, node.title)
                 }}
               >
