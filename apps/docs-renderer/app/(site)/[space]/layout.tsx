@@ -33,12 +33,7 @@ export default async function SpaceLayout({
 
   return (
     <div className="dfy-root">
-      <SidebarNav
-        manifest={manifest}
-        tree={tree}
-        currentSpace={space}
-        hrefPrefix={hrefPrefix}
-      />
+      <SidebarNav manifest={manifest} tree={tree} currentSpace={space} hrefPrefix={hrefPrefix} />
       <main className="dfy-main">
         <div className="dfy-content">{children}</div>
       </main>

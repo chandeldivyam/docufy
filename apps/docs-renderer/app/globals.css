@@ -27,22 +27,20 @@
   --code-fg: #e6edf3;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: oklch(0.17 0 0);
-    --fg: oklch(0.97 0 0);
-    --muted: oklch(0.7 0 0);
-    --border: oklch(0.28 0 0);
-    --primary: oklch(0.75 0.12 260);
-    --primary-fg: oklch(0.14 0 0);
-    --sidebar-bg: oklch(0.2 0 0);
-    --sidebar-fg: oklch(0.98 0 0);
-    --sidebar-fg-muted: oklch(0.77 0 0);
-    --sidebar-border: oklch(0.3 0 0);
-    --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 10%, var(--sidebar-bg));
-    --code-bg: #0a0c10;
-    --code-fg: #e6edf3;
-  }
+:root.dark {
+  --bg: oklch(0.17 0 0);
+  --fg: oklch(0.97 0 0);
+  --muted: oklch(0.7 0 0);
+  --border: oklch(0.28 0 0);
+  --primary: oklch(0.75 0.12 260);
+  --primary-fg: oklch(0.14 0 0);
+  --sidebar-bg: oklch(0.2 0 0);
+  --sidebar-fg: oklch(0.98 0 0);
+  --sidebar-fg-muted: oklch(0.77 0 0);
+  --sidebar-border: oklch(0.3 0 0);
+  --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 10%, var(--sidebar-bg));
+  --code-bg: #0a0c10;
+  --code-fg: #e6edf3;
 }
 
 /* ---------- Base ---------- */
@@ -130,8 +128,8 @@ body {
 
 .sidebar-nav-group {
   position: relative;
-  margin-left: 6px; /* Adjust as needed */
-  padding-left: 6px; /* Space for the guide line */
+  margin-left: 0px; /* Adjust as needed */
+  padding-left: 0px; /* Space for the guide line */
 }
 
 .sidebar-nav-group::before {

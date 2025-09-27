@@ -1,7 +1,8 @@
-// apps/docs-renderer/components/SidebarNav.tsx
 import type { Manifest, Tree } from '../lib/types';
 import SidebarNavClient from './islands/SidebarNavClient';
 import SidebarSpaceSwitcher from './islands/SidebarSpaceSwitcher';
+import ThemeToggle from './islands/ThemeToggle';
+import { Book } from 'lucide-react';
 
 function sortSpaces(manifest: Manifest) {
   return manifest.nav.spaces.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -24,7 +25,7 @@ export default function SidebarNav({
     return (
       <aside
         aria-label="Documentation sidebar"
-        className="sticky top-0 h-svh border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] text-[var(--sidebar-fg)] p-3 flex flex-col gap-3"
+        className="sticky top-0 flex h-svh flex-col gap-3 border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] p-3 text-[var(--sidebar-fg)]"
       />
     );
   }
@@ -35,15 +36,25 @@ export default function SidebarNav({
   return (
     <aside
       aria-label="Documentation sidebar"
-      className="sticky top-0 h-svh border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] text-[var(--sidebar-fg)] p-3 flex flex-col gap-3"
+      className="sticky top-0 flex h-svh flex-col gap-3 border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] p-3 text-[var(--sidebar-fg)]"
     >
-      <SidebarSpaceSwitcher spaces={spaceOptions} currentSpace={currentSpace} hrefPrefix={hrefPrefix} />
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          {/* Placeholder for the logo */}
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--sidebar-hover)]">
+            <Book className="h-5 w-5 text-[var(--sidebar-fg-muted)]" />
+          </div>
+          <span className="font-semibold">{manifest.site.name}</span>
+        </div>
+        <ThemeToggle />
+      </div>
+      <SidebarSpaceSwitcher
+        spaces={spaceOptions}
+        currentSpace={currentSpace}
+        hrefPrefix={hrefPrefix}
+      />
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-        <SidebarNavClient
-          nodes={selected.items}
-          hrefPrefix={hrefPrefix}
-          storageKey={storageKey}
-        />
+        <SidebarNavClient nodes={selected.items} hrefPrefix={hrefPrefix} storageKey={storageKey} />
       </div>
     </aside>
   );

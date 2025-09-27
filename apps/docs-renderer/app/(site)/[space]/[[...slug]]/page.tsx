@@ -24,7 +24,7 @@ export default async function DocPage({
   const blobPromise = fetchPageBlob(page.blob);
 
   return (
-    <Suspense fallback={<div>Loading…</div>}>
+    <Suspense fallback={<></>}>
       <Content blobPromise={blobPromise} />
     </Suspense>
   );

@@ -47,7 +47,7 @@ export default function SidebarSpaceSwitcher({
             <SelectItem
               key={space.slug}
               value={space.slug}
-              className="cursor-pointer focus:bg-[var(--primary)] focus:text-[var(--primary-fg)] pl-4"
+              className="cursor-pointer pl-4 focus:bg-[var(--primary)] focus:text-[var(--primary-fg)]"
             >
               {space.name}
             </SelectItem>

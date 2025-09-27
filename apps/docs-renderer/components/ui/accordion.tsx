@@ -11,7 +11,11 @@ const AccordionItem = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>
 >(({ className, ...props }, ref) => (
-  <AccordionPrimitive.Item ref={ref} className={cn('border-b border-transparent', className)} {...props} />
+  <AccordionPrimitive.Item
+    ref={ref}
+    className={cn('border-b border-transparent', className)}
+    {...props}
+  />
 ));
 AccordionItem.displayName = 'AccordionItem';
 
@@ -29,7 +33,10 @@ const AccordionTrigger = React.forwardRef<
       {...props}
     >
       <span className="truncate leading-6">{children}</span>
-      <ChevronDown className="ml-2 h-4 w-4 shrink-0 transition-transform duration-200 data-[state=open]:rotate-180" aria-hidden />
+      <ChevronDown
+        className="ml-2 h-4 w-4 shrink-0 transition-transform duration-200 data-[state=open]:rotate-180"
+        aria-hidden
+      />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 ));
@@ -39,7 +46,11 @@ const AccordionContent = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
 >(({ className, children, ...props }, ref) => (
-  <AccordionPrimitive.Content ref={ref} className={cn('overflow-hidden text-sm', className)} {...props}>
+  <AccordionPrimitive.Content
+    ref={ref}
+    className={cn('overflow-hidden text-sm', className)}
+    {...props}
+  >
     <div className="py-1">{children}</div>
   </AccordionPrimitive.Content>
 ));

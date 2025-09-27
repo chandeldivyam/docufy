@@ -15,7 +15,9 @@ function getNodeId(node: UiTreeItem) {
 }
 
 function containsRoute(nodes: UiTreeItem[], route: string): boolean {
-  return nodes.some((node) => node.route === route || (node.children && containsRoute(node.children, route)));
+  return nodes.some(
+    (node) => node.route === route || (node.children && containsRoute(node.children, route)),
+  );
 }
 
 function collectAncestors(nodes: UiTreeItem[], route: string, acc: string[] = []) {
@@ -24,7 +26,9 @@ function collectAncestors(nodes: UiTreeItem[], route: string, acc: string[] = []
       continue;
     }
 
-    const matchesSelf = node.route ? (route === node.route || route.startsWith(`${node.route}/`)) : false;
+    const matchesSelf = node.route
+      ? route === node.route || route.startsWith(`${node.route}/`)
+      : false;
     if (matchesSelf || containsRoute(node.children, route)) {
       acc.push(getNodeId(node));
       collectAncestors(node.children, route, acc);
@@ -69,16 +73,18 @@ export default function SidebarNavClient({
 }) {
   const pathname = usePathname();
   const currentRoute = useMemo(() => {
-    const relative = hrefPrefix && pathname.startsWith(hrefPrefix)
-      ? pathname.slice(hrefPrefix.length)
-      : pathname;
+    const relative =
+      hrefPrefix && pathname.startsWith(hrefPrefix) ? pathname.slice(hrefPrefix.length) : pathname;
 
     const normalized = relative || '/';
     const withSlash = normalized.startsWith('/') ? normalized : `/${normalized}`;
     return withSlash.length > 1 ? withSlash.replace(/\/$/, '') : withSlash;
   }, [pathname, hrefPrefix]);
 
-  const initialExpanded = useMemo(() => collectAncestors(nodes, currentRoute), [nodes, currentRoute]);
+  const initialExpanded = useMemo(
+    () => collectAncestors(nodes, currentRoute),
+    [nodes, currentRoute],
+  );
   const [expanded, setExpanded] = useExpanded(initialExpanded, storageKey);
 
   useEffect(() => {
@@ -145,7 +151,7 @@ function Node({
     return (
       <li>
         <div
-          className="mt-3 mb-1.5 rounded-md px-2 py-1 text-[12px] font-bold tracking-normal text-[var(--sidebar-fg)]"
+          className="mb-1.5 mt-3 rounded-md px-2 py-1 font-bold tracking-normal text-[var(--sidebar-fg)]"
           style={{ marginLeft: depth * INDENT }}
         >
           {node.title}
