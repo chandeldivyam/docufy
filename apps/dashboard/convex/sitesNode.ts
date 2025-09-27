@@ -352,7 +352,7 @@ export const _doPublish = internalAction({
       }
 
       const plain = extractPlainTextFromPm(pmDoc);
-      const { html, toc } = serializeContent(pmDoc ?? {});
+      const { html, toc } = await serializeContent(pmDoc ?? {});
 
       const bundleObj = {
         id: String(p.id),

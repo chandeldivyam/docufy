@@ -1,46 +1,49 @@
-/* Design tokens */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* ---------- Design Tokens (scalable) ---------- */
 :root {
-  --bg: #ffffff;
-  --fg: #0b1220;
-  --muted: #667085;
-  --border: #e5e7eb;
-  --sidebar-bg: #fafafa;
-  --accent: #2563eb;
-  --accent-fg: #ffffff;
   --radius: 10px;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
 
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
-    'Apple Color Emoji', 'Segoe UI Emoji';
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
-    monospace;
+  /* surfaces */
+  --bg: oklch(1 0 0);
+  --fg: oklch(0.18 0 0);
+  --muted: oklch(0.58 0 0);
+  --border: oklch(0.92 0 0);
 
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
+  /* brand / accents */
+  --primary: oklch(0.38 0.07 240);
+  --primary-fg: oklch(0.98 0 0);
 
-  --header-h: 52px;
+  /* sidebar */
+  --sidebar-bg: oklch(0.985 0 0);
+  --sidebar-fg: oklch(0.18 0 0);
+  --sidebar-fg-muted: oklch(0.45 0 0);
+  --sidebar-border: oklch(0.92 0 0);
+  --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 4%, var(--sidebar-bg));
+
+  --step--1: clamp(0.8rem, 0.79rem + 0.1vw, 0.88rem);
+  --step-0: clamp(0.95rem, 0.91rem + 0.22vw, 1.05rem);
+  --step-1: clamp(1.15rem, 1.05rem + 0.4vw, 1.3rem);
+  --step-2: clamp(1.35rem, 1.21rem + 0.62vw, 1.6rem);
+  --step-3: clamp(1.6rem, 1.38rem + 0.92vw, 1.95rem);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0c1015;
-    --fg: #e7edf3;
-    --muted: #9aa4b2;
-    --border: #1f2937;
-    --sidebar-bg: #0e141b;
-    --accent: #3b82f6;
-    --accent-fg: #e7edf3;
-  }
+:root.dark {
+  --bg: oklch(0.17 0 0);
+  --fg: oklch(0.97 0 0);
+  --muted: oklch(0.7 0 0);
+  --border: oklch(0.28 0 0);
+  --primary: oklch(0.75 0.12 260);
+  --primary-fg: oklch(0.14 0 0);
+  --sidebar-bg: oklch(0.2 0 0);
+  --sidebar-fg: oklch(0.98 0 0);
+  --sidebar-fg-muted: oklch(0.77 0 0);
+  --sidebar-border: oklch(0.3 0 0);
+  --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 10%, var(--sidebar-bg));
 }
 
-/* Base */
+/* ---------- Base ---------- */
 html,
 body,
 #__next {
@@ -48,169 +51,334 @@ body,
 }
 body {
   margin: 0;
-  font-family: var(--font-sans);
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    'Apple Color Emoji',
+    'Segoe UI Emoji';
   background: var(--bg);
   color: var(--fg);
-  scroll-behavior: smooth;
   text-rendering: optimizeLegibility;
 }
 
-main,
-article {
-  max-width: 980px;
-  margin: 0 auto;
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
-/* Typography */
-h1 {
-  font-size: clamp(24px, 2.2vw, 32px);
-  margin: var(--space-4) 0;
-}
-h2 {
-  font-size: clamp(20px, 1.6vw, 24px);
-  margin: var(--space-4) 0;
-}
-h3 {
-  font-size: 18px;
-  margin: var(--space-3) 0;
-}
-p {
-  line-height: 1.75;
-  color: var(--fg);
-}
-a {
-  color: var(--accent);
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-code {
-  font-family: var(--font-mono);
-  font-size: 0.95em;
-}
-
-/* Layout */
+/* ========== Responsive root grid (mobile-first) ========== */
 .dfy-root {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr; /* phones: content-only */
   height: 100vh;
-}
-.dfy-header {
-  height: var(--header-h);
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 0 var(--space-4);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-.dfy-main {
-  display: flex;
   min-height: 0;
-  flex: 1;
 }
 
-/* Sidebar */
-.dfy-sidebar {
-  width: 300px;
-  overflow: auto;
-  border-right: 1px solid var(--border);
-  background: var(--sidebar-bg);
-  padding: var(--space-3);
-  position: sticky;
-  top: 0;
-}
-.dfy-space-select {
-  margin-bottom: var(--space-3);
-}
-.dfy-space-select select {
-  width: 100%;
-  background: var(--bg);
-  color: var(--fg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 8px 10px;
-  box-shadow: var(--shadow-sm);
-}
-.dfy-space-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin: var(--space-2) 0 var(--space-2);
-}
-.dfy-tree a,
-.dfy-group {
-  display: block;
-  padding: 6px 10px;
-  border-radius: 8px;
-  color: var(--fg);
-  text-decoration: none;
-}
-.dfy-tree a:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-@media (prefers-color-scheme: dark) {
-  .dfy-tree a:hover {
-    background: rgba(255, 255, 255, 0.06);
+@media (min-width: 1100px) {
+  .dfy-root {
+    grid-template-columns: 300px 1fr;
   }
 }
-.dfy-tree a.active {
-  background: var(--accent);
-  color: var(--accent-fg);
-  box-shadow: var(--shadow-sm);
+
+/* Main/content already OK */
+.dfy-main {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
-.dfy-row {
+
+.dfy-article-wrap {
+  min-width: 0;
+}
+
+/* Ensure content can host sticky topbar & overlay on mobile */
+.dfy-content {
+  height: 100vh;
+  padding: 28px;
+  padding-top: 0;
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden; /* page should never scroll sideways */
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* ========== Mobile Top Bar (hamburger + last two crumbs) ========== */
+.dfy-mobile-nav-toggle {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  /* keep it outside flow but accessible for :has() */
+}
+
+/* Only show on small screens */
+.dfy-mobile-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 12px;
+  background: color-mix(in oklab, var(--bg) 96%, transparent);
+  backdrop-filter: saturate(1.1) blur(4px);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+@media (min-width: 1100px) {
+  .dfy-mobile-topbar,
+  .dfy-sidebar-backdrop,
+  #dfy-mobile-nav-toggle {
+    display: none;
+  }
+}
+
+.dfy-hamburger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  color: var(--sidebar-fg);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.dfy-hamburger:hover {
+  background: var(--sidebar-hover);
+}
+
+/* Mintlify-like last-two-level breadcrumb */
+.dfy-breadcrumb ol {
   display: flex;
   align-items: center;
   gap: 6px;
+  margin: 0;
+  padding: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.dfy-disclosure {
+.dfy-breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 80vw; /* keep it single line */
+}
+.dfy-breadcrumb li + li::before {
+  content: '›';
+  opacity: 0.7;
+}
+.dfy-breadcrumb li[data-current='true'] {
+  color: var(--sidebar-fg);
+  font-weight: 600;
+}
+
+/* ========== Off-canvas Sidebar (mobile) ========== */
+/* Target the existing SidebarNav aside via its aria-label */
+@media (max-width: 1099.98px) {
+  /* Off-canvas panel */
+  body [aria-label='Documentation sidebar'] {
+    position: fixed !important;
+    inset: 0 auto 0 0; /* left side */
+    width: min(86vw, 320px);
+    max-width: 86vw;
+    height: 100svh;
+    transform: translateX(-100%);
+    transition: transform 200ms ease;
+    z-index: 70;
+    box-shadow:
+      0 0 0 1px var(--sidebar-border),
+      0 18px 48px color-mix(in oklab, black 28%, transparent);
+  }
+
+  /* Backdrop behind the drawer */
+  .dfy-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: color-mix(in oklab, black 45%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+    z-index: 60;
+  }
+
+  /* When the checkbox is checked, open the drawer + show backdrop */
+  body:has(#dfy-mobile-nav-toggle:checked) [aria-label='Documentation sidebar'] {
+    transform: translateX(0%);
+  }
+  body:has(#dfy-mobile-nav-toggle:checked) .dfy-sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* ---------- Sidebar nav ---------- */
+/* Moved to Tailwind utilities; only design tokens remain in this file. */
+
+/* Sidebar link: shared Tailwind-lite rules for clarity + consistency */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--sidebar-fg-muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.sidebar-link:hover {
+  background: var(--sidebar-hover);
+  color: var(--sidebar-fg);
+}
+.sidebar-link[aria-current='page'] {
+  color: var(--primary);
+  font-weight: 600;
+}
+.sidebar-link svg {
   width: 16px;
   height: 16px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  position: relative;
+  color: var(--sidebar-fg-muted);
 }
-.dfy-disclosure::before {
+.sidebar-link[aria-current='page'] svg {
+  color: var(--primary);
+}
+
+.sidebar-nav-group {
+  position: relative;
+  margin-left: 0px; /* Adjust as needed */
+  padding-left: 0px; /* Space for the guide line */
+}
+
+.sidebar-nav-group::before {
   content: '';
   position: absolute;
-  inset: 4px;
-  border-left: 2px solid #888;
-  border-bottom: 2px solid #888;
-  transform: rotate(-45deg);
-  transition: transform 0.12s ease-in-out;
-}
-.dfy-disclosure[aria-expanded='true']::before {
-  transform: rotate(45deg);
-}
-.dfy-leaf {
-  width: 16px;
-  height: 16px;
-  display: inline-block;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--sidebar-border);
+  transition: background-color 150ms ease-in-out;
 }
 
-.dfy-children {
-  margin-left: 12px;
-  border-left: 1px dashed var(--border);
-  padding-left: 12px;
+.sidebar-nav-group:hover::before {
+  background-color: color-mix(in oklab, var(--primary) 50%, var(--sidebar-border));
 }
 
-/* Content */
-.dfy-content {
-  flex: 1;
-  overflow: auto;
-  padding: var(--space-5);
-  content-visibility: auto;
-  contain-intrinsic-size: 800px;
+/* ---------- Article ---------- */
+.dfy-article {
+  max-width: 800px; /* Optimal for reading, adjust as needed */
+  margin: 0 auto;
+  padding: 2rem 0 2rem 0; /* Add vertical rhythm */
 }
 
-/* Article primitives */
+.dfy-article h1 {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+  line-height: 1.2;
+}
+
+.dfy-article h2 {
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  font-weight: 500;
+  margin: 2rem 0 1rem;
+  padding-bottom: 0.5rem;
+  scroll-margin-top: 80px; /* Offset for sticky headers */
+}
+
+.dfy-article h3 {
+  font-size: clamp(1rem, 1vw, 1.25rem);
+  font-weight: 500;
+  margin: 2rem 0 0.75rem;
+  scroll-margin-top: 80px;
+}
+
+.dfy-article p,
+.dfy-article ul,
+.dfy-article ol {
+  line-height: 1.75;
+  font-size: 16px; /* Or your preferred base size */
+  margin-bottom: 1.25rem;
+  padding-left: 0.5rem;
+  color: var(--sidebar-fg-muted);
+}
+
+.dfy-article ol {
+  list-style-type: decimal; /* For ordered lists */
+}
+
+.dfy-article ul {
+  list-style-type: disc; /* Use standard bullets for unordered lists */
+}
+
+.dfy-article li {
+  margin-bottom: 0.5rem; /* Consistent spacing between list items */
+}
+
+/* Removes bottom margin from paragraphs inside list items to avoid double spacing */
+.dfy-article li p {
+  margin-bottom: 0;
+}
+
+.dfy-article ul ul {
+  margin-top: 0.75rem; /* Adds space above the nested list */
+  margin-left: 1.25rem; /* Increases the indentation of the nested list */
+}
+
+.dfy-article ul ul li {
+  list-style-type: circle; /* Changes the bullet style for sub-items */
+}
+
+.dfy-article a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.dfy-article a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.dfy-article blockquote {
+  margin: 1.5rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--primary);
+  background-color: color-mix(in oklab, var(--primary) 5%, transparent);
+  color: var(--muted);
+}
+
+.dfy-article a {
+  color: var(--primary);
+  text-decoration: none;
+}
+.dfy-article a:hover {
+  text-decoration: underline;
+}
 .dfy-article blockquote {
   margin: 16px 0;
   padding-left: 12px;
@@ -236,23 +404,7 @@ code {
   text-align: left;
 }
 
-/* Code blocks */
-pre {
-  background: #0e1111;
-  color: #e6edf3;
-  padding: 12px;
-  border-radius: 8px;
-  overflow: auto;
-  box-shadow: var(--shadow-sm);
-}
-
-/* Focus rings */
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* Visually hidden */
+/* visually hidden helper */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -262,4 +414,202 @@ pre {
   overflow: hidden;
   clip: rect(0 0 0 0);
   border: 0;
+}
+
+html.dark .shiki,
+html.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--background) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+.tt-codeblock-group {
+  margin: 1.2rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+}
+
+.tt-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.tt-codeblock-select {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.tt-codeblock-copy {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.875rem;
+  background: var(--sidebar-bg);
+  color: var(--foreground);
+}
+
+.tt-codeblock-pre {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow: auto; /* Add this line */
+}
+
+/* ---------- Page grid for content + right rail ---------- */
+.dfy-page {
+  display: grid;
+  grid-template-columns: 1fr; /* mobile first */
+  gap: 24px;
+}
+
+@media (min-width: 1100px) {
+  .dfy-page {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    align-items: start;
+  }
+}
+
+/* ---------- Right-rail ToC ---------- */
+.dfy-toc-rail {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .dfy-toc-rail {
+    display: block;
+    position: sticky;
+    top: 24px; /* keep clear of any sticky header */
+    max-height: calc(100svh - 48px);
+    overflow: auto;
+    padding: 4px;
+  }
+}
+
+/* ---------- Inline ToC (mobile) ---------- */
+.dfy-toc-inline {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--sidebar-bg) 60%, transparent);
+  padding: 8px 10px;
+  margin: 0 0 16px;
+}
+.dfy-toc-inline > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--sidebar-fg);
+  list-style: none;
+}
+.dfy-toc-inline > summary::marker {
+  content: '';
+}
+.dfy-toc-inline[open] {
+  padding-bottom: 10px;
+}
+@media (min-width: 1100px) {
+  .dfy-toc-inline {
+    display: none;
+  }
+}
+
+/* ---------- ToC nav (shared) ---------- */
+.dfy-toc {
+  position: relative;
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--sidebar-bg) 60%, transparent);
+  padding: 8px 10px 8px 16px; /* space for rail */
+}
+
+/* Rail line (full track) */
+.dfy-toc::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: var(--ink-inset);
+  bottom: var(--ink-inset);
+  width: 1px;
+  background: var(--sidebar-border);
+  border-radius: 1px;
+}
+
+/* ToC items */
+.dfy-toc li {
+  margin: 4px 0;
+}
+.dfy-toc li[data-level='3'] {
+  padding-left: 12px;
+}
+.dfy-toc li[data-level='4'] {
+  padding-left: 24px;
+}
+
+.dfy-toc a {
+  display: block;
+  padding: 6px;
+  color: var(--sidebar-fg-muted);
+  text-decoration: none;
+  line-height: 1.35;
+  padding-left: 6px;
+}
+
+.dfy-toc a:hover {
+  background-color: var(--sidebar-hover);
+  border-radius: var(--radius);
+}
+
+/* Active item */
+.dfy-toc a.active,
+.dfy-toc a[aria-current] {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Keep headings anchor-safe under sticky UI */
+.dfy-article h2,
+.dfy-article h3 {
+  scroll-margin-top: 80px;
+}
+
+/* --- 4) Let long elements scroll INSIDE themselves instead of widening the page --- */
+.dfy-article pre {
+  overflow-x: auto;
+  max-width: 100%;
+  white-space: pre; /* keep code formatting; scroll horizontally inside pre */
+}
+@media (max-width: 1099.98px) {
+  .dfy-article table {
+    display: block; /* allow scrolling container */
+    width: 100%;
+    overflow-x: auto; /* table can scroll horizontally on small screens */
+  }
+}
+.dfy-article img,
+.dfy-article video,
+.dfy-article iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- 5) If you’re using the mobile drawer, lock the page scroll when it is open --- */
+@media (max-width: 1099.98px) {
+  body:has(#dfy-mobile-nav-toggle:checked) {
+    overflow: hidden; /* avoid the "page moves sideways when menu opens" effect */
+    touch-action: none;
+  }
 }
