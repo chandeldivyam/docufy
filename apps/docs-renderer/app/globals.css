@@ -22,9 +22,11 @@
   --sidebar-border: oklch(0.92 0 0);
   --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 4%, var(--sidebar-bg));
 
-  /* code */
-  --code-bg: #0e1111;
-  --code-fg: #e6edf3;
+  --step--1: clamp(0.8rem, 0.79rem + 0.1vw, 0.88rem);
+  --step-0: clamp(0.95rem, 0.91rem + 0.22vw, 1.05rem);
+  --step-1: clamp(1.15rem, 1.05rem + 0.4vw, 1.3rem);
+  --step-2: clamp(1.35rem, 1.21rem + 0.62vw, 1.6rem);
+  --step-3: clamp(1.6rem, 1.38rem + 0.92vw, 1.95rem);
 }
 
 :root.dark {
@@ -39,8 +41,6 @@
   --sidebar-fg-muted: oklch(0.77 0 0);
   --sidebar-border: oklch(0.3 0 0);
   --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 10%, var(--sidebar-bg));
-  --code-bg: #0a0c10;
-  --code-fg: #e6edf3;
 }
 
 /* ---------- Base ---------- */
@@ -77,8 +77,6 @@ body {
   grid-template-columns: 300px 1fr;
   height: 100vh;
   min-height: 0;
-}
-.dfy-nav-scroll {
 }
 .dfy-main {
   min-width: 0;
@@ -149,24 +147,62 @@ body {
 
 /* ---------- Article ---------- */
 .dfy-article {
-  max-width: 980px;
+  max-width: 800px; /* Optimal for reading, adjust as needed */
   margin: 0 auto;
+  padding: 2rem 0; /* Add vertical rhythm */
 }
+
 .dfy-article h1 {
-  font-size: clamp(24px, 2.2vw, 32px);
-  margin: 16px 0;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+  line-height: 1.2;
 }
+
 .dfy-article h2 {
-  font-size: clamp(20px, 1.6vw, 24px);
-  margin: 16px 0;
+  font-size: clamp(1.5rem, 4vw, 1.875rem);
+  font-weight: 700;
+  margin: 2.5rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border); /* Common practice for section breaks */
+  scroll-margin-top: 80px; /* Offset for sticky headers */
 }
+
 .dfy-article h3 {
-  font-size: 18px;
-  margin: 12px 0;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  font-weight: 600;
+  margin: 2rem 0 0.75rem;
+  scroll-margin-top: 80px;
 }
-.dfy-article p {
+
+.dfy-article p,
+.dfy-article ul,
+.dfy-article ol {
   line-height: 1.75;
+  font-size: 16px; /* Or your preferred base size */
+  margin-bottom: 1.25rem;
 }
+
+.dfy-article a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.dfy-article a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.dfy-article blockquote {
+  margin: 1.5rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--primary);
+  background-color: color-mix(in oklab, var(--primary) 5%, transparent);
+  color: var(--muted);
+}
+
 .dfy-article a {
   color: var(--primary);
   text-decoration: none;
@@ -199,14 +235,6 @@ body {
   text-align: left;
 }
 
-pre {
-  background: var(--code-bg);
-  color: var(--code-fg);
-  padding: 12px;
-  border-radius: 8px;
-  overflow: auto;
-}
-
 /* visually hidden helper */
 .sr-only {
   position: absolute;
@@ -217,4 +245,58 @@ pre {
   overflow: hidden;
   clip: rect(0 0 0 0);
   border: 0;
+}
+
+html.dark .shiki,
+html.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--background) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+.tt-codeblock-group {
+  margin: 1.2rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+}
+
+.tt-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.tt-codeblock-select {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.tt-codeblock-copy {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.875rem;
+  background: var(--sidebar-bg);
+  color: var(--foreground);
+}
+
+.tt-codeblock-pre {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow: auto; /* Add this line */
 }

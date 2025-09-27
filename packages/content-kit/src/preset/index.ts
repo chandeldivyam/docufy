@@ -83,5 +83,10 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
     ];
   }
 
-  return [...base, StaticCodeBlock.configure({ lowlight }), StaticImage, ...extra];
+  return [
+    ...base,
+    StaticCodeBlock.configure({ lowlight, enableLowlightHighlight: false }),
+    StaticImage,
+    ...extra,
+  ];
 }

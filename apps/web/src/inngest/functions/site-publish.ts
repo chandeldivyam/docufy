@@ -281,7 +281,7 @@ export const sitePublish = inngest.createFunction(
         pmDoc = { type: "doc", content: [] }
       }
 
-      const { html, toc } = serializeContent(pmDoc)
+      const { html, toc } = await serializeContent(pmDoc)
       const plain = extractPlain(pmDoc)
 
       const bundleObj = {
