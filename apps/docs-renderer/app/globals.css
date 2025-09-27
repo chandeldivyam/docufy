@@ -71,24 +71,166 @@ body {
   outline-offset: 2px;
 }
 
-/* ---------- Layout ---------- */
+/* ========== Responsive root grid (mobile-first) ========== */
 .dfy-root {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 1fr; /* phones: content-only */
   height: 100vh;
   min-height: 0;
 }
+
+@media (min-width: 1100px) {
+  .dfy-root {
+    grid-template-columns: 300px 1fr;
+  }
+}
+
+/* Main/content already OK */
 .dfy-main {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
 }
+
+.dfy-article-wrap {
+  min-width: 0;
+}
+
+/* Ensure content can host sticky topbar & overlay on mobile */
 .dfy-content {
   height: 100vh;
-  overflow: auto;
   padding: 28px;
+  padding-top: 0;
   content-visibility: auto;
   contain-intrinsic-size: 800px;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden; /* page should never scroll sideways */
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* ========== Mobile Top Bar (hamburger + last two crumbs) ========== */
+.dfy-mobile-nav-toggle {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  /* keep it outside flow but accessible for :has() */
+}
+
+/* Only show on small screens */
+.dfy-mobile-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 12px;
+  background: color-mix(in oklab, var(--bg) 96%, transparent);
+  backdrop-filter: saturate(1.1) blur(4px);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+@media (min-width: 1100px) {
+  .dfy-mobile-topbar,
+  .dfy-sidebar-backdrop,
+  #dfy-mobile-nav-toggle {
+    display: none;
+  }
+}
+
+.dfy-hamburger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  color: var(--sidebar-fg);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.dfy-hamburger:hover {
+  background: var(--sidebar-hover);
+}
+
+/* Mintlify-like last-two-level breadcrumb */
+.dfy-breadcrumb ol {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dfy-breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 80vw; /* keep it single line */
+}
+.dfy-breadcrumb li + li::before {
+  content: '›';
+  opacity: 0.7;
+}
+.dfy-breadcrumb li[data-current='true'] {
+  color: var(--sidebar-fg);
+  font-weight: 600;
+}
+
+/* ========== Off-canvas Sidebar (mobile) ========== */
+/* Target the existing SidebarNav aside via its aria-label */
+@media (max-width: 1099.98px) {
+  /* Off-canvas panel */
+  body [aria-label='Documentation sidebar'] {
+    position: fixed !important;
+    inset: 0 auto 0 0; /* left side */
+    width: min(86vw, 320px);
+    max-width: 86vw;
+    height: 100svh;
+    transform: translateX(-100%);
+    transition: transform 200ms ease;
+    z-index: 70;
+    box-shadow:
+      0 0 0 1px var(--sidebar-border),
+      0 18px 48px color-mix(in oklab, black 28%, transparent);
+  }
+
+  /* Backdrop behind the drawer */
+  .dfy-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: color-mix(in oklab, black 45%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+    z-index: 60;
+  }
+
+  /* When the checkbox is checked, open the drawer + show backdrop */
+  body:has(#dfy-mobile-nav-toggle:checked) [aria-label='Documentation sidebar'] {
+    transform: translateX(0%);
+  }
+  body:has(#dfy-mobile-nav-toggle:checked) .dfy-sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* ---------- Sidebar nav ---------- */
@@ -149,29 +291,28 @@ body {
 .dfy-article {
   max-width: 800px; /* Optimal for reading, adjust as needed */
   margin: 0 auto;
-  padding: 2rem 0; /* Add vertical rhythm */
+  padding: 2rem 0 2rem 0; /* Add vertical rhythm */
 }
 
 .dfy-article h1 {
-  font-size: clamp(2rem, 5vw, 2.75rem);
-  font-weight: 800;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0 0 1rem;
   line-height: 1.2;
 }
 
 .dfy-article h2 {
-  font-size: clamp(1.5rem, 4vw, 1.875rem);
-  font-weight: 700;
-  margin: 2.5rem 0 1rem;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  font-weight: 500;
+  margin: 2rem 0 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border); /* Common practice for section breaks */
   scroll-margin-top: 80px; /* Offset for sticky headers */
 }
 
 .dfy-article h3 {
-  font-size: clamp(1.2rem, 3vw, 1.5rem);
-  font-weight: 600;
+  font-size: clamp(1rem, 1vw, 1.25rem);
+  font-weight: 500;
   margin: 2rem 0 0.75rem;
   scroll-margin-top: 80px;
 }
@@ -182,6 +323,25 @@ body {
   line-height: 1.75;
   font-size: 16px; /* Or your preferred base size */
   margin-bottom: 1.25rem;
+  padding-left: 0.5rem;
+  color: var(--sidebar-fg-muted);
+}
+
+.dfy-article ol {
+  list-style-type: decimal; /* For ordered lists */
+}
+
+.dfy-article ul {
+  list-style-type: disc; /* Use standard bullets for unordered lists */
+}
+
+.dfy-article li {
+  margin-bottom: 0.5rem; /* Consistent spacing between list items */
+}
+
+/* Removes bottom margin from paragraphs inside list items to avoid double spacing */
+.dfy-article li p {
+  margin-bottom: 0;
 }
 
 .dfy-article a {
@@ -391,7 +551,7 @@ html.dark .shiki span {
 
 .dfy-toc a {
   display: block;
-  padding: 2px 0;
+  padding: 6px;
   color: var(--sidebar-fg-muted);
   text-decoration: none;
   line-height: 1.35;
@@ -400,6 +560,7 @@ html.dark .shiki span {
 
 .dfy-toc a:hover {
   background-color: var(--sidebar-hover);
+  border-radius: var(--radius);
 }
 
 /* Active item */
@@ -413,4 +574,33 @@ html.dark .shiki span {
 .dfy-article h2,
 .dfy-article h3 {
   scroll-margin-top: 80px;
+}
+
+/* --- 4) Let long elements scroll INSIDE themselves instead of widening the page --- */
+.dfy-article pre {
+  overflow-x: auto;
+  max-width: 100%;
+  white-space: pre; /* keep code formatting; scroll horizontally inside pre */
+}
+@media (max-width: 1099.98px) {
+  .dfy-article table {
+    display: block; /* allow scrolling container */
+    width: 100%;
+    overflow-x: auto; /* table can scroll horizontally on small screens */
+  }
+}
+.dfy-article img,
+.dfy-article video,
+.dfy-article iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- 5) If you’re using the mobile drawer, lock the page scroll when it is open --- */
+@media (max-width: 1099.98px) {
+  body:has(#dfy-mobile-nav-toggle:checked) {
+    overflow: hidden; /* avoid the "page moves sideways when menu opens" effect */
+    touch-action: none;
+  }
 }
