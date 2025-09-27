@@ -21,16 +21,24 @@ export default function SidebarNav({
   const spaces = sortSpaces(manifest);
   const selected = tree.spaces.find((space) => space.space.slug === currentSpace);
   if (!selected) {
-    return <aside className="dfy-sidebar" aria-label="Documentation sidebar" />;
+    return (
+      <aside
+        aria-label="Documentation sidebar"
+        className="sticky top-0 h-svh border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] text-[var(--sidebar-fg)] p-3 flex flex-col gap-3"
+      />
+    );
   }
 
   const spaceOptions = spaces.map(({ slug, name, entry }) => ({ slug, name, entry }));
   const storageKey = `dfy:nav:${manifest.buildId}:${currentSpace}`;
 
   return (
-    <aside className="dfy-sidebar" aria-label="Documentation sidebar">
+    <aside
+      aria-label="Documentation sidebar"
+      className="sticky top-0 h-svh border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] text-[var(--sidebar-fg)] p-3 flex flex-col gap-3"
+    >
       <SidebarSpaceSwitcher spaces={spaceOptions} currentSpace={currentSpace} hrefPrefix={hrefPrefix} />
-      <div className="dfy-nav-scroll">
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         <SidebarNavClient
           nodes={selected.items}
           hrefPrefix={hrefPrefix}

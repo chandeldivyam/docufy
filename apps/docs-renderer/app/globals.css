@@ -18,6 +18,7 @@
   /* sidebar */
   --sidebar-bg: oklch(0.985 0 0);
   --sidebar-fg: oklch(0.18 0 0);
+  --sidebar-fg-muted: oklch(0.45 0 0);
   --sidebar-border: oklch(0.92 0 0);
   --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 4%, var(--sidebar-bg));
 
@@ -36,6 +37,7 @@
     --primary-fg: oklch(0.14 0 0);
     --sidebar-bg: oklch(0.2 0 0);
     --sidebar-fg: oklch(0.98 0 0);
+    --sidebar-fg-muted: oklch(0.77 0 0);
     --sidebar-border: oklch(0.3 0 0);
     --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 10%, var(--sidebar-bg));
     --code-bg: #0a0c10;
@@ -78,23 +80,7 @@ body {
   height: 100vh;
   min-height: 0;
 }
-.dfy-sidebar {
-  border-right: 1px solid var(--sidebar-border);
-  background: var(--sidebar-bg);
-  color: var(--sidebar-fg);
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 .dfy-nav-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
 }
 .dfy-main {
   min-width: 0;
@@ -110,104 +96,57 @@ body {
 }
 
 /* ---------- Sidebar nav ---------- */
+/* Moved to Tailwind utilities; only design tokens remain in this file. */
 
-.dfy-space-switcher {
+/* Sidebar link: shared Tailwind-lite rules for clarity + consistency */
+.sidebar-link {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.dfy-select {
-  width: 100%;
-  appearance: none;
-  background: var(--bg);
-  color: var(--fg);
-  border: 1px solid var(--sidebar-border);
-  border-radius: var(--radius);
+  align-items: center;
+  gap: 12px;
   padding: 8px 10px;
-  font-size: 13px;
-  line-height: 1.4;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-}
-.dfy-select:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-.dfy-group-label {
-  margin: 18px 6px 6px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  background: color-mix(in oklab, var(--sidebar-fg) 5%, var(--sidebar-bg));
-  border-radius: 6px;
-}
-
-.dfy-space-title {
-  display: none;
-}
-.dfy-tree {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.dfy-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.dfy-toggle {
-  width: 20px;
-  height: 20px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 4px;
-}
-.dfy-toggle:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-.dfy-toggle::before {
-  content: '▸';
-  transform: rotate(0deg);
-  transition: transform 160ms ease;
-  font-size: 12px;
-  line-height: 1;
-}
-[aria-expanded='true'] > .dfy-row > .dfy-toggle::before {
-  transform: rotate(90deg);
-}
-.dfy-children {
-  border-left: 1px solid var(--border);
-  margin-left: 14px;
-  padding-left: 10px;
-}
-.dfy-leaf {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--muted);
-  opacity: 0.4;
-}
-.dfy-link {
-  display: block;
-  padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   text-decoration: none;
-  color: inherit;
+  color: var(--sidebar-fg-muted);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 }
-.dfy-link:hover {
+.sidebar-link:hover {
   background: var(--sidebar-hover);
+  color: var(--sidebar-fg);
 }
-.dfy-link.active {
-  background: var(--primary);
-  color: var(--primary-fg);
+.sidebar-link[aria-current='page'] {
+  color: var(--primary);
+  font-weight: 600;
+}
+.sidebar-link svg {
+  width: 16px;
+  height: 16px;
+  color: var(--sidebar-fg-muted);
+}
+.sidebar-link[aria-current='page'] svg {
+  color: var(--primary);
+}
+
+.sidebar-nav-group {
+  position: relative;
+  margin-left: 6px; /* Adjust as needed */
+  padding-left: 6px; /* Space for the guide line */
+}
+
+.sidebar-nav-group::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--sidebar-border);
+  transition: background-color 150ms ease-in-out;
+}
+
+.sidebar-nav-group:hover::before {
+  background-color: color-mix(in oklab, var(--primary) 50%, var(--sidebar-border));
 }
 
 /* ---------- Article ---------- */

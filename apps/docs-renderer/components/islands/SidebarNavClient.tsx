@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { ChevronRight } from 'lucide-react';
+import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
 import type { UiTreeItem } from '../../lib/types';
 
-const INDENT = 14;
+const INDENT = 12;
 
 function getNodeId(node: UiTreeItem) {
   return node.route || `group:${node.slug}`;
@@ -97,7 +99,7 @@ export default function SidebarNavClient({
 
   return (
     <nav aria-label="Section navigation" role="tree">
-      <ul className="dfy-tree">
+      <ul className="m-0 list-none p-0">
         {nodes.map((node) => (
           <Node
             key={node.route || node.slug}
@@ -106,9 +108,7 @@ export default function SidebarNavClient({
             expanded={expanded}
             onToggle={(id, open) =>
               setExpanded((prev) => {
-                if (open) {
-                  return prev.includes(id) ? prev : [...prev, id];
-                }
+                if (open) return prev.includes(id) ? prev : [...prev, id];
                 return prev.filter((value) => value !== id);
               })
             }
@@ -144,11 +144,14 @@ function Node({
   if (node.kind === 'group') {
     return (
       <li>
-        <div className="dfy-group-label" style={{ marginLeft: depth * INDENT }}>
+        <div
+          className="mt-3 mb-1.5 rounded-md px-2 py-1 text-[12px] font-bold tracking-normal text-[var(--sidebar-fg)]"
+          style={{ marginLeft: depth * INDENT }}
+        >
           {node.title}
         </div>
         {hasChildren && (
-          <ul className="dfy-children" role="group">
+          <ul className="sidebar-nav-group m-0 list-none" role="group">
             {node.children!.map((child) => (
               <Node
                 key={child.route || child.slug}
@@ -169,13 +172,17 @@ function Node({
   if (!hasChildren) {
     return (
       <li role="treeitem" aria-expanded={false} aria-current={isActive ? 'page' : undefined}>
-        <div className="dfy-row" style={{ marginLeft: depth * INDENT }}>
+        <div className="flex items-center gap-2" style={{ marginLeft: depth * INDENT }}>
           <Link
             prefetch
             href={`${hrefPrefix}${node.route}`}
-            className={cn('dfy-link', isActive && 'active')}
+            className={cn('sidebar-link flex-1')}
+            aria-current={isActive ? 'page' : undefined}
           >
-            {node.title}
+            {node.iconName && (
+              <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
+            )}
+            <span className="flex-1 truncate">{node.title}</span>
           </Link>
         </div>
       </li>
@@ -184,25 +191,30 @@ function Node({
 
   return (
     <li role="treeitem" aria-expanded={isExpanded}>
-      <div className="dfy-row" style={{ marginLeft: depth * INDENT }}>
-        <button
-          type="button"
-          className="dfy-toggle"
-          aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
-          aria-expanded={isExpanded}
-          onClick={() => onToggle(nodeId, !isExpanded)}
-        />
+      <div className="flex items-center gap-2" style={{ marginLeft: depth * INDENT }}>
         <Link
           prefetch
           href={`${hrefPrefix}${node.route}`}
           aria-current={isActive ? 'page' : undefined}
-          className={cn('dfy-link', isActive && 'active')}
+          className={cn('sidebar-link flex-1')}
         >
-          {node.title}
+          {node.iconName && (
+            <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
+          )}
+          <span className="flex-1 truncate">{node.title}</span>
         </Link>
+        <button
+          type="button"
+          className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+          aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+          aria-expanded={isExpanded}
+          onClick={() => onToggle(nodeId, !isExpanded)}
+        >
+          <ChevronRight className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-90')} />
+        </button>
       </div>
       {isExpanded && (
-        <ul className="dfy-children" role="group">
+        <ul className="m-0 list-none" role="group">
           {node.children!.map((child) => (
             <Node
               key={child.route || child.slug}

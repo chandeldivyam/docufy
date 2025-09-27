@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useMemo, useState, KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Tree, UiTreeItem, Manifest } from '../lib/types';
+import { Book, ChevronsUpDown, ChevronRight, FileText } from 'lucide-react';
 
 function isActive(route: string, current: string): boolean {
   return route === current;
@@ -41,33 +42,41 @@ export default function Sidebar({
   if (!selected) return null;
 
   return (
-    <aside className="dfy-sidebar" aria-label="Documentation">
+    <aside
+      aria-label="Documentation"
+      className="sticky top-0 h-svh border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] text-[var(--sidebar-fg)] p-3 flex flex-col gap-3"
+    >
       {layout === 'sidebar-dropdown' && (
-        <div className="dfy-space-select">
+        <div className="flex flex-col gap-1.5">
           <label className="sr-only" htmlFor="space-select">
             Select space
           </label>
-          <select
-            id="space-select"
-            value={currentSpace}
-            onChange={(e) => {
-              const slug = e.target.value;
-              const entry = spaces.find((s) => s.slug === slug)?.entry ?? `/${slug}`;
-              router.push(`${hrefPrefix}${entry}`);
-            }}
-          >
-            {spaces.map((s) => (
-              <option key={s.slug} value={s.slug}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <Book aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
+            <select
+              id="space-select"
+              className="block w-full appearance-none rounded-[var(--radius)] border border-[var(--sidebar-border)] bg-[var(--bg)] px-8 py-2 pr-9 text-sm text-[var(--fg)] shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+              value={currentSpace}
+              onChange={(e) => {
+                const slug = e.target.value;
+                const entry = spaces.find((s) => s.slug === slug)?.entry ?? `/${slug}`;
+                router.push(`${hrefPrefix}${entry}`);
+              }}
+            >
+              {spaces.map((s) => (
+                <option key={s.slug} value={s.slug}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            <ChevronsUpDown aria-hidden className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
+          </div>
         </div>
       )}
 
-      <nav className="dfy-space">
-        <div className="dfy-space-title">{selected.space.name}</div>
-        <ul className="dfy-tree">
+      <nav>
+        <div className="sr-only">{selected.space.name}</div>
+        <ul className="m-0 list-none p-0">
           {selected.items.map((n) => (
             <TreeItem
               key={n.route}
@@ -105,43 +114,60 @@ function TreeItem({
     if (e.key === 'ArrowLeft') setOpen(false);
   };
 
-  const Row =
-    node.kind === 'group' ? (
-      <div className="dfy-row" style={{ paddingLeft: depth * 12 }}>
-        {hasChildren && (
-          <button
-            type="button"
-            aria-expanded={open}
-            className="dfy-disclosure"
-            onClick={() => setOpen((v) => !v)}
-            onKeyDown={onKeyDown}
-          />
-        )}
-        <div role="heading" aria-level={Math.min(6, depth + 2)} className="dfy-group">
+  // Group nodes act as section labels (always expanded)
+  if (node.kind === 'group') {
+    return (
+      <li>
+        <div className="mt-4 mb-1 inline-block rounded-md bg-[color-mix(in_oklab,var(--sidebar-fg)_5%,var(--sidebar-bg))] px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
           {node.title}
         </div>
-      </div>
-    ) : (
-      <div className="dfy-row" style={{ paddingLeft: depth * 12 }}>
         {hasChildren && (
-          <button
-            type="button"
-            aria-expanded={open}
-            className="dfy-disclosure"
-            onClick={() => setOpen((v) => !v)}
-            onKeyDown={onKeyDown}
-          />
+          <ul className="m-0 list-none" style={{ borderLeft: 'none', marginLeft: 0, paddingLeft: 0 }}>
+            {node.children!.map((c) => (
+              <TreeItem
+                key={c.route}
+                node={c}
+                currentRoute={currentRoute}
+                depth={depth}
+                hrefPrefix={hrefPrefix}
+              />
+            ))}
+          </ul>
         )}
-        <Link
-          prefetch
-          href={`${hrefPrefix}${node.route}`}
-          aria-current={isActive(node.route, currentRoute) ? 'page' : undefined}
-          className={isActive(node.route, currentRoute) ? 'active' : undefined}
-        >
-          {node.title}
-        </Link>
-      </div>
+      </li>
     );
+  }
+
+  const Row = (
+    <div className="flex items-center gap-2" style={{ paddingLeft: depth * 12 }}>
+      <Link
+        prefetch
+        href={`${hrefPrefix}${node.route}`}
+        aria-current={isActive(node.route, currentRoute) ? 'page' : undefined}
+        className={
+          (isActive(node.route, currentRoute)
+            ? 'bg-[var(--primary)] text-[var(--primary-fg)]'
+            : 'hover:bg-[var(--sidebar-hover)]') +
+          ' block flex-1 rounded-md px-2.5 py-2 no-underline text-inherit'
+        }
+      >
+        <FileText className="mr-3 h-4 w-4 text-[var(--muted)]" aria-hidden />
+        <span className="flex-1 truncate">{node.title}</span>
+      </Link>
+      {hasChildren && (
+        <button
+          type="button"
+          aria-expanded={open}
+          className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+          onClick={() => setOpen((v) => !v)}
+          onKeyDown={onKeyDown}
+          aria-label={open ? 'Collapse section' : 'Expand section'}
+        >
+          <ChevronRight className={open ? 'h-4 w-4 transition-transform rotate-90' : 'h-4 w-4 transition-transform'} />
+        </button>
+      )}
+    </div>
+  );
 
   if (!hasChildren) return <li>{Row}</li>;
 
@@ -149,7 +175,7 @@ function TreeItem({
     <li>
       {Row}
       {open && (
-        <ul className="dfy-children">
+        <ul className="m-0 list-none border-l border-[var(--border)]">
           {node.children!.map((c) => (
             <TreeItem
               key={c.route}

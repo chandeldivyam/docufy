@@ -2,6 +2,14 @@
 
 import { useRouter } from 'next/navigation';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'; // Make sure this path is correct
+
 export type SpaceOption = {
   slug: string;
   name: string;
@@ -21,29 +29,31 @@ export default function SidebarSpaceSwitcher({
 
   if (spaces.length <= 1) return null;
 
+  const handleValueChange = (slug: string) => {
+    const target = spaces.find((space) => space.slug === slug);
+    if (!target) return;
+    const entry = target.entry ?? `/${slug}`;
+    router.push(`${hrefPrefix}${entry}`);
+  };
+
   return (
-    <div className="dfy-space-switcher">
-      <label htmlFor="dfy-space-select" className="sr-only">
-        Select space
-      </label>
-      <select
-        id="dfy-space-select"
-        className="dfy-select"
-        value={currentSpace}
-        onChange={(event) => {
-          const slug = event.target.value;
-          const target = spaces.find((space) => space.slug === slug);
-          if (!target) return;
-          const entry = target.entry ?? `/${slug}`;
-          router.push(`${hrefPrefix}${entry}`);
-        }}
-      >
-        {spaces.map((space) => (
-          <option key={space.slug} value={space.slug}>
-            {space.name}
-          </option>
-        ))}
-      </select>
+    <div className="flex flex-col gap-1.5">
+      <Select value={currentSpace} onValueChange={handleValueChange}>
+        <SelectTrigger className="w-full border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] px-4 text-sm text-[var(--sidebar-fg)] outline-none ">
+          <SelectValue placeholder="Select a space" />
+        </SelectTrigger>
+        <SelectContent className="border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] text-[var(--sidebar-fg)]">
+          {spaces.map((space) => (
+            <SelectItem
+              key={space.slug}
+              value={space.slug}
+              className="cursor-pointer focus:bg-[var(--primary)] focus:text-[var(--primary-fg)] pl-4"
+            >
+              {space.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
