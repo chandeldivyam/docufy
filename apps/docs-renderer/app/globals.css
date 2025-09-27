@@ -344,6 +344,15 @@ body {
   margin-bottom: 0;
 }
 
+.dfy-article ul ul {
+  margin-top: 0.75rem; /* Adds space above the nested list */
+  margin-left: 1.25rem; /* Increases the indentation of the nested list */
+}
+
+.dfy-article ul ul li {
+  list-style-type: circle; /* Changes the bullet style for sub-items */
+}
+
 .dfy-article a {
   color: var(--primary);
   text-decoration: none;
