@@ -5,6 +5,7 @@ import {
   emptyDocumentsCollection,
 } from "@/lib/collections"
 import { CollaborativeEditor } from "@/components/editor/CollaborativeEditor"
+import { ApiSpecEditor } from "@/components/api/APISpecEditor"
 
 export const Route = createFileRoute(
   "/_authenticated/$orgSlug/spaces/$spaceId/document/$docId"
@@ -28,6 +29,26 @@ function DocumentPage() {
     return (
       <div className="p-6 text-sm text-muted-foreground">
         Loading document...
+      </div>
+    )
+  }
+
+  if (doc.type === "api_spec") {
+    return (
+      <ApiSpecEditor
+        orgSlug={orgSlug}
+        spaceId={spaceId}
+        parentDocId={doc.id}
+        apiSpecBlobKey={doc.api_spec_blob_key ?? ""}
+      />
+    )
+  }
+
+  if (doc.type === "api") {
+    return (
+      <div className="p-6 text-sm">
+        <div className="text-muted-foreground">API endpoint</div>
+        <div className="mt-2">doc id: {doc.id}</div>
       </div>
     )
   }

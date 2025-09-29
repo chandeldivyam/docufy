@@ -16,6 +16,12 @@ export type PageIndexEntry = {
   size: number;
   neighbors: string[];
   lastModified: number;
+  kind: 'page' | 'api';
+  api: {
+    document?: string;
+    path?: string;
+    method?: string;
+  } | null;
 };
 
 export type Manifest = {
@@ -37,12 +43,17 @@ export type Manifest = {
 };
 
 export type UiTreeItem = {
-  kind: 'group' | 'page';
+  kind: 'group' | 'page' | 'api_spec' | 'api';
   title: string;
   iconName?: string;
   slug: string;
   route: string;
   children?: UiTreeItem[];
+  api?: {
+    document?: string;
+    path?: string;
+    method?: string;
+  } | null;
 };
 
 export type UiTreeSpace = {
@@ -68,4 +79,8 @@ export type PageBlob = {
   rendered: { html: string; toc: unknown[] };
   plain: string;
   source: unknown;
+  type: 'page' | 'api';
+  apiSpecBlobKey?: string;
+  apiMethod?: string;
+  apiPath?: string;
 };

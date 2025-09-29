@@ -8,304 +8,304 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createServerRootRoute } from '@tanstack/react-start/server'
+import { createServerRootRoute } from "@tanstack/react-start/server"
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as LogoutRouteImport } from './routes/logout'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as AuthenticatedOrgsRouteImport } from './routes/_authenticated/orgs'
-import { Route as AuthenticatedActiveOrgRouteImport } from './routes/_authenticated/_active-org'
-import { Route as AuthenticatedOrgSlugRouteImport } from './routes/_authenticated/$orgSlug'
-import { Route as AuthenticatedActiveOrgIndexRouteImport } from './routes/_authenticated/_active-org/index'
-import { Route as AuthenticatedOrgSlugIndexRouteImport } from './routes/_authenticated/$orgSlug/index'
-import { Route as AuthenticatedActiveOrgSettingsRouteImport } from './routes/_authenticated/_active-org/settings'
-import { Route as AuthenticatedOrgSlugSettingsRouteImport } from './routes/_authenticated/$orgSlug/settings'
-import { Route as AuthenticatedOrgSlugSpacesIndexRouteImport } from './routes/_authenticated/$orgSlug/spaces/index'
-import { Route as AuthenticatedOrgSlugSpacesSpaceIdRouteImport } from './routes/_authenticated/$orgSlug/spaces/$spaceId'
-import { Route as AuthenticatedOrgSlugSitesSiteIdRouteImport } from './routes/_authenticated/$orgSlug/sites/$siteId'
-import { Route as AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport } from './routes/_authenticated/$orgSlug/spaces/$spaceId/document/$docId'
-import { ServerRoute as ApiUserInvitationsServerRouteImport } from './routes/api/user-invitations'
-import { ServerRoute as ApiSpacesServerRouteImport } from './routes/api/spaces'
-import { ServerRoute as ApiSitesServerRouteImport } from './routes/api/sites'
-import { ServerRoute as ApiSiteSpacesServerRouteImport } from './routes/api/site-spaces'
-import { ServerRoute as ApiSiteDomainsServerRouteImport } from './routes/api/site-domains'
-import { ServerRoute as ApiSiteBuildsServerRouteImport } from './routes/api/site-builds'
-import { ServerRoute as ApiOrgUserProfilesServerRouteImport } from './routes/api/org-user-profiles'
-import { ServerRoute as ApiMyOrganizationsServerRouteImport } from './routes/api/my-organizations'
-import { ServerRoute as ApiInvitationsServerRouteImport } from './routes/api/invitations'
-import { ServerRoute as ApiInngestServerRouteImport } from './routes/api/inngest'
-import { ServerRoute as ApiHelloServerRouteImport } from './routes/api/hello'
-import { ServerRoute as ApiDocumentsServerRouteImport } from './routes/api/documents'
-import { ServerRoute as ApiDocumentUpdatesServerRouteImport } from './routes/api/document-updates'
-import { ServerRoute as ApiAwarenessUpdatesServerRouteImport } from './routes/api/awareness-updates'
-import { ServerRoute as ApiTrpcSplatServerRouteImport } from './routes/api/trpc/$'
-import { ServerRoute as ApiShapeSplatServerRouteImport } from './routes/api/shape/$'
-import { ServerRoute as ApiBlobUploadServerRouteImport } from './routes/api/blob/upload'
-import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth/$'
+import { Route as rootRouteImport } from "./routes/__root"
+import { Route as LogoutRouteImport } from "./routes/logout"
+import { Route as LoginRouteImport } from "./routes/login"
+import { Route as AuthenticatedRouteImport } from "./routes/_authenticated"
+import { Route as AuthenticatedOrgsRouteImport } from "./routes/_authenticated/orgs"
+import { Route as AuthenticatedActiveOrgRouteImport } from "./routes/_authenticated/_active-org"
+import { Route as AuthenticatedOrgSlugRouteImport } from "./routes/_authenticated/$orgSlug"
+import { Route as AuthenticatedActiveOrgIndexRouteImport } from "./routes/_authenticated/_active-org/index"
+import { Route as AuthenticatedOrgSlugIndexRouteImport } from "./routes/_authenticated/$orgSlug/index"
+import { Route as AuthenticatedActiveOrgSettingsRouteImport } from "./routes/_authenticated/_active-org/settings"
+import { Route as AuthenticatedOrgSlugSettingsRouteImport } from "./routes/_authenticated/$orgSlug/settings"
+import { Route as AuthenticatedOrgSlugSpacesIndexRouteImport } from "./routes/_authenticated/$orgSlug/spaces/index"
+import { Route as AuthenticatedOrgSlugSpacesSpaceIdRouteImport } from "./routes/_authenticated/$orgSlug/spaces/$spaceId"
+import { Route as AuthenticatedOrgSlugSitesSiteIdRouteImport } from "./routes/_authenticated/$orgSlug/sites/$siteId"
+import { Route as AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport } from "./routes/_authenticated/$orgSlug/spaces/$spaceId/document/$docId"
+import { ServerRoute as ApiUserInvitationsServerRouteImport } from "./routes/api/user-invitations"
+import { ServerRoute as ApiSpacesServerRouteImport } from "./routes/api/spaces"
+import { ServerRoute as ApiSitesServerRouteImport } from "./routes/api/sites"
+import { ServerRoute as ApiSiteSpacesServerRouteImport } from "./routes/api/site-spaces"
+import { ServerRoute as ApiSiteDomainsServerRouteImport } from "./routes/api/site-domains"
+import { ServerRoute as ApiSiteBuildsServerRouteImport } from "./routes/api/site-builds"
+import { ServerRoute as ApiOrgUserProfilesServerRouteImport } from "./routes/api/org-user-profiles"
+import { ServerRoute as ApiMyOrganizationsServerRouteImport } from "./routes/api/my-organizations"
+import { ServerRoute as ApiInvitationsServerRouteImport } from "./routes/api/invitations"
+import { ServerRoute as ApiInngestServerRouteImport } from "./routes/api/inngest"
+import { ServerRoute as ApiHelloServerRouteImport } from "./routes/api/hello"
+import { ServerRoute as ApiDocumentsServerRouteImport } from "./routes/api/documents"
+import { ServerRoute as ApiDocumentUpdatesServerRouteImport } from "./routes/api/document-updates"
+import { ServerRoute as ApiAwarenessUpdatesServerRouteImport } from "./routes/api/awareness-updates"
+import { ServerRoute as ApiTrpcSplatServerRouteImport } from "./routes/api/trpc/$"
+import { ServerRoute as ApiShapeSplatServerRouteImport } from "./routes/api/shape/$"
+import { ServerRoute as ApiBlobUploadServerRouteImport } from "./routes/api/blob/upload"
+import { ServerRoute as ApiAuthSplatServerRouteImport } from "./routes/api/auth/$"
 
 const rootServerRouteImport = createServerRootRoute()
 
 const LogoutRoute = LogoutRouteImport.update({
-  id: '/logout',
-  path: '/logout',
+  id: "/logout",
+  path: "/logout",
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+  id: "/_authenticated",
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedOrgsRoute = AuthenticatedOrgsRouteImport.update({
-  id: '/orgs',
-  path: '/orgs',
+  id: "/orgs",
+  path: "/orgs",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedActiveOrgRoute = AuthenticatedActiveOrgRouteImport.update({
-  id: '/_active-org',
+  id: "/_active-org",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedOrgSlugRoute = AuthenticatedOrgSlugRouteImport.update({
-  id: '/$orgSlug',
-  path: '/$orgSlug',
+  id: "/$orgSlug",
+  path: "/$orgSlug",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedActiveOrgIndexRoute =
   AuthenticatedActiveOrgIndexRouteImport.update({
-    id: '/',
-    path: '/',
+    id: "/",
+    path: "/",
     getParentRoute: () => AuthenticatedActiveOrgRoute,
   } as any)
 const AuthenticatedOrgSlugIndexRoute =
   AuthenticatedOrgSlugIndexRouteImport.update({
-    id: '/',
-    path: '/',
+    id: "/",
+    path: "/",
     getParentRoute: () => AuthenticatedOrgSlugRoute,
   } as any)
 const AuthenticatedActiveOrgSettingsRoute =
   AuthenticatedActiveOrgSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
+    id: "/settings",
+    path: "/settings",
     getParentRoute: () => AuthenticatedActiveOrgRoute,
   } as any)
 const AuthenticatedOrgSlugSettingsRoute =
   AuthenticatedOrgSlugSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
+    id: "/settings",
+    path: "/settings",
     getParentRoute: () => AuthenticatedOrgSlugRoute,
   } as any)
 const AuthenticatedOrgSlugSpacesIndexRoute =
   AuthenticatedOrgSlugSpacesIndexRouteImport.update({
-    id: '/spaces/',
-    path: '/spaces/',
+    id: "/spaces/",
+    path: "/spaces/",
     getParentRoute: () => AuthenticatedOrgSlugRoute,
   } as any)
 const AuthenticatedOrgSlugSpacesSpaceIdRoute =
   AuthenticatedOrgSlugSpacesSpaceIdRouteImport.update({
-    id: '/spaces/$spaceId',
-    path: '/spaces/$spaceId',
+    id: "/spaces/$spaceId",
+    path: "/spaces/$spaceId",
     getParentRoute: () => AuthenticatedOrgSlugRoute,
   } as any)
 const AuthenticatedOrgSlugSitesSiteIdRoute =
   AuthenticatedOrgSlugSitesSiteIdRouteImport.update({
-    id: '/sites/$siteId',
-    path: '/sites/$siteId',
+    id: "/sites/$siteId",
+    path: "/sites/$siteId",
     getParentRoute: () => AuthenticatedOrgSlugRoute,
   } as any)
 const AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute =
   AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport.update({
-    id: '/document/$docId',
-    path: '/document/$docId',
+    id: "/document/$docId",
+    path: "/document/$docId",
     getParentRoute: () => AuthenticatedOrgSlugSpacesSpaceIdRoute,
   } as any)
 const ApiUserInvitationsServerRoute =
   ApiUserInvitationsServerRouteImport.update({
-    id: '/api/user-invitations',
-    path: '/api/user-invitations',
+    id: "/api/user-invitations",
+    path: "/api/user-invitations",
     getParentRoute: () => rootServerRouteImport,
   } as any)
 const ApiSpacesServerRoute = ApiSpacesServerRouteImport.update({
-  id: '/api/spaces',
-  path: '/api/spaces',
+  id: "/api/spaces",
+  path: "/api/spaces",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiSitesServerRoute = ApiSitesServerRouteImport.update({
-  id: '/api/sites',
-  path: '/api/sites',
+  id: "/api/sites",
+  path: "/api/sites",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiSiteSpacesServerRoute = ApiSiteSpacesServerRouteImport.update({
-  id: '/api/site-spaces',
-  path: '/api/site-spaces',
+  id: "/api/site-spaces",
+  path: "/api/site-spaces",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiSiteDomainsServerRoute = ApiSiteDomainsServerRouteImport.update({
-  id: '/api/site-domains',
-  path: '/api/site-domains',
+  id: "/api/site-domains",
+  path: "/api/site-domains",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiSiteBuildsServerRoute = ApiSiteBuildsServerRouteImport.update({
-  id: '/api/site-builds',
-  path: '/api/site-builds',
+  id: "/api/site-builds",
+  path: "/api/site-builds",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiOrgUserProfilesServerRoute =
   ApiOrgUserProfilesServerRouteImport.update({
-    id: '/api/org-user-profiles',
-    path: '/api/org-user-profiles',
+    id: "/api/org-user-profiles",
+    path: "/api/org-user-profiles",
     getParentRoute: () => rootServerRouteImport,
   } as any)
 const ApiMyOrganizationsServerRoute =
   ApiMyOrganizationsServerRouteImport.update({
-    id: '/api/my-organizations',
-    path: '/api/my-organizations',
+    id: "/api/my-organizations",
+    path: "/api/my-organizations",
     getParentRoute: () => rootServerRouteImport,
   } as any)
 const ApiInvitationsServerRoute = ApiInvitationsServerRouteImport.update({
-  id: '/api/invitations',
-  path: '/api/invitations',
+  id: "/api/invitations",
+  path: "/api/invitations",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiInngestServerRoute = ApiInngestServerRouteImport.update({
-  id: '/api/inngest',
-  path: '/api/inngest',
+  id: "/api/inngest",
+  path: "/api/inngest",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiHelloServerRoute = ApiHelloServerRouteImport.update({
-  id: '/api/hello',
-  path: '/api/hello',
+  id: "/api/hello",
+  path: "/api/hello",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiDocumentsServerRoute = ApiDocumentsServerRouteImport.update({
-  id: '/api/documents',
-  path: '/api/documents',
+  id: "/api/documents",
+  path: "/api/documents",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiDocumentUpdatesServerRoute =
   ApiDocumentUpdatesServerRouteImport.update({
-    id: '/api/document-updates',
-    path: '/api/document-updates',
+    id: "/api/document-updates",
+    path: "/api/document-updates",
     getParentRoute: () => rootServerRouteImport,
   } as any)
 const ApiAwarenessUpdatesServerRoute =
   ApiAwarenessUpdatesServerRouteImport.update({
-    id: '/api/awareness-updates',
-    path: '/api/awareness-updates',
+    id: "/api/awareness-updates",
+    path: "/api/awareness-updates",
     getParentRoute: () => rootServerRouteImport,
   } as any)
 const ApiTrpcSplatServerRoute = ApiTrpcSplatServerRouteImport.update({
-  id: '/api/trpc/$',
-  path: '/api/trpc/$',
+  id: "/api/trpc/$",
+  path: "/api/trpc/$",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiShapeSplatServerRoute = ApiShapeSplatServerRouteImport.update({
-  id: '/api/shape/$',
-  path: '/api/shape/$',
+  id: "/api/shape/$",
+  path: "/api/shape/$",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiBlobUploadServerRoute = ApiBlobUploadServerRouteImport.update({
-  id: '/api/blob/upload',
-  path: '/api/blob/upload',
+  id: "/api/blob/upload",
+  path: "/api/blob/upload",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
+  id: "/api/auth/$",
+  path: "/api/auth/$",
   getParentRoute: () => rootServerRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/login': typeof LoginRoute
-  '/logout': typeof LogoutRoute
-  '/$orgSlug': typeof AuthenticatedOrgSlugRouteWithChildren
-  '/orgs': typeof AuthenticatedOrgsRoute
-  '/$orgSlug/settings': typeof AuthenticatedOrgSlugSettingsRoute
-  '/settings': typeof AuthenticatedActiveOrgSettingsRoute
-  '/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
-  '/': typeof AuthenticatedActiveOrgIndexRoute
-  '/$orgSlug/sites/$siteId': typeof AuthenticatedOrgSlugSitesSiteIdRoute
-  '/$orgSlug/spaces/$spaceId': typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
-  '/$orgSlug/spaces': typeof AuthenticatedOrgSlugSpacesIndexRoute
-  '/$orgSlug/spaces/$spaceId/document/$docId': typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
+  "/login": typeof LoginRoute
+  "/logout": typeof LogoutRoute
+  "/$orgSlug": typeof AuthenticatedOrgSlugRouteWithChildren
+  "/orgs": typeof AuthenticatedOrgsRoute
+  "/$orgSlug/settings": typeof AuthenticatedOrgSlugSettingsRoute
+  "/settings": typeof AuthenticatedActiveOrgSettingsRoute
+  "/$orgSlug/": typeof AuthenticatedOrgSlugIndexRoute
+  "/": typeof AuthenticatedActiveOrgIndexRoute
+  "/$orgSlug/sites/$siteId": typeof AuthenticatedOrgSlugSitesSiteIdRoute
+  "/$orgSlug/spaces/$spaceId": typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  "/$orgSlug/spaces": typeof AuthenticatedOrgSlugSpacesIndexRoute
+  "/$orgSlug/spaces/$spaceId/document/$docId": typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
 export interface FileRoutesByTo {
-  '/login': typeof LoginRoute
-  '/logout': typeof LogoutRoute
-  '/orgs': typeof AuthenticatedOrgsRoute
-  '/$orgSlug/settings': typeof AuthenticatedOrgSlugSettingsRoute
-  '/settings': typeof AuthenticatedActiveOrgSettingsRoute
-  '/$orgSlug': typeof AuthenticatedOrgSlugIndexRoute
-  '/': typeof AuthenticatedActiveOrgIndexRoute
-  '/$orgSlug/sites/$siteId': typeof AuthenticatedOrgSlugSitesSiteIdRoute
-  '/$orgSlug/spaces/$spaceId': typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
-  '/$orgSlug/spaces': typeof AuthenticatedOrgSlugSpacesIndexRoute
-  '/$orgSlug/spaces/$spaceId/document/$docId': typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
+  "/login": typeof LoginRoute
+  "/logout": typeof LogoutRoute
+  "/orgs": typeof AuthenticatedOrgsRoute
+  "/$orgSlug/settings": typeof AuthenticatedOrgSlugSettingsRoute
+  "/settings": typeof AuthenticatedActiveOrgSettingsRoute
+  "/$orgSlug": typeof AuthenticatedOrgSlugIndexRoute
+  "/": typeof AuthenticatedActiveOrgIndexRoute
+  "/$orgSlug/sites/$siteId": typeof AuthenticatedOrgSlugSitesSiteIdRoute
+  "/$orgSlug/spaces/$spaceId": typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  "/$orgSlug/spaces": typeof AuthenticatedOrgSlugSpacesIndexRoute
+  "/$orgSlug/spaces/$spaceId/document/$docId": typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/login': typeof LoginRoute
-  '/logout': typeof LogoutRoute
-  '/_authenticated/$orgSlug': typeof AuthenticatedOrgSlugRouteWithChildren
-  '/_authenticated/_active-org': typeof AuthenticatedActiveOrgRouteWithChildren
-  '/_authenticated/orgs': typeof AuthenticatedOrgsRoute
-  '/_authenticated/$orgSlug/settings': typeof AuthenticatedOrgSlugSettingsRoute
-  '/_authenticated/_active-org/settings': typeof AuthenticatedActiveOrgSettingsRoute
-  '/_authenticated/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
-  '/_authenticated/_active-org/': typeof AuthenticatedActiveOrgIndexRoute
-  '/_authenticated/$orgSlug/sites/$siteId': typeof AuthenticatedOrgSlugSitesSiteIdRoute
-  '/_authenticated/$orgSlug/spaces/$spaceId': typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
-  '/_authenticated/$orgSlug/spaces/': typeof AuthenticatedOrgSlugSpacesIndexRoute
-  '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId': typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
+  "/_authenticated": typeof AuthenticatedRouteWithChildren
+  "/login": typeof LoginRoute
+  "/logout": typeof LogoutRoute
+  "/_authenticated/$orgSlug": typeof AuthenticatedOrgSlugRouteWithChildren
+  "/_authenticated/_active-org": typeof AuthenticatedActiveOrgRouteWithChildren
+  "/_authenticated/orgs": typeof AuthenticatedOrgsRoute
+  "/_authenticated/$orgSlug/settings": typeof AuthenticatedOrgSlugSettingsRoute
+  "/_authenticated/_active-org/settings": typeof AuthenticatedActiveOrgSettingsRoute
+  "/_authenticated/$orgSlug/": typeof AuthenticatedOrgSlugIndexRoute
+  "/_authenticated/_active-org/": typeof AuthenticatedActiveOrgIndexRoute
+  "/_authenticated/$orgSlug/sites/$siteId": typeof AuthenticatedOrgSlugSitesSiteIdRoute
+  "/_authenticated/$orgSlug/spaces/$spaceId": typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  "/_authenticated/$orgSlug/spaces/": typeof AuthenticatedOrgSlugSpacesIndexRoute
+  "/_authenticated/$orgSlug/spaces/$spaceId/document/$docId": typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/login'
-    | '/logout'
-    | '/$orgSlug'
-    | '/orgs'
-    | '/$orgSlug/settings'
-    | '/settings'
-    | '/$orgSlug/'
-    | '/'
-    | '/$orgSlug/sites/$siteId'
-    | '/$orgSlug/spaces/$spaceId'
-    | '/$orgSlug/spaces'
-    | '/$orgSlug/spaces/$spaceId/document/$docId'
+    | "/login"
+    | "/logout"
+    | "/$orgSlug"
+    | "/orgs"
+    | "/$orgSlug/settings"
+    | "/settings"
+    | "/$orgSlug/"
+    | "/"
+    | "/$orgSlug/sites/$siteId"
+    | "/$orgSlug/spaces/$spaceId"
+    | "/$orgSlug/spaces"
+    | "/$orgSlug/spaces/$spaceId/document/$docId"
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/login'
-    | '/logout'
-    | '/orgs'
-    | '/$orgSlug/settings'
-    | '/settings'
-    | '/$orgSlug'
-    | '/'
-    | '/$orgSlug/sites/$siteId'
-    | '/$orgSlug/spaces/$spaceId'
-    | '/$orgSlug/spaces'
-    | '/$orgSlug/spaces/$spaceId/document/$docId'
+    | "/login"
+    | "/logout"
+    | "/orgs"
+    | "/$orgSlug/settings"
+    | "/settings"
+    | "/$orgSlug"
+    | "/"
+    | "/$orgSlug/sites/$siteId"
+    | "/$orgSlug/spaces/$spaceId"
+    | "/$orgSlug/spaces"
+    | "/$orgSlug/spaces/$spaceId/document/$docId"
   id:
-    | '__root__'
-    | '/_authenticated'
-    | '/login'
-    | '/logout'
-    | '/_authenticated/$orgSlug'
-    | '/_authenticated/_active-org'
-    | '/_authenticated/orgs'
-    | '/_authenticated/$orgSlug/settings'
-    | '/_authenticated/_active-org/settings'
-    | '/_authenticated/$orgSlug/'
-    | '/_authenticated/_active-org/'
-    | '/_authenticated/$orgSlug/sites/$siteId'
-    | '/_authenticated/$orgSlug/spaces/$spaceId'
-    | '/_authenticated/$orgSlug/spaces/'
-    | '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId'
+    | "__root__"
+    | "/_authenticated"
+    | "/login"
+    | "/logout"
+    | "/_authenticated/$orgSlug"
+    | "/_authenticated/_active-org"
+    | "/_authenticated/orgs"
+    | "/_authenticated/$orgSlug/settings"
+    | "/_authenticated/_active-org/settings"
+    | "/_authenticated/$orgSlug/"
+    | "/_authenticated/_active-org/"
+    | "/_authenticated/$orgSlug/sites/$siteId"
+    | "/_authenticated/$orgSlug/spaces/$spaceId"
+    | "/_authenticated/$orgSlug/spaces/"
+    | "/_authenticated/$orgSlug/spaces/$spaceId/document/$docId"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -314,127 +314,127 @@ export interface RootRouteChildren {
   LogoutRoute: typeof LogoutRoute
 }
 export interface FileServerRoutesByFullPath {
-  '/api/awareness-updates': typeof ApiAwarenessUpdatesServerRoute
-  '/api/document-updates': typeof ApiDocumentUpdatesServerRoute
-  '/api/documents': typeof ApiDocumentsServerRoute
-  '/api/hello': typeof ApiHelloServerRoute
-  '/api/inngest': typeof ApiInngestServerRoute
-  '/api/invitations': typeof ApiInvitationsServerRoute
-  '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
-  '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
-  '/api/site-builds': typeof ApiSiteBuildsServerRoute
-  '/api/site-domains': typeof ApiSiteDomainsServerRoute
-  '/api/site-spaces': typeof ApiSiteSpacesServerRoute
-  '/api/sites': typeof ApiSitesServerRoute
-  '/api/spaces': typeof ApiSpacesServerRoute
-  '/api/user-invitations': typeof ApiUserInvitationsServerRoute
-  '/api/auth/$': typeof ApiAuthSplatServerRoute
-  '/api/blob/upload': typeof ApiBlobUploadServerRoute
-  '/api/shape/$': typeof ApiShapeSplatServerRoute
-  '/api/trpc/$': typeof ApiTrpcSplatServerRoute
+  "/api/awareness-updates": typeof ApiAwarenessUpdatesServerRoute
+  "/api/document-updates": typeof ApiDocumentUpdatesServerRoute
+  "/api/documents": typeof ApiDocumentsServerRoute
+  "/api/hello": typeof ApiHelloServerRoute
+  "/api/inngest": typeof ApiInngestServerRoute
+  "/api/invitations": typeof ApiInvitationsServerRoute
+  "/api/my-organizations": typeof ApiMyOrganizationsServerRoute
+  "/api/org-user-profiles": typeof ApiOrgUserProfilesServerRoute
+  "/api/site-builds": typeof ApiSiteBuildsServerRoute
+  "/api/site-domains": typeof ApiSiteDomainsServerRoute
+  "/api/site-spaces": typeof ApiSiteSpacesServerRoute
+  "/api/sites": typeof ApiSitesServerRoute
+  "/api/spaces": typeof ApiSpacesServerRoute
+  "/api/user-invitations": typeof ApiUserInvitationsServerRoute
+  "/api/auth/$": typeof ApiAuthSplatServerRoute
+  "/api/blob/upload": typeof ApiBlobUploadServerRoute
+  "/api/shape/$": typeof ApiShapeSplatServerRoute
+  "/api/trpc/$": typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRoutesByTo {
-  '/api/awareness-updates': typeof ApiAwarenessUpdatesServerRoute
-  '/api/document-updates': typeof ApiDocumentUpdatesServerRoute
-  '/api/documents': typeof ApiDocumentsServerRoute
-  '/api/hello': typeof ApiHelloServerRoute
-  '/api/inngest': typeof ApiInngestServerRoute
-  '/api/invitations': typeof ApiInvitationsServerRoute
-  '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
-  '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
-  '/api/site-builds': typeof ApiSiteBuildsServerRoute
-  '/api/site-domains': typeof ApiSiteDomainsServerRoute
-  '/api/site-spaces': typeof ApiSiteSpacesServerRoute
-  '/api/sites': typeof ApiSitesServerRoute
-  '/api/spaces': typeof ApiSpacesServerRoute
-  '/api/user-invitations': typeof ApiUserInvitationsServerRoute
-  '/api/auth/$': typeof ApiAuthSplatServerRoute
-  '/api/blob/upload': typeof ApiBlobUploadServerRoute
-  '/api/shape/$': typeof ApiShapeSplatServerRoute
-  '/api/trpc/$': typeof ApiTrpcSplatServerRoute
+  "/api/awareness-updates": typeof ApiAwarenessUpdatesServerRoute
+  "/api/document-updates": typeof ApiDocumentUpdatesServerRoute
+  "/api/documents": typeof ApiDocumentsServerRoute
+  "/api/hello": typeof ApiHelloServerRoute
+  "/api/inngest": typeof ApiInngestServerRoute
+  "/api/invitations": typeof ApiInvitationsServerRoute
+  "/api/my-organizations": typeof ApiMyOrganizationsServerRoute
+  "/api/org-user-profiles": typeof ApiOrgUserProfilesServerRoute
+  "/api/site-builds": typeof ApiSiteBuildsServerRoute
+  "/api/site-domains": typeof ApiSiteDomainsServerRoute
+  "/api/site-spaces": typeof ApiSiteSpacesServerRoute
+  "/api/sites": typeof ApiSitesServerRoute
+  "/api/spaces": typeof ApiSpacesServerRoute
+  "/api/user-invitations": typeof ApiUserInvitationsServerRoute
+  "/api/auth/$": typeof ApiAuthSplatServerRoute
+  "/api/blob/upload": typeof ApiBlobUploadServerRoute
+  "/api/shape/$": typeof ApiShapeSplatServerRoute
+  "/api/trpc/$": typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport
-  '/api/awareness-updates': typeof ApiAwarenessUpdatesServerRoute
-  '/api/document-updates': typeof ApiDocumentUpdatesServerRoute
-  '/api/documents': typeof ApiDocumentsServerRoute
-  '/api/hello': typeof ApiHelloServerRoute
-  '/api/inngest': typeof ApiInngestServerRoute
-  '/api/invitations': typeof ApiInvitationsServerRoute
-  '/api/my-organizations': typeof ApiMyOrganizationsServerRoute
-  '/api/org-user-profiles': typeof ApiOrgUserProfilesServerRoute
-  '/api/site-builds': typeof ApiSiteBuildsServerRoute
-  '/api/site-domains': typeof ApiSiteDomainsServerRoute
-  '/api/site-spaces': typeof ApiSiteSpacesServerRoute
-  '/api/sites': typeof ApiSitesServerRoute
-  '/api/spaces': typeof ApiSpacesServerRoute
-  '/api/user-invitations': typeof ApiUserInvitationsServerRoute
-  '/api/auth/$': typeof ApiAuthSplatServerRoute
-  '/api/blob/upload': typeof ApiBlobUploadServerRoute
-  '/api/shape/$': typeof ApiShapeSplatServerRoute
-  '/api/trpc/$': typeof ApiTrpcSplatServerRoute
+  "/api/awareness-updates": typeof ApiAwarenessUpdatesServerRoute
+  "/api/document-updates": typeof ApiDocumentUpdatesServerRoute
+  "/api/documents": typeof ApiDocumentsServerRoute
+  "/api/hello": typeof ApiHelloServerRoute
+  "/api/inngest": typeof ApiInngestServerRoute
+  "/api/invitations": typeof ApiInvitationsServerRoute
+  "/api/my-organizations": typeof ApiMyOrganizationsServerRoute
+  "/api/org-user-profiles": typeof ApiOrgUserProfilesServerRoute
+  "/api/site-builds": typeof ApiSiteBuildsServerRoute
+  "/api/site-domains": typeof ApiSiteDomainsServerRoute
+  "/api/site-spaces": typeof ApiSiteSpacesServerRoute
+  "/api/sites": typeof ApiSitesServerRoute
+  "/api/spaces": typeof ApiSpacesServerRoute
+  "/api/user-invitations": typeof ApiUserInvitationsServerRoute
+  "/api/auth/$": typeof ApiAuthSplatServerRoute
+  "/api/blob/upload": typeof ApiBlobUploadServerRoute
+  "/api/shape/$": typeof ApiShapeSplatServerRoute
+  "/api/trpc/$": typeof ApiTrpcSplatServerRoute
 }
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath
   fullPaths:
-    | '/api/awareness-updates'
-    | '/api/document-updates'
-    | '/api/documents'
-    | '/api/hello'
-    | '/api/inngest'
-    | '/api/invitations'
-    | '/api/my-organizations'
-    | '/api/org-user-profiles'
-    | '/api/site-builds'
-    | '/api/site-domains'
-    | '/api/site-spaces'
-    | '/api/sites'
-    | '/api/spaces'
-    | '/api/user-invitations'
-    | '/api/auth/$'
-    | '/api/blob/upload'
-    | '/api/shape/$'
-    | '/api/trpc/$'
+    | "/api/awareness-updates"
+    | "/api/document-updates"
+    | "/api/documents"
+    | "/api/hello"
+    | "/api/inngest"
+    | "/api/invitations"
+    | "/api/my-organizations"
+    | "/api/org-user-profiles"
+    | "/api/site-builds"
+    | "/api/site-domains"
+    | "/api/site-spaces"
+    | "/api/sites"
+    | "/api/spaces"
+    | "/api/user-invitations"
+    | "/api/auth/$"
+    | "/api/blob/upload"
+    | "/api/shape/$"
+    | "/api/trpc/$"
   fileServerRoutesByTo: FileServerRoutesByTo
   to:
-    | '/api/awareness-updates'
-    | '/api/document-updates'
-    | '/api/documents'
-    | '/api/hello'
-    | '/api/inngest'
-    | '/api/invitations'
-    | '/api/my-organizations'
-    | '/api/org-user-profiles'
-    | '/api/site-builds'
-    | '/api/site-domains'
-    | '/api/site-spaces'
-    | '/api/sites'
-    | '/api/spaces'
-    | '/api/user-invitations'
-    | '/api/auth/$'
-    | '/api/blob/upload'
-    | '/api/shape/$'
-    | '/api/trpc/$'
+    | "/api/awareness-updates"
+    | "/api/document-updates"
+    | "/api/documents"
+    | "/api/hello"
+    | "/api/inngest"
+    | "/api/invitations"
+    | "/api/my-organizations"
+    | "/api/org-user-profiles"
+    | "/api/site-builds"
+    | "/api/site-domains"
+    | "/api/site-spaces"
+    | "/api/sites"
+    | "/api/spaces"
+    | "/api/user-invitations"
+    | "/api/auth/$"
+    | "/api/blob/upload"
+    | "/api/shape/$"
+    | "/api/trpc/$"
   id:
-    | '__root__'
-    | '/api/awareness-updates'
-    | '/api/document-updates'
-    | '/api/documents'
-    | '/api/hello'
-    | '/api/inngest'
-    | '/api/invitations'
-    | '/api/my-organizations'
-    | '/api/org-user-profiles'
-    | '/api/site-builds'
-    | '/api/site-domains'
-    | '/api/site-spaces'
-    | '/api/sites'
-    | '/api/spaces'
-    | '/api/user-invitations'
-    | '/api/auth/$'
-    | '/api/blob/upload'
-    | '/api/shape/$'
-    | '/api/trpc/$'
+    | "__root__"
+    | "/api/awareness-updates"
+    | "/api/document-updates"
+    | "/api/documents"
+    | "/api/hello"
+    | "/api/inngest"
+    | "/api/invitations"
+    | "/api/my-organizations"
+    | "/api/org-user-profiles"
+    | "/api/site-builds"
+    | "/api/site-domains"
+    | "/api/site-spaces"
+    | "/api/sites"
+    | "/api/spaces"
+    | "/api/user-invitations"
+    | "/api/auth/$"
+    | "/api/blob/upload"
+    | "/api/shape/$"
+    | "/api/trpc/$"
   fileServerRoutesById: FileServerRoutesById
 }
 export interface RootServerRouteChildren {
@@ -458,233 +458,233 @@ export interface RootServerRouteChildren {
   ApiTrpcSplatServerRoute: typeof ApiTrpcSplatServerRoute
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/logout': {
-      id: '/logout'
-      path: '/logout'
-      fullPath: '/logout'
+    "/logout": {
+      id: "/logout"
+      path: "/logout"
+      fullPath: "/logout"
       preLoaderRoute: typeof LogoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
+    "/login": {
+      id: "/login"
+      path: "/login"
+      fullPath: "/login"
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: ''
+    "/_authenticated": {
+      id: "/_authenticated"
+      path: ""
+      fullPath: ""
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/orgs': {
-      id: '/_authenticated/orgs'
-      path: '/orgs'
-      fullPath: '/orgs'
+    "/_authenticated/orgs": {
+      id: "/_authenticated/orgs"
+      path: "/orgs"
+      fullPath: "/orgs"
       preLoaderRoute: typeof AuthenticatedOrgsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/_active-org': {
-      id: '/_authenticated/_active-org'
-      path: ''
-      fullPath: ''
+    "/_authenticated/_active-org": {
+      id: "/_authenticated/_active-org"
+      path: ""
+      fullPath: ""
       preLoaderRoute: typeof AuthenticatedActiveOrgRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/$orgSlug': {
-      id: '/_authenticated/$orgSlug'
-      path: '/$orgSlug'
-      fullPath: '/$orgSlug'
+    "/_authenticated/$orgSlug": {
+      id: "/_authenticated/$orgSlug"
+      path: "/$orgSlug"
+      fullPath: "/$orgSlug"
       preLoaderRoute: typeof AuthenticatedOrgSlugRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/_active-org/': {
-      id: '/_authenticated/_active-org/'
-      path: '/'
-      fullPath: '/'
+    "/_authenticated/_active-org/": {
+      id: "/_authenticated/_active-org/"
+      path: "/"
+      fullPath: "/"
       preLoaderRoute: typeof AuthenticatedActiveOrgIndexRouteImport
       parentRoute: typeof AuthenticatedActiveOrgRoute
     }
-    '/_authenticated/$orgSlug/': {
-      id: '/_authenticated/$orgSlug/'
-      path: '/'
-      fullPath: '/$orgSlug/'
+    "/_authenticated/$orgSlug/": {
+      id: "/_authenticated/$orgSlug/"
+      path: "/"
+      fullPath: "/$orgSlug/"
       preLoaderRoute: typeof AuthenticatedOrgSlugIndexRouteImport
       parentRoute: typeof AuthenticatedOrgSlugRoute
     }
-    '/_authenticated/_active-org/settings': {
-      id: '/_authenticated/_active-org/settings'
-      path: '/settings'
-      fullPath: '/settings'
+    "/_authenticated/_active-org/settings": {
+      id: "/_authenticated/_active-org/settings"
+      path: "/settings"
+      fullPath: "/settings"
       preLoaderRoute: typeof AuthenticatedActiveOrgSettingsRouteImport
       parentRoute: typeof AuthenticatedActiveOrgRoute
     }
-    '/_authenticated/$orgSlug/settings': {
-      id: '/_authenticated/$orgSlug/settings'
-      path: '/settings'
-      fullPath: '/$orgSlug/settings'
+    "/_authenticated/$orgSlug/settings": {
+      id: "/_authenticated/$orgSlug/settings"
+      path: "/settings"
+      fullPath: "/$orgSlug/settings"
       preLoaderRoute: typeof AuthenticatedOrgSlugSettingsRouteImport
       parentRoute: typeof AuthenticatedOrgSlugRoute
     }
-    '/_authenticated/$orgSlug/spaces/': {
-      id: '/_authenticated/$orgSlug/spaces/'
-      path: '/spaces'
-      fullPath: '/$orgSlug/spaces'
+    "/_authenticated/$orgSlug/spaces/": {
+      id: "/_authenticated/$orgSlug/spaces/"
+      path: "/spaces"
+      fullPath: "/$orgSlug/spaces"
       preLoaderRoute: typeof AuthenticatedOrgSlugSpacesIndexRouteImport
       parentRoute: typeof AuthenticatedOrgSlugRoute
     }
-    '/_authenticated/$orgSlug/spaces/$spaceId': {
-      id: '/_authenticated/$orgSlug/spaces/$spaceId'
-      path: '/spaces/$spaceId'
-      fullPath: '/$orgSlug/spaces/$spaceId'
+    "/_authenticated/$orgSlug/spaces/$spaceId": {
+      id: "/_authenticated/$orgSlug/spaces/$spaceId"
+      path: "/spaces/$spaceId"
+      fullPath: "/$orgSlug/spaces/$spaceId"
       preLoaderRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdRouteImport
       parentRoute: typeof AuthenticatedOrgSlugRoute
     }
-    '/_authenticated/$orgSlug/sites/$siteId': {
-      id: '/_authenticated/$orgSlug/sites/$siteId'
-      path: '/sites/$siteId'
-      fullPath: '/$orgSlug/sites/$siteId'
+    "/_authenticated/$orgSlug/sites/$siteId": {
+      id: "/_authenticated/$orgSlug/sites/$siteId"
+      path: "/sites/$siteId"
+      fullPath: "/$orgSlug/sites/$siteId"
       preLoaderRoute: typeof AuthenticatedOrgSlugSitesSiteIdRouteImport
       parentRoute: typeof AuthenticatedOrgSlugRoute
     }
-    '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId': {
-      id: '/_authenticated/$orgSlug/spaces/$spaceId/document/$docId'
-      path: '/document/$docId'
-      fullPath: '/$orgSlug/spaces/$spaceId/document/$docId'
+    "/_authenticated/$orgSlug/spaces/$spaceId/document/$docId": {
+      id: "/_authenticated/$orgSlug/spaces/$spaceId/document/$docId"
+      path: "/document/$docId"
+      fullPath: "/$orgSlug/spaces/$spaceId/document/$docId"
       preLoaderRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport
       parentRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdRoute
     }
   }
 }
-declare module '@tanstack/react-start/server' {
+declare module "@tanstack/react-start/server" {
   interface ServerFileRoutesByPath {
-    '/api/user-invitations': {
-      id: '/api/user-invitations'
-      path: '/api/user-invitations'
-      fullPath: '/api/user-invitations'
+    "/api/user-invitations": {
+      id: "/api/user-invitations"
+      path: "/api/user-invitations"
+      fullPath: "/api/user-invitations"
       preLoaderRoute: typeof ApiUserInvitationsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/spaces': {
-      id: '/api/spaces'
-      path: '/api/spaces'
-      fullPath: '/api/spaces'
+    "/api/spaces": {
+      id: "/api/spaces"
+      path: "/api/spaces"
+      fullPath: "/api/spaces"
       preLoaderRoute: typeof ApiSpacesServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/sites': {
-      id: '/api/sites'
-      path: '/api/sites'
-      fullPath: '/api/sites'
+    "/api/sites": {
+      id: "/api/sites"
+      path: "/api/sites"
+      fullPath: "/api/sites"
       preLoaderRoute: typeof ApiSitesServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/site-spaces': {
-      id: '/api/site-spaces'
-      path: '/api/site-spaces'
-      fullPath: '/api/site-spaces'
+    "/api/site-spaces": {
+      id: "/api/site-spaces"
+      path: "/api/site-spaces"
+      fullPath: "/api/site-spaces"
       preLoaderRoute: typeof ApiSiteSpacesServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/site-domains': {
-      id: '/api/site-domains'
-      path: '/api/site-domains'
-      fullPath: '/api/site-domains'
+    "/api/site-domains": {
+      id: "/api/site-domains"
+      path: "/api/site-domains"
+      fullPath: "/api/site-domains"
       preLoaderRoute: typeof ApiSiteDomainsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/site-builds': {
-      id: '/api/site-builds'
-      path: '/api/site-builds'
-      fullPath: '/api/site-builds'
+    "/api/site-builds": {
+      id: "/api/site-builds"
+      path: "/api/site-builds"
+      fullPath: "/api/site-builds"
       preLoaderRoute: typeof ApiSiteBuildsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/org-user-profiles': {
-      id: '/api/org-user-profiles'
-      path: '/api/org-user-profiles'
-      fullPath: '/api/org-user-profiles'
+    "/api/org-user-profiles": {
+      id: "/api/org-user-profiles"
+      path: "/api/org-user-profiles"
+      fullPath: "/api/org-user-profiles"
       preLoaderRoute: typeof ApiOrgUserProfilesServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/my-organizations': {
-      id: '/api/my-organizations'
-      path: '/api/my-organizations'
-      fullPath: '/api/my-organizations'
+    "/api/my-organizations": {
+      id: "/api/my-organizations"
+      path: "/api/my-organizations"
+      fullPath: "/api/my-organizations"
       preLoaderRoute: typeof ApiMyOrganizationsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/invitations': {
-      id: '/api/invitations'
-      path: '/api/invitations'
-      fullPath: '/api/invitations'
+    "/api/invitations": {
+      id: "/api/invitations"
+      path: "/api/invitations"
+      fullPath: "/api/invitations"
       preLoaderRoute: typeof ApiInvitationsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/inngest': {
-      id: '/api/inngest'
-      path: '/api/inngest'
-      fullPath: '/api/inngest'
+    "/api/inngest": {
+      id: "/api/inngest"
+      path: "/api/inngest"
+      fullPath: "/api/inngest"
       preLoaderRoute: typeof ApiInngestServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/hello': {
-      id: '/api/hello'
-      path: '/api/hello'
-      fullPath: '/api/hello'
+    "/api/hello": {
+      id: "/api/hello"
+      path: "/api/hello"
+      fullPath: "/api/hello"
       preLoaderRoute: typeof ApiHelloServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/documents': {
-      id: '/api/documents'
-      path: '/api/documents'
-      fullPath: '/api/documents'
+    "/api/documents": {
+      id: "/api/documents"
+      path: "/api/documents"
+      fullPath: "/api/documents"
       preLoaderRoute: typeof ApiDocumentsServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/document-updates': {
-      id: '/api/document-updates'
-      path: '/api/document-updates'
-      fullPath: '/api/document-updates'
+    "/api/document-updates": {
+      id: "/api/document-updates"
+      path: "/api/document-updates"
+      fullPath: "/api/document-updates"
       preLoaderRoute: typeof ApiDocumentUpdatesServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/awareness-updates': {
-      id: '/api/awareness-updates'
-      path: '/api/awareness-updates'
-      fullPath: '/api/awareness-updates'
+    "/api/awareness-updates": {
+      id: "/api/awareness-updates"
+      path: "/api/awareness-updates"
+      fullPath: "/api/awareness-updates"
       preLoaderRoute: typeof ApiAwarenessUpdatesServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/trpc/$': {
-      id: '/api/trpc/$'
-      path: '/api/trpc/$'
-      fullPath: '/api/trpc/$'
+    "/api/trpc/$": {
+      id: "/api/trpc/$"
+      path: "/api/trpc/$"
+      fullPath: "/api/trpc/$"
       preLoaderRoute: typeof ApiTrpcSplatServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/shape/$': {
-      id: '/api/shape/$'
-      path: '/api/shape/$'
-      fullPath: '/api/shape/$'
+    "/api/shape/$": {
+      id: "/api/shape/$"
+      path: "/api/shape/$"
+      fullPath: "/api/shape/$"
       preLoaderRoute: typeof ApiShapeSplatServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/blob/upload': {
-      id: '/api/blob/upload'
-      path: '/api/blob/upload'
-      fullPath: '/api/blob/upload'
+    "/api/blob/upload": {
+      id: "/api/blob/upload"
+      path: "/api/blob/upload"
+      fullPath: "/api/blob/upload"
       preLoaderRoute: typeof ApiBlobUploadServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
+    "/api/auth/$": {
+      id: "/api/auth/$"
+      path: "/api/auth/$"
+      fullPath: "/api/auth/$"
       preLoaderRoute: typeof ApiAuthSplatServerRouteImport
       parentRoute: typeof rootServerRouteImport
     }
@@ -703,7 +703,7 @@ const AuthenticatedOrgSlugSpacesSpaceIdRouteChildren: AuthenticatedOrgSlugSpaces
 
 const AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren =
   AuthenticatedOrgSlugSpacesSpaceIdRoute._addFileChildren(
-    AuthenticatedOrgSlugSpacesSpaceIdRouteChildren,
+    AuthenticatedOrgSlugSpacesSpaceIdRouteChildren
   )
 
 interface AuthenticatedOrgSlugRouteChildren {
@@ -739,7 +739,7 @@ const AuthenticatedActiveOrgRouteChildren: AuthenticatedActiveOrgRouteChildren =
 
 const AuthenticatedActiveOrgRouteWithChildren =
   AuthenticatedActiveOrgRoute._addFileChildren(
-    AuthenticatedActiveOrgRouteChildren,
+    AuthenticatedActiveOrgRouteChildren
   )
 
 interface AuthenticatedRouteChildren {
@@ -755,7 +755,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
-  AuthenticatedRouteChildren,
+  AuthenticatedRouteChildren
 )
 
 const rootRouteChildren: RootRouteChildren = {

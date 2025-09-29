@@ -31,6 +31,7 @@ import {
   ChevronRight,
   MoreHorizontal,
   Pencil,
+  FileCode2,
 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
@@ -45,6 +46,7 @@ import type { IconName } from "lucide-react/dynamic"
 import { IconPickerGrid } from "@/components/icons/icon-picker"
 import { rankBetween } from "@/lib/rank"
 import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
 
 export const Route = createFileRoute(
   "/_authenticated/$orgSlug/spaces/$spaceId"
@@ -506,7 +508,7 @@ function DocumentsTree({
     parentId = null,
     open = true,
   }: {
-    type: "page" | "group"
+    type: "page" | "group" | "api_spec"
     parentId?: string | null
     open?: boolean
   }) => {
@@ -583,6 +585,17 @@ function DocumentsTree({
             onClick={() => startCreate({ type: "page", parentId: null })}
           >
             <Plus className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            title="New API spec"
+            onClick={() =>
+              startCreate({ type: "api_spec", parentId: null, open: true })
+            }
+          >
+            <FileCode2 className="h-3 w-3" />
           </Button>
           <Button
             variant="ghost"
@@ -863,12 +876,19 @@ function TreeNode(props: {
           <span className="h-5 w-5" />
         )}
 
-        <IconPickerButton
-          current={node.icon_name}
-          fallback={isGroup ? "folder" : "file-text"}
-          onChange={(name) => onUpdateIcon(node.id, name)}
-          onClear={() => onUpdateIcon(node.id, null)}
-        />
+        {node.type !== "api" && (
+          <IconPickerButton
+            current={node.icon_name}
+            fallback={isGroup ? "folder" : "file-text"}
+            onChange={(name) => onUpdateIcon(node.id, name)}
+            onClear={() => onUpdateIcon(node.id, null)}
+          />
+        )}
+        {node.type === "api" && node.api_method && (
+          <Badge variant="outline" className={getMethodStyles(node.api_method)}>
+            {node.api_method}
+          </Badge>
+        )}
 
         {isEditing ? (
           <input
@@ -882,7 +902,7 @@ function TreeNode(props: {
             }}
             onBlur={() => onCommitRename(node.id, editTitle)}
           />
-        ) : isGroup ? (
+        ) : isGroup || node.type === "api" ? (
           <span className="flex-1 truncate" title={node.title}>
             {node.title}
           </span>
@@ -898,19 +918,20 @@ function TreeNode(props: {
         )}
 
         <div className="ml-auto flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="invisible h-6 w-6 group-hover:visible"
-            title="Add child page"
-            onClick={(event) => {
-              event.stopPropagation()
-              onStartCreate({ type: "page", parentId: node.id })
-            }}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-
+          {node.type !== "api" && node.type !== "api_spec" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="invisible h-6 w-6 group-hover:visible"
+              title="Add child page"
+              onClick={(event) => {
+                event.stopPropagation()
+                onStartCreate({ type: "page", parentId: node.id })
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -934,15 +955,17 @@ function TreeNode(props: {
                 <Pencil className="mr-2 h-4 w-4" />
                 Rename
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(event) => {
-                  event.preventDefault()
-                  onStartCreate({ type: "page", parentId: node.id })
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add child page
-              </DropdownMenuItem>
+              {node.type !== "api" && node.type !== "api_spec" && (
+                <DropdownMenuItem
+                  onClick={(event) => {
+                    event.preventDefault()
+                    onStartCreate({ type: "page", parentId: node.id })
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add child page
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={async (event) => {
                   event.preventDefault()
@@ -1056,4 +1079,19 @@ function IconPickerButton({
 
 function byRank(a: { rank: string }, b: { rank: string }) {
   return a.rank < b.rank ? -1 : a.rank > b.rank ? 1 : 0
+}
+
+const getMethodStyles = (method: string) => {
+  const styles = {
+    GET: "bg-blue-100 text-blue-800 border-blue-200",
+    POST: "bg-green-100 text-green-800 border-green-200",
+    PUT: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    DELETE: "bg-red-100 text-red-800 border-red-200",
+    PATCH: "bg-purple-100 text-purple-800 border-purple-200",
+  }
+
+  return (
+    styles[method as keyof typeof styles] ||
+    "bg-gray-100 text-gray-800 border-gray-200"
+  )
 }

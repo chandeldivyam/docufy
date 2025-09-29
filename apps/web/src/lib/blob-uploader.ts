@@ -70,3 +70,26 @@ export async function uploadImageToBlob(
     ...dimensions,
   }
 }
+
+export async function uploadFileToBlob(
+  file: File,
+  ctx: BlobUploadContext,
+  subdir: string = "files"
+): Promise<BlobUploadResult> {
+  const uuid = crypto.randomUUID()
+  const safeName = sanitizeName(file.name || "file")
+  const orgSegment = ctx.orgSlug ? ctx.orgSlug : ORG_PLACEHOLDER
+  const pathname = `assets/${orgSegment}/${ctx.documentId}/${subdir}/${uuid}-${safeName}`
+
+  const result = await upload(pathname, file, {
+    access: "public",
+    handleUploadUrl: "/api/blob/upload",
+    clientPayload: JSON.stringify({
+      documentId: ctx.documentId,
+      orgSlug: ctx.orgSlug,
+    }),
+  })
+
+  // Non-images: no dimensions to read
+  return { url: result.url }
+}

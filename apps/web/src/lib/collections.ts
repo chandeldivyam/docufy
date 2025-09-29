@@ -277,7 +277,10 @@ const documentsRawSchema = z.object({
   title: z.string(),
   icon_name: z.string().nullable(),
   rank: z.string(),
-  type: z.enum(["page", "group", "api"]),
+  type: z.enum(["page", "group", "api", "api_spec"]),
+  api_spec_blob_key: z.string().nullable().optional(),
+  api_path: z.string().nullable().optional(),
+  api_method: z.string().nullable().optional(),
   archived_at: z.coerce.date().nullable(),
   created_at: z.coerce.date(),
   updated_at: z.coerce.date(),
@@ -303,6 +306,9 @@ function createDocumentsCollectionFor(spaceId: string) {
           title: row.title,
           type: row.type,
           iconName: row.icon_name ?? undefined,
+          apiSpecBlobKey: row.api_spec_blob_key ?? undefined,
+          apiPath: row.api_path ?? undefined,
+          apiMethod: row.api_method ?? undefined,
         })
         return { txid: result.txid }
       },
@@ -318,6 +324,7 @@ function createDocumentsCollectionFor(spaceId: string) {
           iconName?: string | null
           parentId?: string | null
           rank?: string
+          apiSpecBlobKey?: string | null
         } = { id: prev.id }
 
         if (next.title !== prev.title) {
@@ -330,6 +337,9 @@ function createDocumentsCollectionFor(spaceId: string) {
           payload.parentId = next.parent_id ?? null
         }
         if (next.rank !== prev.rank) payload.rank = next.rank
+        if (next.api_spec_blob_key !== prev.api_spec_blob_key) {
+          payload.apiSpecBlobKey = next.api_spec_blob_key ?? null
+        }
 
         const result = await trpc.documents.update.mutate(payload)
         return { txid: result.txid }

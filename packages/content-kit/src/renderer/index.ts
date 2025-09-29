@@ -6,7 +6,7 @@ import * as cheerio from 'cheerio/slim'; // htmlparser2; no parse5
 import { codeToHtml } from 'shiki';
 import { decode as decodeEntities } from 'html-entities'; // or `he`
 
-type TocItem = { level: number; text: string; id: string };
+export type TocItem = { level: number; text: string; id: string };
 
 function slugify(s: string) {
   return s

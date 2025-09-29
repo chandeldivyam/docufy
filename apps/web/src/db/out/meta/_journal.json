@@ -43,6 +43,13 @@
       "when": 1758623663630,
       "tag": "0005_curvy_talisman",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1759070468628,
+      "tag": "0006_dapper_klaw",
+      "breakpoints": true
     }
   ]
 }

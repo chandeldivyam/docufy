@@ -71,9 +71,12 @@ export const documentsTable = pgTable(
     rank: text("rank").notNull(),
     // Give 'type' a precise TS type and default
     type: text("type")
-      .$type<"page" | "group" | "api">()
+      .$type<"page" | "group" | "api" | "api_spec">()
       .default("page")
       .notNull(),
+    apiSpecBlobKey: text("api_spec_blob_key"),
+    apiPath: text("api_path"),
+    apiMethod: text("api_method"),
     archivedAt: timestamp("archived_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -121,7 +124,10 @@ export const createDocumentSchema = createInsertSchema(documentsTable)
     parentId: z.string().optional(),
     iconName: z.string().nullable().optional(),
     title: z.string().min(1),
-    type: z.enum(["page", "group", "api"]).optional(),
+    type: z.enum(["page", "group", "api", "api_spec"]).optional(),
+    apiSpecBlobKey: z.string().optional(),
+    apiPath: z.string().optional(),
+    apiMethod: z.string().optional(),
   })
 
 export const sitesTable = pgTable(

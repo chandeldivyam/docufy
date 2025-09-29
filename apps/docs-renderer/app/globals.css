@@ -141,6 +141,12 @@ body {
   backdrop-filter: saturate(1.1) blur(4px);
   border-bottom: 1px solid var(--border);
   margin-bottom: 12px;
+  /* Fix: Make it extend full width */
+  width: 100%;
+  margin-left: -28px;
+  margin-right: -28px;
+  padding-left: 28px;
+  padding-right: 28px;
 }
 
 @media (min-width: 1100px) {
@@ -615,4 +621,69 @@ html.dark .shiki span {
     overflow: hidden; /* avoid the "page moves sideways when menu opens" effect */
     touch-action: none;
   }
+}
+
+.fd-scope h2 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.fd-scope h2 + p {
+  font-size: 1.1rem;
+  color: var(--sidebar-fg-muted);
+  margin-bottom: 2rem;
+}
+
+.fd-scope form {
+  margin-bottom: 2.5rem;
+}
+
+.fd-scope form button[type='submit'] {
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+}
+
+.fd-scope h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: var(--fg);
+}
+
+.fd-scope .font-mono.text-fd-primary {
+  background: color-mix(in oklab, var(--primary) 8%, transparent);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.fd-scope [role='tablist'] {
+  margin-bottom: 0.5rem;
+}
+
+.fd-scope [role='tabpanel'] figure {
+  margin-top: 0;
+}
+
+.fd-scope code.bg-fd-primary\/10.text-fd-primary {
+  padding: 3px;
+  border-radius: 6px;
+  margin: 0px 2px;
+}
+
+*::-webkit-scrollbar {
+  width: var(--sb-size);
+  height: var(--sb-size);
+}
+*::-webkit-scrollbar-track {
+  background: var(--sb-track);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--sb-thumb-hover);
 }

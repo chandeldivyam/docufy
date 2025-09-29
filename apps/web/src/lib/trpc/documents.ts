@@ -5,6 +5,7 @@ import { and, eq, isNull, ne } from "drizzle-orm"
 import { documentsTable, spacesTable } from "@/db/schema"
 import { members as membersTable } from "@/db/auth-schema"
 import crypto from "node:crypto"
+import { sql } from "drizzle-orm/sql"
 
 function slugify(input: string) {
   return input
@@ -58,8 +59,11 @@ export const documentsRouter = router({
         spaceId: z.string(),
         parentId: z.string().optional(),
         title: z.string().min(1),
-        type: z.enum(["page", "group", "api"]).optional(),
+        type: z.enum(["page", "group", "api", "api_spec"]).optional(),
         iconName: z.string().nullable().optional(),
+        apiSpecBlobKey: z.string().nullable().optional(),
+        apiPath: z.string().nullable().optional(),
+        apiMethod: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -128,6 +132,9 @@ export const documentsRouter = router({
           iconName: input.iconName ?? null,
           rank,
           type,
+          apiSpecBlobKey: input.apiSpecBlobKey ?? null,
+          apiPath: input.apiPath ?? null,
+          apiMethod: input.apiMethod ?? null,
         })
 
         const txid = await generateTxId(tx)
@@ -155,15 +162,27 @@ export const documentsRouter = router({
       )[0]
       if (!doc) throw new TRPCError({ code: "NOT_FOUND" })
 
-      // Keep delete to admins/owners for now
       await assertOrgRole(ctx.db, userId, doc.orgId, ["owner", "admin"])
 
       return await ctx.db.transaction(async (tx) => {
-        await tx.delete(documentsTable).where(eq(documentsTable.id, input.id))
+        // Collect target + all descendants and delete in one go
+        await tx.execute(sql`
+          with recursive to_delete as (
+            select d.id from ${documentsTable} d where d.id = ${input.id}
+            union all
+            select c.id
+            from ${documentsTable} c
+            join to_delete td on c.parent_id = td.id
+          )
+          delete from ${documentsTable}
+          where id in (select id from to_delete)
+        `)
+
         const txid = await generateTxId(tx)
         return { txid }
       })
     }),
+
   update: authedProcedure
     .input(
       z.object({
@@ -172,6 +191,7 @@ export const documentsRouter = router({
         iconName: z.string().nullable().optional(),
         parentId: z.string().nullable().optional(), // not required by UX now, but future-proof
         rank: z.string().min(1).optional(),
+        apiSpecBlobKey: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -188,6 +208,7 @@ export const documentsRouter = router({
             slug: documentsTable.slug,
             title: documentsTable.title,
             type: documentsTable.type,
+            apiSpecBlobKey: documentsTable.apiSpecBlobKey,
           })
           .from(documentsTable)
           .where(eq(documentsTable.id, input.id))
@@ -352,6 +373,10 @@ export const documentsRouter = router({
         patch.rank = input.rank
       }
 
+      if (input.apiSpecBlobKey !== undefined) {
+        patch.apiSpecBlobKey = input.apiSpecBlobKey ?? null
+      }
+
       return await ctx.db.transaction(async (tx) => {
         if (Object.keys(patch).length === 0) {
           const txid = await generateTxId(tx)
@@ -364,6 +389,7 @@ export const documentsRouter = router({
           .where(eq(documentsTable.id, current.id))
 
         const txid = await generateTxId(tx)
+        // TODO: start the inngest job to generate the API spec
         return { txid }
       })
     }),

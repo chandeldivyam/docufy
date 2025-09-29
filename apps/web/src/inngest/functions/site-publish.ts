@@ -21,7 +21,10 @@ import { sha256, byteLengthUtf8 } from "../helpers/hash"
 import * as Y from "yjs"
 import { yDocToProsemirrorJSON } from "y-prosemirror"
 import type { JSONContent } from "@tiptap/core"
-import { serialize as serializeContent } from "@docufy/content-kit/renderer" // ✅ use your renderer
+import {
+  serialize as serializeContent,
+  type TocItem,
+} from "@docufy/content-kit/renderer" // ✅ use your renderer
 
 type NavSpace = {
   slug: string
@@ -40,6 +43,12 @@ type PageIndexEntry = {
   size: number
   neighbors: string[]
   lastModified: number
+  kind?: "page" | "api_spec" | "api"
+  api?: {
+    document?: string
+    path?: string
+    method?: string
+  }
 }
 
 // --- helpers ---
@@ -206,7 +215,10 @@ export const sitePublish = inngest.createFunction(
       if (!childrenOf.has(pid)) childrenOf.set(pid, [])
       childrenOf.get(pid)!.push(d.id)
     }
-    function routeFor(spaceSlug: string, trail: string[]) {
+    function routeFor(spaceSlug: string, trail: string[], isApi: boolean) {
+      if (isApi) {
+        return `/api-reference/${spaceSlug}/${trail.join("/")}`
+      }
       return `/${spaceSlug}/${trail.join("/")}`
     }
 
@@ -220,7 +232,10 @@ export const sitePublish = inngest.createFunction(
       spaceSlug: string
       iconName?: string | null
       updatedAt?: Date | null
-      type: "page" | "group" | "api"
+      type: "page" | "group" | "api" | "api_spec"
+      apiSpecBlobKey?: string | null
+      apiPath?: string | null
+      apiMethod?: string | null
     }
     const flatPages: FlatPage[] = []
     const routesBySpace = new Map<string, string[]>()
@@ -232,7 +247,7 @@ export const sitePublish = inngest.createFunction(
         const doc = docsById.get(id)!
         const nextTrail = trail.concat(doc.slug)
         if (doc.type === "page" || doc.type === "api") {
-          const r = routeFor(spaceSlug, nextTrail)
+          const r = routeFor(spaceSlug, nextTrail, doc.type === "api")
           flatPages.push({
             id: doc.id,
             title: doc.title,
@@ -243,6 +258,9 @@ export const sitePublish = inngest.createFunction(
             iconName: doc.iconName ?? null,
             updatedAt: doc.updatedAt,
             type: doc.type,
+            apiSpecBlobKey: doc.apiSpecBlobKey ?? null,
+            apiPath: doc.apiPath ?? null,
+            apiMethod: doc.apiMethod ?? null,
           })
           if (!routesBySpace.has(spaceSlug)) routesBySpace.set(spaceSlug, [])
           routesBySpace.get(spaceSlug)!.push(r)
@@ -270,30 +288,56 @@ export const sitePublish = inngest.createFunction(
     let bytesWritten = 0
     const orgId = site.organizationId
 
+    type PageBundle = {
+      id: string
+      title: string
+      slug: string
+      trail: string[]
+      iconName?: string | null
+      updatedAt?: Date | null
+      type: "page" | "api" | "api_spec" | "group"
+      apiSpecBlobKey?: string | null
+      apiPath?: string | null
+      apiMethod?: string | null
+      rendered?: { html: string; toc: TocItem[] }
+      plain?: string
+      source?: JSONContent
+    }
+
     for (const p of flatPages) {
-      // --- REAL CONTENT LOADING STARTS HERE ---
-      let pmDoc: JSONContent | null = null
-      try {
-        pmDoc = await loadPmJsonFromYUpdates(p.id)
-      } catch (e) {
-        // If a doc has no updates or decode fails, fall back to empty doc
-        console.log("Failed to load PM JSON for doc", p.id, e)
-        pmDoc = { type: "doc", content: [] }
-      }
-
-      const { html, toc } = await serializeContent(pmDoc)
-      const plain = extractPlain(pmDoc)
-
-      const bundleObj = {
+      const bundleObj: PageBundle = {
         id: p.id,
         title: p.title,
         slug: p.slug,
         trail: p.trail,
         iconName: p.iconName,
-        rendered: { html, toc },
-        plain,
-        source: pmDoc ?? {},
+        updatedAt: p.updatedAt,
+        type: p.type,
       }
+      // --- REAL CONTENT LOADING STARTS HERE ---
+      if (p.type === "api" || p.type === "api_spec") {
+        bundleObj.apiPath = p.apiPath
+        bundleObj.apiMethod = p.apiMethod
+        bundleObj.apiSpecBlobKey = p.apiSpecBlobKey
+        bundleObj.rendered = { html: "", toc: [] }
+        bundleObj.plain = ""
+        bundleObj.source = { type: "api", content: [] }
+      } else {
+        let pmDoc: JSONContent | null = null
+        try {
+          pmDoc = await loadPmJsonFromYUpdates(p.id)
+        } catch (e) {
+          // If a doc has no updates or decode fails, fall back to empty doc
+          console.log("Failed to load PM JSON for doc", p.id, e)
+          pmDoc = { type: "doc", content: [] }
+        }
+        const { html, toc } = await serializeContent(pmDoc)
+        const plain = extractPlain(pmDoc)
+        bundleObj.rendered = { html, toc }
+        bundleObj.plain = plain
+        bundleObj.source = pmDoc ?? {}
+      }
+
       const body = JSON.stringify(bundleObj)
       const hash = sha256(body)
       const key = `orgs/${orgId}/blobs/${hash}.json`
@@ -347,7 +391,7 @@ export const sitePublish = inngest.createFunction(
 
     const pagesIndex: Record<string, PageIndexEntry> = {}
     for (const p of flatPages) {
-      const r = routeFor(p.spaceSlug, p.trail)
+      const r = routeFor(p.spaceSlug, p.trail, p.type === "api")
       const ref = pageRefById.get(p.id)!
       pagesIndex[r] = {
         title: p.title,
@@ -358,6 +402,14 @@ export const sitePublish = inngest.createFunction(
         size: ref.size,
         neighbors: [],
         lastModified: p.updatedAt ? p.updatedAt.getTime() : now,
+        kind: p.type === "api" ? "api" : "page",
+      }
+      if (p.type === "api" && p.apiPath && p.apiMethod && p.apiSpecBlobKey) {
+        pagesIndex[r].api = {
+          path: p.apiPath,
+          method: p.apiMethod,
+          document: p.apiSpecBlobKey,
+        }
       }
     }
     for (const routes of routesBySpace.values()) {
@@ -373,11 +425,16 @@ export const sitePublish = inngest.createFunction(
 
     // Build UI-friendly tree (spaces -> items with routes)
     type UiTreeItem = {
-      kind: "group" | "page"
+      kind: "group" | "page" | "api" | "api_spec"
       title: string
       iconName?: string | null
       slug: string
       route: string
+      api?: {
+        path: string
+        method: string
+        document: string
+      }
       children?: UiTreeItem[]
     }
     type UiTreeSpace = {
@@ -386,23 +443,46 @@ export const sitePublish = inngest.createFunction(
     }
     const uiTreeSpaces: UiTreeSpace[] = spaces.map((s) => {
       const spaceSlug = s.slug
-      const asUi = (id: string, trail: string[]): UiTreeItem => {
+      const asUi = (
+        id: string,
+        trail: string[],
+        isApi: boolean
+      ): UiTreeItem => {
         const d = docsById.get(id)!
-        const route = routeFor(spaceSlug, trail.concat(d.slug))
+        const route = routeFor(spaceSlug, trail.concat(d.slug), isApi)
+        let kind: UiTreeItem["kind"]
+        if (d.type === "api") {
+          kind = "api"
+        } else if (d.type === "api_spec") {
+          kind = "api_spec"
+        } else {
+          kind = d.type === "group" ? "group" : "page"
+        }
         const base: UiTreeItem = {
-          kind: d.type === "group" ? "group" : "page",
+          kind,
           title: d.title,
           iconName: d.iconName ?? null,
           slug: d.slug,
           route,
         }
-        const kids = (childrenOf.get(id) ?? []).map((k) =>
-          asUi(k, trail.concat(d.slug))
-        )
+        if (kind === "api") {
+          base.api = {
+            path: d.apiPath!,
+            method: d.apiMethod!,
+            document: d.apiSpecBlobKey!,
+          }
+        }
+        const kids = (childrenOf.get(id) ?? []).map((k) => {
+          const childDoc = docsById.get(k)!
+          return asUi(k, trail.concat(d.slug), childDoc.type === "api")
+        })
         return kids.length ? { ...base, children: kids } : base
       }
       const rootKey = "__root__:" + s.id
-      const roots = (childrenOf.get(rootKey) ?? []).map((id) => asUi(id, []))
+      const roots = (childrenOf.get(rootKey) ?? []).map((id) => {
+        const childDoc = docsById.get(id)!
+        return asUi(id, [], childDoc.type === "api")
+      })
       return {
         space: { slug: s.slug, name: s.name, iconName: s.iconName ?? null },
         items: roots,

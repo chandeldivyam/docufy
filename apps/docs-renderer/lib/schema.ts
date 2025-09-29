@@ -20,6 +20,15 @@ export const PageIndexEntryZ = z.object({
   size: z.number(),
   neighbors: z.array(z.string()).optional().default([]),
   lastModified: z.number().optional(),
+  kind: z.enum(['page', 'api_spec', 'api']).optional().nullable(),
+  api: z
+    .object({
+      document: z.string().optional(),
+      path: z.string().optional(),
+      method: z.string().optional(),
+    })
+    .optional()
+    .nullable(),
 });
 
 export const ManifestZ = z.object({
