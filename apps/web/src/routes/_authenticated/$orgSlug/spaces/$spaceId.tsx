@@ -47,6 +47,16 @@ import { IconPickerGrid } from "@/components/icons/icon-picker"
 import { rankBetween } from "@/lib/rank"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export const Route = createFileRoute(
   "/_authenticated/$orgSlug/spaces/$spaceId"
@@ -567,7 +577,14 @@ function DocumentsTree({
   }
 
   const deleteDoc = async (docId: string) => {
+    // If the currently viewed route is this document, navigate back to
+    // the generic space page after deletion so we don’t get stuck on
+    // the document view showing a loading state.
+    const isCurrentDoc = pathname.includes(`/document/${docId}`)
     await docsCollection.delete(docId)
+    if (isCurrentDoc) {
+      navigate({ to: "/$orgSlug/spaces/$spaceId", params: { orgSlug, spaceId } })
+    }
   }
 
   return (
@@ -769,6 +786,7 @@ function TreeNode(props: {
   const dragMode = dragOver?.mode
   const showInsideHighlight =
     isDragOverHere && dragMode === "inside" && !isInvalidDrop(node.id, "inside")
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const inputRef = useRef<HTMLInputElement | null>(null)
   useEffect(() => {
@@ -967,18 +985,10 @@ function TreeNode(props: {
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
-                onClick={async (event) => {
+                onClick={(event) => {
                   event.preventDefault()
-                  if (node.type === "group" && children.length > 0) {
-                    const ok = window.confirm(
-                      "Delete this group? Its child pages will be moved to root."
-                    )
-                    if (!ok) return
-                  } else {
-                    const ok = window.confirm("Delete this page?")
-                    if (!ok) return
-                  }
-                  await onDelete(node.id)
+                  event.stopPropagation()
+                  setDeleteOpen(true)
                 }}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -1021,6 +1031,30 @@ function TreeNode(props: {
           ))}
         </ul>
       ) : null}
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent aria-label={isGroup ? "Delete group" : "Delete page"}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{isGroup ? "Delete group" : "Delete page"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {isGroup && hasChildren
+                ? "This group has child pages. They will be moved to root."
+                : "This action cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                await onDelete(node.id)
+                setDeleteOpen(false)
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </li>
   )
 }

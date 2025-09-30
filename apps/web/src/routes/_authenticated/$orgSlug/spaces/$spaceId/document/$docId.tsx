@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useLiveQuery } from "@tanstack/react-db"
 import {
   getSpaceDocumentsCollection,
@@ -16,6 +16,7 @@ export const Route = createFileRoute(
 
 function DocumentPage() {
   const { spaceId, docId, orgSlug } = Route.useParams()
+  const navigate = useNavigate()
   const docsCol = spaceId
     ? getSpaceDocumentsCollection(spaceId)
     : emptyDocumentsCollection
@@ -24,6 +25,18 @@ function DocumentPage() {
     [docsCol, docId]
   )
   const doc = docs?.find((d) => d.id === docId)
+
+  // If documents are loaded and the requested doc is missing (e.g., deleted),
+  // navigate back to the generic space page to avoid being stuck on a loader.
+  if (docs && !doc) {
+    // Use a microtask to avoid navigating during render pass
+    queueMicrotask(() =>
+      navigate({
+        to: "/$orgSlug/spaces/$spaceId",
+        params: { orgSlug, spaceId },
+      })
+    )
+  }
 
   if (!doc) {
     return (

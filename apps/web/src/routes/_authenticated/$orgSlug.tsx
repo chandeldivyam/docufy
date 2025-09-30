@@ -670,12 +670,6 @@ function SpacesSection({ currentSlug }: { currentSlug: string }) {
               This will permanently delete the space. You can not undo this.
             </DialogDescription>
           </DialogHeader>
-          <p
-            id="delete-space-description"
-            className="text-sm text-muted-foreground"
-          >
-            This will permanently delete the space. You can not undo this.
-          </p>
           {deleteError ? (
             <p className="text-sm text-destructive">{deleteError}</p>
           ) : null}
