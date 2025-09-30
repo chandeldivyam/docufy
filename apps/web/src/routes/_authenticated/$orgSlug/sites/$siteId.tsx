@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import {
   Card,
   CardContent,
@@ -49,6 +49,7 @@ import {
   Copy,
   Loader2,
   ChevronDown,
+  Upload,
 } from "lucide-react"
 import { toast } from "sonner"
 import { uploadSiteAssetToBlob } from "@/lib/blob-uploader"
@@ -142,15 +143,112 @@ function SiteDetailPage() {
 
   function BrandingCard() {
     const orgSlug = activeOrg?.slug
-    const [busy, setBusy] = useState(false)
+    type BrandingKind = "logo-light" | "logo-dark" | "favicon"
+    const [busy, setBusy] = useState<Record<BrandingKind, boolean>>({
+      "logo-light": false,
+      "logo-dark": false,
+      favicon: false,
+    })
 
-    async function onPick(
-      kind: "logo-light" | "logo-dark" | "favicon",
-      f: File
-    ) {
+    function UploadField(props: {
+      id: string
+      label: string
+      accept: string
+      currentUrl?: string | null
+      kind: BrandingKind
+      previewClassName?: string
+    }) {
+      const { id, label, accept, currentUrl, kind, previewClassName } = props
+      const inputRef = useRef<HTMLInputElement | null>(null)
+      const loading = busy[kind]
+
+      return (
+        <div className="space-y-2">
+          <Label htmlFor={id}>{label}</Label>
+          <div
+            className="rounded-lg border-2 border-dashed p-3 sm:p-4 hover:bg-accent/40 transition-colors cursor-pointer focus-visible:outline-none"
+            role="button"
+            tabIndex={0}
+            onClick={() => inputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                inputRef.current?.click()
+              }
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault()
+              if (loading) return
+              const f = e.dataTransfer.files?.[0]
+              if (f) onPick(kind, f)
+            }}
+            aria-busy={loading}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={loading}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    inputRef.current?.click()
+                  }}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {currentUrl ? "Replace file" : "Upload file"}
+                </Button>
+                <span className="text-xs text-muted-foreground hidden sm:block">
+                  or drag & drop
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground hidden md:block">
+                {accept}
+              </span>
+            </div>
+            {currentUrl ? (
+              <div className="mt-3">
+                <img
+                  src={currentUrl}
+                  alt={label}
+                  className={
+                    previewClassName
+                      ? `object-contain max-w-full ${previewClassName}`
+                      : "h-10 max-w-full object-contain"
+                  }
+                />
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-muted-foreground">
+                No file uploaded yet
+              </p>
+            )}
+            <input
+              ref={inputRef}
+              id={id}
+              className="sr-only"
+              type="file"
+              accept={accept}
+              onChange={(e) =>
+                e.target.files?.[0] && onPick(kind, e.target.files[0])
+              }
+              disabled={loading}
+            />
+          </div>
+        </div>
+      )
+    }
+
+    async function onPick(kind: BrandingKind, f: File) {
       if (!site) return
       try {
-        setBusy(true)
+        setBusy((m) => ({ ...m, [kind]: true }))
         const { url } = await uploadSiteAssetToBlob(f, {
           orgSlug,
           siteId: site.id,
@@ -168,12 +266,12 @@ function SiteDetailPage() {
         console.error(e)
         toast.error("Upload failed")
       } finally {
-        setBusy(false)
+        setBusy((m) => ({ ...m, [kind]: false }))
       }
     }
 
     return (
-      <Card>
+      <Card className="border-none shadow-none">
         <CardHeader>
           <CardTitle>Branding</CardTitle>
           <CardDescription>
@@ -181,65 +279,31 @@ function SiteDetailPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-6 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Logo (Light)</Label>
-              <input
-                type="file"
-                accept=".svg,.png,.jpg,.jpeg,.webp"
-                onChange={(e) =>
-                  e.target.files?.[0] && onPick("logo-light", e.target.files[0])
-                }
-                disabled={busy}
-              />
-              {site?.logo_url_light && (
-                <img
-                  src={site.logo_url_light}
-                  alt="Logo light"
-                  className="mt-2 h-8 max-w-[160px] object-contain"
-                />
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label>Logo (Dark)</Label>
-              <input
-                type="file"
-                accept=".svg,.png,.jpg,.jpeg,.webp"
-                onChange={(e) =>
-                  e.target.files?.[0] && onPick("logo-dark", e.target.files[0])
-                }
-                disabled={busy}
-              />
-              {site?.logo_url_dark && (
-                <img
-                  src={site.logo_url_dark}
-                  alt="Logo dark"
-                  className="mt-2 h-8 max-w-[160px] object-contain bg-black p-1 rounded"
-                />
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label>Favicon</Label>
-              <input
-                type="file"
-                accept=".png,.ico,.svg"
-                onChange={(e) =>
-                  e.target.files?.[0] && onPick("favicon", e.target.files[0])
-                }
-                disabled={busy}
-              />
-              {site?.favicon_url && (
-                <img
-                  src={site.favicon_url}
-                  alt="Favicon"
-                  className="mt-2 h-8 w-8 object-contain"
-                />
-              )}
-            </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <UploadField
+              id="logo-light"
+              label="Logo (Light)"
+              accept=".svg,.png,.jpg,.jpeg,.webp"
+              currentUrl={site?.logo_url_light}
+              kind="logo-light"
+            />
+            <UploadField
+              id="logo-dark"
+              label="Logo (Dark)"
+              accept=".svg,.png,.jpg,.jpeg,.webp"
+              currentUrl={site?.logo_url_dark}
+              kind="logo-dark"
+              previewClassName="bg-black p-1 rounded"
+            />
+            <UploadField
+              id="favicon"
+              label="Favicon"
+              accept=".png,.ico,.svg"
+              currentUrl={site?.favicon_url}
+              kind="favicon"
+              previewClassName="h-8 w-8"
+            />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Tips: Use SVG for logos. Favicon PNG at 32–64px or ICO.
-          </p>
         </CardContent>
       </Card>
     )
@@ -400,6 +464,7 @@ function SiteDetailPage() {
                 Basic settings for your documentation site
               </CardDescription>
             </CardHeader>
+            <BrandingCard />
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -431,6 +496,7 @@ function SiteDetailPage() {
                         (d) => void (d.slug = e.target.value)
                       )
                     }
+                    disabled
                     placeholder="my-docs"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -463,7 +529,6 @@ function SiteDetailPage() {
               )}
             </CardContent>
           </Card>
-          <BrandingCard />
         </TabsContent>
 
         {/* Content Tab */}
