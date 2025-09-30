@@ -7,6 +7,7 @@
 /* ---------- Design Tokens (scalable) ---------- */
 :root {
   --radius: 10px;
+  --dfy-content-pad: 28px;
 
   /* surfaces */
   --bg: oklch(1 0 0);
@@ -97,12 +98,13 @@ body {
 
 .dfy-article-wrap {
   min-width: 0;
+  width: 100%;
 }
 
 /* Ensure content can host sticky topbar & overlay on mobile */
 .dfy-content {
   height: 100vh;
-  padding: 28px;
+  padding: var(--dfy-content-pad);
   padding-top: 0;
   content-visibility: auto;
   contain-intrinsic-size: 800px;
@@ -141,12 +143,11 @@ body {
   backdrop-filter: saturate(1.1) blur(4px);
   border-bottom: 1px solid var(--border);
   margin-bottom: 12px;
-  /* Fix: Make it extend full width */
-  width: 100%;
-  margin-left: -28px;
-  margin-right: -28px;
-  padding-left: 28px;
-  padding-right: 28px;
+  width: calc(100% + var(--dfy-content-pad) * 2);
+  margin-left: calc(-1 * var(--dfy-content-pad));
+  margin-right: calc(-1 * var(--dfy-content-pad));
+  padding-left: var(--dfy-content-pad);
+  padding-right: var(--dfy-content-pad);
 }
 
 @media (min-width: 1100px) {
@@ -484,6 +485,7 @@ html.dark .shiki span {
   display: grid;
   grid-template-columns: 1fr; /* mobile first */
   gap: 24px;
+  width: 100%;
 }
 
 @media (min-width: 1100px) {
