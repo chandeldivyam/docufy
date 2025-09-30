@@ -51,6 +51,7 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { toast } from "sonner"
+import { uploadSiteAssetToBlob } from "@/lib/blob-uploader"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug/sites/$siteId")({
   ssr: false,
@@ -128,7 +129,7 @@ function SiteDetailPage() {
   const [isSaving, setIsSaving] = useState(false)
   const selectionLoaded = selection !== undefined
 
-  if (!site) {
+  if (!site || site == undefined) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <div className="text-center space-y-3">
@@ -136,6 +137,111 @@ function SiteDetailPage() {
           <p className="text-muted-foreground">Loading site details...</p>
         </div>
       </div>
+    )
+  }
+
+  function BrandingCard() {
+    const orgSlug = activeOrg?.slug
+    const [busy, setBusy] = useState(false)
+
+    async function onPick(
+      kind: "logo-light" | "logo-dark" | "favicon",
+      f: File
+    ) {
+      if (!site) return
+      try {
+        setBusy(true)
+        const { url } = await uploadSiteAssetToBlob(f, {
+          orgSlug,
+          siteId: site.id,
+          kind,
+        })
+        if (kind === "logo-light") {
+          await sitesCol?.update(site.id, (d) => void (d.logo_url_light = url))
+        } else if (kind === "logo-dark") {
+          await sitesCol?.update(site.id, (d) => void (d.logo_url_dark = url))
+        } else {
+          await sitesCol?.update(site.id, (d) => void (d.favicon_url = url))
+        }
+        toast.success("Uploaded")
+      } catch (e) {
+        console.error(e)
+        toast.error("Upload failed")
+      } finally {
+        setBusy(false)
+      }
+    }
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Branding</CardTitle>
+          <CardDescription>
+            Logos for light/dark themes and favicon
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-6 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Logo (Light)</Label>
+              <input
+                type="file"
+                accept=".svg,.png,.jpg,.jpeg,.webp"
+                onChange={(e) =>
+                  e.target.files?.[0] && onPick("logo-light", e.target.files[0])
+                }
+                disabled={busy}
+              />
+              {site?.logo_url_light && (
+                <img
+                  src={site.logo_url_light}
+                  alt="Logo light"
+                  className="mt-2 h-8 max-w-[160px] object-contain"
+                />
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Logo (Dark)</Label>
+              <input
+                type="file"
+                accept=".svg,.png,.jpg,.jpeg,.webp"
+                onChange={(e) =>
+                  e.target.files?.[0] && onPick("logo-dark", e.target.files[0])
+                }
+                disabled={busy}
+              />
+              {site?.logo_url_dark && (
+                <img
+                  src={site.logo_url_dark}
+                  alt="Logo dark"
+                  className="mt-2 h-8 max-w-[160px] object-contain bg-black p-1 rounded"
+                />
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Favicon</Label>
+              <input
+                type="file"
+                accept=".png,.ico,.svg"
+                onChange={(e) =>
+                  e.target.files?.[0] && onPick("favicon", e.target.files[0])
+                }
+                disabled={busy}
+              />
+              {site?.favicon_url && (
+                <img
+                  src={site.favicon_url}
+                  alt="Favicon"
+                  className="mt-2 h-8 w-8 object-contain"
+                />
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Tips: Use SVG for logos. Favicon PNG at 32–64px or ICO.
+          </p>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -357,6 +463,7 @@ function SiteDetailPage() {
               )}
             </CardContent>
           </Card>
+          <BrandingCard />
         </TabsContent>
 
         {/* Content Tab */}

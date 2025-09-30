@@ -18,13 +18,15 @@ export default async function Content({ blobPromise }: { blobPromise: Promise<Pa
     ) : null;
 
   return (
-    <DocPageFrame tocSlot={tocSlot}>
-      <article className="dfy-article">
-        <h1>{blob.title}</h1>
-        <div dangerouslySetInnerHTML={{ __html: sanitize(blob.rendered.html) }} />
-        <CopyButtons />
-        <TocSpy />
-      </article>
-    </DocPageFrame>
+    <div className="dfy-page">
+      <DocPageFrame tocSlot={tocSlot}>
+        <article className="dfy-article">
+          <h1>{blob.title}</h1>
+          <div dangerouslySetInnerHTML={{ __html: sanitize(blob.rendered.html) }} />
+          <CopyButtons />
+          <TocSpy />
+        </article>
+      </DocPageFrame>
+    </div>
   );
 }

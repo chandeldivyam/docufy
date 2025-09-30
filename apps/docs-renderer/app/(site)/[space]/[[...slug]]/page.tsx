@@ -29,3 +29,4 @@ export default async function DocPage({
     </Suspense>
   );
 }
+export { generateMetadata } from './metadata';

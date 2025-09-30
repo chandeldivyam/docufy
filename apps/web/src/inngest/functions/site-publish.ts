@@ -496,9 +496,17 @@ export const sitePublish = inngest.createFunction(
       publishedAt: now,
       site: {
         name: null,
-        logoUrl: null,
+        // Back-compat: keep logoUrl, prefer light logo
+        logoUrl: site.logoUrlLight ?? null,
         layout: "sidebar-dropdown",
         baseUrl: site.baseUrl,
+        branding: {
+          logo: {
+            light: site.logoUrlLight ?? null,
+            dark: site.logoUrlDark ?? site.logoUrlLight ?? null,
+          },
+          favicon: site.faviconUrl ? { url: site.faviconUrl } : null,
+        },
       },
       routing: {
         basePath: "/",

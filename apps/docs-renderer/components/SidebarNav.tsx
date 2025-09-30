@@ -2,7 +2,6 @@ import type { Manifest, Tree } from '../lib/types';
 import SidebarNavClient from './islands/SidebarNavClient';
 import SidebarSpaceSwitcher from './islands/SidebarSpaceSwitcher';
 import ThemeToggle from './islands/ThemeToggle';
-import { Book } from 'lucide-react';
 
 function sortSpaces(manifest: Manifest) {
   return manifest.nav.spaces.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -40,10 +39,27 @@ export default function SidebarNav({
     >
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          {/* Placeholder for the logo */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--sidebar-hover)]">
-            <Book className="h-5 w-5 text-[var(--sidebar-fg-muted)]" />
-          </div>
+          {/* Logo (prefers site.branding; falls back to logoUrl; else icon) */}
+          {(() => {
+            const light = manifest.site.branding?.logo?.light ?? manifest.site.logoUrl ?? '';
+            const dark = manifest.site.branding?.logo?.dark ?? light;
+            return (
+              <div className="flex w-[100px] shrink-0 items-center justify-center">
+                {/* show light in light mode */}
+                {light ? (
+                  <img src={light} alt="Logo" className="object-contain dark:hidden" />
+                ) : (
+                  <></>
+                )}
+                {/* show dark in dark mode if different */}
+                {dark ? (
+                  <img src={dark} alt="Logo" className="hidden object-contain dark:block" />
+                ) : (
+                  <></>
+                )}
+              </div>
+            );
+          })()}
           <span className="font-semibold">{manifest.site.name}</span>
         </div>
         <ThemeToggle />

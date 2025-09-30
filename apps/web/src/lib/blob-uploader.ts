@@ -93,3 +93,29 @@ export async function uploadFileToBlob(
   // Non-images: no dimensions to read
   return { url: result.url }
 }
+
+// --- Site branding uploads ---
+export type SiteAssetKind = "logo-light" | "logo-dark" | "favicon"
+
+export async function uploadSiteAssetToBlob(
+  file: File,
+  ctx: { orgSlug?: string; siteId: string; kind: SiteAssetKind }
+): Promise<BlobUploadResult> {
+  const uuid = crypto.randomUUID()
+  const safeName = sanitizeName(file.name || FALLBACK_NAME)
+  const orgSegment = ctx.orgSlug ? ctx.orgSlug : ORG_PLACEHOLDER
+  const pathname = `assets/${orgSegment}/${ctx.siteId}/branding/${ctx.kind}/${uuid}-${safeName}`
+
+  const result = await upload(pathname, file, {
+    access: "public",
+    handleUploadUrl: "/api/blob/upload",
+    clientPayload: JSON.stringify({
+      siteId: ctx.siteId,
+      orgSlug: ctx.orgSlug,
+      kind: ctx.kind,
+    }),
+  })
+
+  const dimensions = await measureImage(file)
+  return { url: result.url, ...dimensions }
+}

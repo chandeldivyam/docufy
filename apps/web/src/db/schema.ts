@@ -149,6 +149,9 @@ export const sitesTable = pgTable(
       .notNull(),
     lastBuildId: text("last_build_id"),
     lastPublishedAt: timestamp("last_published_at"),
+    logoUrlLight: text("logo_url_light"),
+    logoUrlDark: text("logo_url_dark"),
+    faviconUrl: text("favicon_url"),
   },
   (t) => ({
     orgSlugUnique: uniqueIndex("sites_org_slug_unique").on(

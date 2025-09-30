@@ -28,10 +28,13 @@ export async function generateMetadata({
     ? `${origin}${prefix}${route}`
     : `${origin}${prefix}/${manifest.routing.defaultSpace}`;
 
+  const iconUrl = manifest.site.branding?.favicon?.url ?? null;
+
   return {
     title,
     alternates: { canonical },
     openGraph: { title, url: canonical },
     twitter: { title },
+    icons: iconUrl ? { icon: [{ url: iconUrl }] } : undefined,
   } as const;
 }

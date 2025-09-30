@@ -42,6 +42,17 @@ export const ManifestZ = z.object({
     baseUrl: z.string().url(),
     name: z.string().nullable().optional(),
     logoUrl: z.string().nullable().optional(),
+    branding: z
+      .object({
+        logo: z
+          .object({
+            light: z.string().nullable().optional(),
+            dark: z.string().nullable().optional(),
+          })
+          .optional(),
+        favicon: z.object({ url: z.string().url() }).nullable().optional(),
+      })
+      .optional(),
   }),
   routing: z.object({ basePath: z.string(), defaultSpace: z.string() }),
   nav: z.object({ spaces: z.array(NavSpaceZ) }),

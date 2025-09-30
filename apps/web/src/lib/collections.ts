@@ -389,6 +389,10 @@ const sitesRawSchema = z.object({
   updated_at: z.coerce.date(),
   last_build_id: z.string().nullable().optional(),
   last_published_at: z.coerce.date().nullable().optional(),
+  // Branding (nullable)
+  logo_url_light: z.string().nullable().optional(),
+  logo_url_dark: z.string().nullable().optional(),
+  favicon_url: z.string().nullable().optional(),
 })
 export type SiteRow = z.infer<typeof sitesRawSchema>
 
@@ -422,6 +426,9 @@ function createSitesCollectionFor(url: string) {
           baseUrl?: string
           storeId?: string
           primaryHost?: string | undefined
+          logoUrlLight?: string | null
+          logoUrlDark?: string | null
+          faviconUrl?: string | null
         } = { id: prev.id }
         if (next.name !== prev.name) payload.name = next.name
         if (next.slug !== prev.slug) payload.slug = next.slug
@@ -429,6 +436,12 @@ function createSitesCollectionFor(url: string) {
         if (next.store_id !== prev.store_id) payload.storeId = next.store_id
         if (next.primary_host !== prev.primary_host)
           payload.primaryHost = next.primary_host ?? undefined
+        if (next.logo_url_light !== prev.logo_url_light)
+          payload.logoUrlLight = next.logo_url_light ?? null
+        if (next.logo_url_dark !== prev.logo_url_dark)
+          payload.logoUrlDark = next.logo_url_dark ?? null
+        if (next.favicon_url !== prev.favicon_url)
+          payload.faviconUrl = next.favicon_url ?? null
         const result = await trpc.sites.update.mutate(payload)
         return { txid: result.txid }
       },

@@ -35,6 +35,10 @@ export type Manifest = {
     baseUrl: string;
     name?: string | null;
     logoUrl?: string | null;
+    branding?: {
+      logo?: { light?: string | null; dark?: string | null };
+      favicon?: { url: string } | null;
+    };
   };
   routing: { basePath: string; defaultSpace: string };
   nav: { spaces: NavSpace[] };
