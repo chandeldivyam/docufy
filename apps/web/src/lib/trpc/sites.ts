@@ -123,6 +123,10 @@ export const sitesRouter = router({
         baseUrl: z.string().url().optional(),
         storeId: z.string().min(1).optional(),
         primaryHost: z.string().optional(),
+        // Branding fields
+        logoUrlLight: z.string().url().nullable().optional(),
+        logoUrlDark: z.string().url().nullable().optional(),
+        faviconUrl: z.string().url().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -151,6 +155,10 @@ export const sitesRouter = router({
       if (input.baseUrl !== undefined) patch.baseUrl = input.baseUrl
       if (input.storeId !== undefined) patch.storeId = input.storeId
       if (input.primaryHost !== undefined) patch.primaryHost = input.primaryHost
+      if (input.logoUrlLight !== undefined)
+        patch.logoUrlLight = input.logoUrlLight
+      if (input.logoUrlDark !== undefined) patch.logoUrlDark = input.logoUrlDark
+      if (input.faviconUrl !== undefined) patch.faviconUrl = input.faviconUrl
 
       if (input.slug !== undefined) {
         const next = slugify(input.slug)

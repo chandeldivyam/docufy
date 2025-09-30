@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import {
   Card,
   CardContent,
@@ -49,8 +49,10 @@ import {
   Copy,
   Loader2,
   ChevronDown,
+  Upload,
 } from "lucide-react"
 import { toast } from "sonner"
+import { uploadSiteAssetToBlob } from "@/lib/blob-uploader"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug/sites/$siteId")({
   ssr: false,
@@ -128,7 +130,7 @@ function SiteDetailPage() {
   const [isSaving, setIsSaving] = useState(false)
   const selectionLoaded = selection !== undefined
 
-  if (!site) {
+  if (!site || site == undefined) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <div className="text-center space-y-3">
@@ -136,6 +138,174 @@ function SiteDetailPage() {
           <p className="text-muted-foreground">Loading site details...</p>
         </div>
       </div>
+    )
+  }
+
+  function BrandingCard() {
+    const orgSlug = activeOrg?.slug
+    type BrandingKind = "logo-light" | "logo-dark" | "favicon"
+    const [busy, setBusy] = useState<Record<BrandingKind, boolean>>({
+      "logo-light": false,
+      "logo-dark": false,
+      favicon: false,
+    })
+
+    function UploadField(props: {
+      id: string
+      label: string
+      accept: string
+      currentUrl?: string | null
+      kind: BrandingKind
+      previewClassName?: string
+    }) {
+      const { id, label, accept, currentUrl, kind, previewClassName } = props
+      const inputRef = useRef<HTMLInputElement | null>(null)
+      const loading = busy[kind]
+
+      return (
+        <div className="space-y-2">
+          <Label htmlFor={id}>{label}</Label>
+          <div
+            className="rounded-lg border-2 border-dashed p-3 sm:p-4 hover:bg-accent/40 transition-colors cursor-pointer focus-visible:outline-none"
+            role="button"
+            tabIndex={0}
+            onClick={() => inputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                inputRef.current?.click()
+              }
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault()
+              if (loading) return
+              const f = e.dataTransfer.files?.[0]
+              if (f) onPick(kind, f)
+            }}
+            aria-busy={loading}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={loading}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    inputRef.current?.click()
+                  }}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {currentUrl ? "Replace file" : "Upload file"}
+                </Button>
+                <span className="text-xs text-muted-foreground hidden sm:block">
+                  or drag & drop
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground hidden md:block">
+                {accept}
+              </span>
+            </div>
+            {currentUrl ? (
+              <div className="mt-3">
+                <img
+                  src={currentUrl}
+                  alt={label}
+                  className={
+                    previewClassName
+                      ? `object-contain max-w-full ${previewClassName}`
+                      : "h-10 max-w-full object-contain"
+                  }
+                />
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-muted-foreground">
+                No file uploaded yet
+              </p>
+            )}
+            <input
+              ref={inputRef}
+              id={id}
+              className="sr-only"
+              type="file"
+              accept={accept}
+              onChange={(e) =>
+                e.target.files?.[0] && onPick(kind, e.target.files[0])
+              }
+              disabled={loading}
+            />
+          </div>
+        </div>
+      )
+    }
+
+    async function onPick(kind: BrandingKind, f: File) {
+      if (!site) return
+      try {
+        setBusy((m) => ({ ...m, [kind]: true }))
+        const { url } = await uploadSiteAssetToBlob(f, {
+          orgSlug,
+          siteId: site.id,
+          kind,
+        })
+        if (kind === "logo-light") {
+          await sitesCol?.update(site.id, (d) => void (d.logo_url_light = url))
+        } else if (kind === "logo-dark") {
+          await sitesCol?.update(site.id, (d) => void (d.logo_url_dark = url))
+        } else {
+          await sitesCol?.update(site.id, (d) => void (d.favicon_url = url))
+        }
+        toast.success("Uploaded")
+      } catch (e) {
+        console.error(e)
+        toast.error("Upload failed")
+      } finally {
+        setBusy((m) => ({ ...m, [kind]: false }))
+      }
+    }
+
+    return (
+      <Card className="border-none shadow-none">
+        <CardHeader>
+          <CardTitle>Branding</CardTitle>
+          <CardDescription>
+            Logos for light/dark themes and favicon
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <UploadField
+              id="logo-light"
+              label="Logo (Light)"
+              accept=".svg,.png,.jpg,.jpeg,.webp"
+              currentUrl={site?.logo_url_light}
+              kind="logo-light"
+            />
+            <UploadField
+              id="logo-dark"
+              label="Logo (Dark)"
+              accept=".svg,.png,.jpg,.jpeg,.webp"
+              currentUrl={site?.logo_url_dark}
+              kind="logo-dark"
+              previewClassName="bg-black p-1 rounded"
+            />
+            <UploadField
+              id="favicon"
+              label="Favicon"
+              accept=".png,.ico,.svg"
+              currentUrl={site?.favicon_url}
+              kind="favicon"
+              previewClassName="h-8 w-8"
+            />
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -294,6 +464,7 @@ function SiteDetailPage() {
                 Basic settings for your documentation site
               </CardDescription>
             </CardHeader>
+            <BrandingCard />
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -325,6 +496,7 @@ function SiteDetailPage() {
                         (d) => void (d.slug = e.target.value)
                       )
                     }
+                    disabled
                     placeholder="my-docs"
                   />
                   <p className="text-xs text-muted-foreground">

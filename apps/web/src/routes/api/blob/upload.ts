@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm"
 
 import { db } from "@/db/connection"
 import { members } from "@/db/auth-schema"
-import { documentsTable } from "@/db/schema"
+import { documentsTable, sitesTable } from "@/db/schema"
 import { auth } from "@/lib/auth"
 
 export const ServerRoute = createServerFileRoute("/api/blob/upload").methods({
@@ -59,35 +59,54 @@ export const ServerRoute = createServerFileRoute("/api/blob/upload").methods({
     body.clientPayload = clientPayloadString
 
     let documentId = parsedPayload.documentId as string | undefined
+    let siteId = parsedPayload.siteId as string | undefined
 
-    if (!documentId) {
+    if (!documentId && !siteId) {
       const pathname = (body as { payload?: { pathname?: string } }).payload
         ?.pathname
       if (typeof pathname === "string") {
         const segments = pathname.split("/").filter(Boolean)
-        if (segments.length >= 3) {
+        if (segments.length >= 5 && segments[3] === "branding") {
+          // assets/{orgSlug}/{siteId}/branding/...
+          siteId = segments[2]
+        } else if (segments.length >= 3) {
           // assets/{orgSlug}/{documentId}/...
           documentId = segments[2]
         }
       }
     }
 
-    if (!documentId) {
-      return new Response(JSON.stringify({ error: "Missing documentId" }), {
-        status: 400,
-        headers: { "content-type": "application/json" },
-      })
+    if (!documentId && !siteId) {
+      return new Response(
+        JSON.stringify({ error: "Missing documentId or siteId" }),
+        {
+          status: 400,
+          headers: { "content-type": "application/json" },
+        }
+      )
     }
 
-    const document = await db
-      .select({ organizationId: documentsTable.organizationId })
-      .from(documentsTable)
-      .where(eq(documentsTable.id, documentId))
-      .limit(1)
-      .then((rows) => rows[0])
+    const document = documentId
+      ? await db
+          .select({ organizationId: documentsTable.organizationId })
+          .from(documentsTable)
+          .where(eq(documentsTable.id, documentId))
+          .limit(1)
+          .then((rows) => rows[0])
+      : null
 
-    if (!document) {
-      return new Response(JSON.stringify({ error: "Document not found" }), {
+    const site = siteId
+      ? await db
+          .select({ organizationId: sitesTable.organizationId })
+          .from(sitesTable)
+          .where(eq(sitesTable.id, siteId))
+          .limit(1)
+          .then((rows) => rows[0])
+      : null
+
+    const orgId = document?.organizationId ?? site?.organizationId
+    if (!orgId) {
+      return new Response(JSON.stringify({ error: "Target not found" }), {
         status: 404,
         headers: { "content-type": "application/json" },
       })
@@ -96,12 +115,7 @@ export const ServerRoute = createServerFileRoute("/api/blob/upload").methods({
     const membership = await db
       .select({ id: members.id })
       .from(members)
-      .where(
-        and(
-          eq(members.userId, userId),
-          eq(members.organizationId, document.organizationId)
-        )
-      )
+      .where(and(eq(members.userId, userId), eq(members.organizationId, orgId)))
       .limit(1)
       .then((rows) => rows[0])
 
@@ -122,6 +136,8 @@ export const ServerRoute = createServerFileRoute("/api/blob/upload").methods({
           "image/webp",
           "image/gif",
           "image/svg+xml",
+          "image/x-icon",
+          "image/vnd.microsoft.icon",
           "application/json",
           "application/yaml",
           "application/x-yaml",
@@ -129,7 +145,7 @@ export const ServerRoute = createServerFileRoute("/api/blob/upload").methods({
           "text/plain",
         ],
         addRandomSuffix: false,
-        tokenPayload: JSON.stringify({ userId, documentId }),
+        tokenPayload: JSON.stringify({ userId, documentId, siteId }),
       }),
       onUploadCompleted: async () => {},
     })
