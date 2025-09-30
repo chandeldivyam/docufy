@@ -3,6 +3,7 @@ import { APIPage } from 'fumadocs-openapi/ui';
 import { fetchManifestV3, fetchPageBlob } from '../../../../lib/fetchers';
 import { getPointer } from '../../../../lib/pointer';
 import SidebarNav from '../../../../components/SidebarNav';
+import DocPageFrame from '../../../../components/DocPageFrame';
 import { fetchTreeV2 } from '../../../../lib/fetchers';
 import { currentBasePath } from '../../../../lib/site';
 import { openapi } from '@/lib/openapi';
@@ -56,15 +57,17 @@ export default async function ApiHandler({
       <SidebarNav manifest={navManifest} tree={tree} currentSpace={space} hrefPrefix={hrefPrefix} />
       <main className="dfy-main">
         <div className="dfy-content">
-          <div className="fd-scope pt-5">
-            <APIPage
-              {...openapi.getAPIPageProps({
-                document: blob.apiSpecBlobKey,
-                operations: [{ path: blob.apiPath, method: blob.apiMethod.toLowerCase() }],
-                hasHead: true,
-              })}
-            />
-          </div>
+          <DocPageFrame>
+            <div className="fd-scope pt-5">
+              <APIPage
+                {...openapi.getAPIPageProps({
+                  document: blob.apiSpecBlobKey,
+                  operations: [{ path: blob.apiPath, method: blob.apiMethod.toLowerCase() }],
+                  hasHead: true,
+                })}
+              />
+            </div>
+          </DocPageFrame>
         </div>
       </main>
     </div>
