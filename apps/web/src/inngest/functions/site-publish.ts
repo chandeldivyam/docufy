@@ -9,7 +9,7 @@ import {
   siteContentBlobsTable,
   siteDomainsTable,
 } from "@/db/schema"
-import { and, eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, asc } from "drizzle-orm"
 import { sql } from "drizzle-orm"
 import {
   writeVersioned,
@@ -179,10 +179,12 @@ export const sitePublish = inngest.createFunction(
           .where(inArray(spacesTable.id, selectedSpaceIds))
       : []
 
-    const spaceOrder = new Map(
-      spaces.map((s) => [s.id, selectedSpaceIds.indexOf(s.id)])
+    const spaceOrderMap = new Map(
+      selectedSpaceIds.map((id, index) => [id, index])
     )
-    spaces.sort((a, b) => spaceOrder.get(a.id)! - spaceOrder.get(b.id)!)
+    spaces.sort(
+      (a, b) => (spaceOrderMap.get(a.id) ?? 0) - (spaceOrderMap.get(b.id) ?? 0)
+    )
 
     // 3) Load documents for selected spaces
     const spaceIds = spaces.map((s) => s.id)
@@ -191,6 +193,7 @@ export const sitePublish = inngest.createFunction(
           .select()
           .from(documentsTable)
           .where(inArray(documentsTable.spaceId, spaceIds))
+          .orderBy(asc(documentsTable.rank))
       : []
 
     // Index by space and parent; sort by (parentId, rank, slug)
@@ -199,13 +202,6 @@ export const sitePublish = inngest.createFunction(
     for (const d of docs) {
       if (!bySpace.has(d.spaceId)) bySpace.set(d.spaceId, [])
       bySpace.get(d.spaceId)!.push(d)
-    }
-    for (const arr of bySpace.values()) {
-      arr.sort((a, b) => {
-        if (a.parentId === b.parentId)
-          return a.rank.localeCompare(b.rank) || a.slug.localeCompare(b.slug)
-        return (a.parentId ?? "").localeCompare(b.parentId ?? "")
-      })
     }
 
     const docsById = new Map(docs.map((d) => [d.id, d]))
