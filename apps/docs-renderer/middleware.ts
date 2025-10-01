@@ -19,7 +19,7 @@ export async function middleware(req: NextRequest) {
   let treeUrl = '';
   try {
     const resp = await fetch(`${base}/domains/${effectiveHost}/latest.json`, {
-      next: { revalidate: 5 },
+      cache: 'default',
     });
     if (resp.ok) {
       pointer = await resp.json();
@@ -32,11 +32,13 @@ export async function middleware(req: NextRequest) {
 
   // 2) Forward pointer to the route as a request header
   const requestHeaders = new Headers(req.headers);
-  if (pointer) {
-    requestHeaders.set('x-docufy-pointer', encodeURIComponent(JSON.stringify(pointer)));
-  }
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
+  if (pointer) {
+    requestHeaders.set('x-docufy-build-id', buildId);
+    requestHeaders.set('x-docufy-manifest-url', manifestUrl);
+    requestHeaders.set('x-docufy-tree-url', treeUrl);
+  }
 
   // 3) Hint + cookie for the browser (helps client navigations)
   if (pointer) {

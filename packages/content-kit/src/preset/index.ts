@@ -14,6 +14,7 @@ import { TaskList } from '@tiptap/extension-task-list';
 import Emoji, { gitHubEmojis } from '@tiptap/extension-emoji';
 import suggestion from '../extensions/emoji/suggestion.js';
 import { TableKit } from '@tiptap/extension-table';
+import { HtmlComponent, StaticHtmlComponent } from '../extensions/html-component/index.js';
 
 type Mode = 'editor' | 'static';
 
@@ -79,6 +80,7 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
         emojis: gitHubEmojis,
         suggestion,
       }),
+      HtmlComponent,
       ...extra,
     ];
   }
@@ -87,6 +89,7 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
     ...base,
     StaticCodeBlock.configure({ lowlight, enableLowlightHighlight: false }),
     StaticImage,
+    StaticHtmlComponent,
     ...extra,
   ];
 }

@@ -19,6 +19,7 @@ import {
   Table,
   Text,
   TextQuote,
+  Square,
 } from "lucide-react"
 
 export const suggestionItems: SuggestionItem[] = createSuggestionItems([
@@ -166,6 +167,28 @@ export const suggestionItems: SuggestionItem[] = createSuggestionItems([
         .deleteRange(range)
         // @ts-expect-error the insertTable exists as per tiptap official documentation
         .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+        .run()
+    },
+  },
+  {
+    title: "Custom Component",
+    description: "Insert custom HTML/CSS component.",
+    searchTerms: ["html", "custom", "component", "widget"],
+    icon: <Square size={18} />,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertContent({
+          type: "htmlComponent",
+          attrs: {
+            html: '<div class="card"><h3>Custom card</h3><p>Add content…</p></div>',
+            css: ".card{padding:12px;border:1px solid #e5e7eb;border-radius:8px}",
+            display: "block",
+            scopeId: null,
+          },
+        })
         .run()
     },
   },

@@ -583,7 +583,10 @@ function DocumentsTree({
     const isCurrentDoc = pathname.includes(`/document/${docId}`)
     await docsCollection.delete(docId)
     if (isCurrentDoc) {
-      navigate({ to: "/$orgSlug/spaces/$spaceId", params: { orgSlug, spaceId } })
+      navigate({
+        to: "/$orgSlug/spaces/$spaceId",
+        params: { orgSlug, spaceId },
+      })
     }
   }
 
@@ -1033,9 +1036,13 @@ function TreeNode(props: {
       ) : null}
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent aria-label={isGroup ? "Delete group" : "Delete page"}>
+        <AlertDialogContent
+          aria-label={isGroup ? "Delete group" : "Delete page"}
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>{isGroup ? "Delete group" : "Delete page"}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isGroup ? "Delete group" : "Delete page"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {isGroup && hasChildren
                 ? "This group has child pages. They will be moved to root."

@@ -5,7 +5,7 @@ import { getExtensions } from '../preset/index.js';
 import * as cheerio from 'cheerio/slim'; // htmlparser2; no parse5
 import { codeToHtml } from 'shiki';
 import { decode as decodeEntities } from 'html-entities'; // or `he`
-
+import { processScopedHtmlComponents } from './scoped-html.js';
 export type TocItem = { level: number; text: string; id: string };
 
 function slugify(s: string) {
@@ -132,6 +132,7 @@ export async function serialize(pmDoc: JSONContent | null) {
 
   // AOT Shiki (dual-theme; async)
   html = await highlightWithShiki(html);
+  html = await processScopedHtmlComponents(html);
 
   return { html, toc };
 }

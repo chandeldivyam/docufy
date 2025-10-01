@@ -5,7 +5,6 @@ import { type Awareness } from "y-protocols/awareness"
 import * as Y from "yjs"
 import { getExtensions } from "@docufy/content-kit/preset"
 import { uploadImageToBlob } from "@/lib/blob-uploader"
-import "@docufy/content-kit/styles.css"
 import { slashCommand } from "./slash-command" // <-- add
 
 export function createTiptapExtensions(
