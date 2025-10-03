@@ -53,6 +53,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { uploadSiteAssetToBlob } from "@/lib/blob-uploader"
+import { ThemeStudio } from "./ThemeStudio"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug/sites/$siteId")({
   ssr: false,
@@ -448,8 +449,9 @@ function SiteDetailPage() {
       </div>
 
       <Tabs defaultValue="settings" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 max-w-lg">
+        <TabsList className="grid w-full grid-cols-5 max-w-lg">
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="theme">Theme</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
           <TabsTrigger value="domains">Domains</TabsTrigger>
           <TabsTrigger value="deploys">Deploys</TabsTrigger>
@@ -527,6 +529,20 @@ function SiteDetailPage() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="theme" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Theme</CardTitle>
+              <CardDescription>
+                Customize colors, surfaces, and layout tokens
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ThemeStudio siteId={siteId} orgId={activeOrgId!} />
             </CardContent>
           </Card>
         </TabsContent>

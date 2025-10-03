@@ -8,6 +8,7 @@ import {
   documentsTable,
   siteContentBlobsTable,
   siteDomainsTable,
+  siteThemesTable,
 } from "@/db/schema"
 import { and, eq, inArray, asc } from "drizzle-orm"
 import { sql } from "drizzle-orm"
@@ -149,6 +150,13 @@ export const sitePublish = inngest.createFunction(
       .where(eq(sitesTable.id, siteId))
       .limit(1)
     if (!site) throw new Error("Site not found")
+
+    const [themePref] =
+      (await db
+        .select()
+        .from(siteThemesTable)
+        .where(eq(siteThemesTable.siteId, siteId))
+        .limit(1)) ?? []
 
     const [build] = await db
       .select()
@@ -526,6 +534,22 @@ export const sitePublish = inngest.createFunction(
       spaces: uiTreeSpaces, // ✅ include full UI tree like before
     }
 
+    // 6.5) Write theme.json (MVP: tokens + shiki)
+    const themeJson = {
+      version: 1,
+      light: {
+        tokens: themePref?.lightTokens ?? {},
+        vars: themePref?.vars ?? {},
+      },
+      dark: { tokens: themePref?.darkTokens ?? {} },
+    }
+    await writeVersioned(
+      siteId,
+      buildId,
+      "theme.json",
+      JSON.stringify(themeJson)
+    )
+
     // 7) Upload versioned files and pointers
     await writeVersioned(
       siteId,
@@ -537,8 +561,14 @@ export const sitePublish = inngest.createFunction(
 
     const manifestUrl = `${site.baseUrl}/sites/${siteId}/${buildId}/manifest.json`
     const treeUrl = `${site.baseUrl}/sites/${siteId}/${buildId}/tree.json`
+    const themeUrl = `${site.baseUrl}/sites/${siteId}/${buildId}/theme.json`
 
-    await writeLatestPointer(siteId, { buildId, manifestUrl, treeUrl })
+    await writeLatestPointer(siteId, {
+      buildId,
+      manifestUrl,
+      treeUrl,
+      themeUrl,
+    })
 
     // Mirror pointer for primary and custom domains
     const customDomains = await db
@@ -547,7 +577,7 @@ export const sitePublish = inngest.createFunction(
       .where(eq(siteDomainsTable.siteId, siteId))
     await writeDomainPointers(
       [site.primaryHost, ...customDomains.map((d) => d.domain)],
-      { buildId, manifestUrl, treeUrl }
+      { buildId, manifestUrl, treeUrl, themeUrl }
     )
 
     // 8) Finalize build

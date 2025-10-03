@@ -88,3 +88,9 @@ export type PageBlob = {
   apiMethod?: string;
   apiPath?: string;
 };
+
+export type ThemeJson = {
+  version: 1;
+  light?: { tokens?: Record<string, string>; vars?: Record<string, string> };
+  dark?: { tokens?: Record<string, string> };
+};

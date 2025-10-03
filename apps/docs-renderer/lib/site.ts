@@ -37,6 +37,7 @@ export type Pointer = {
   treeUrl: string;
   manifestUrl: string;
   basePath?: string;
+  themeUrl?: string;
 };
 
 export async function readPointerFromHeader<T = unknown>(): Promise<T | null> {

@@ -8,9 +8,10 @@ export async function getPointer(): Promise<Pointer> {
   const buildId = h.get('x-docufy-build-id');
   const manifestUrl = h.get('x-docufy-manifest-url');
   const treeUrl = h.get('x-docufy-tree-url');
+  const themeUrl = h.get('x-docufy-theme-url') ?? undefined;
 
   if (buildId && manifestUrl && treeUrl) {
-    return { buildId, manifestUrl, treeUrl };
+    return { buildId, manifestUrl, treeUrl, themeUrl };
   }
 
   // Fallback fetch

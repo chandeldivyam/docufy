@@ -1,6 +1,6 @@
 import { router, authedProcedure, generateTxId } from "@/lib/trpc"
 import { TRPCError } from "@trpc/server"
-import { z } from "zod"
+import z from "zod"
 import { and, eq, inArray, sql } from "drizzle-orm"
 import {
   sitesTable,
@@ -8,6 +8,7 @@ import {
   siteDomainsTable,
   siteBuildsTable,
   spacesTable,
+  siteThemesTable,
 } from "@/db/schema"
 import { members as membersTable } from "@/db/auth-schema"
 import crypto from "node:crypto"
@@ -58,6 +59,8 @@ function allocatePrimaryHost(siteNameOrSlug: string) {
 function newBuildId() {
   return Date.now().toString(36)
 }
+
+const ThemeTokensZ = z.record(z.string())
 
 export const sitesRouter = router({
   create: authedProcedure
@@ -644,5 +647,160 @@ export const sitesRouter = router({
       // Enqueue Inngest domain verify job (your Inngest function will update DB)
       await inngest.send({ name: "domain/verify", data: { domain } })
       return { enqueued: true }
+    }),
+
+  themeUpsert: authedProcedure
+    .input(
+      z.object({
+        siteId: z.string(),
+        organizationId: z.string(),
+        version: z.number().int().min(1).default(1),
+        lightTokens: ThemeTokensZ.default({}),
+        darkTokens: ThemeTokensZ.default({}),
+        vars: ThemeTokensZ.default({}),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id
+      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" })
+
+      // AuthZ: user must be owner/admin of the site's org
+      const site = (
+        await ctx.db
+          .select({ orgId: sitesTable.organizationId })
+          .from(sitesTable)
+          .where(eq(sitesTable.id, input.siteId))
+          .limit(1)
+      )[0]
+      if (!site) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertOrgRole(ctx.db, userId, site.orgId, ["owner", "admin"])
+
+      return await ctx.db.transaction(async (tx) => {
+        // upsert by select → insert/update (portable & explicit)
+        const existing = (
+          await tx
+            .select({ siteId: siteThemesTable.siteId })
+            .from(siteThemesTable)
+            .where(eq(siteThemesTable.siteId, input.siteId))
+            .limit(1)
+        )[0]
+
+        if (existing) {
+          await tx
+            .update(siteThemesTable)
+            .set({
+              version: input.version,
+              lightTokens: input.lightTokens,
+              darkTokens: input.darkTokens,
+            })
+            .where(eq(siteThemesTable.siteId, input.siteId))
+        } else {
+          await tx.insert(siteThemesTable).values({
+            siteId: input.siteId,
+            organizationId: site.orgId,
+            version: input.version,
+            lightTokens: input.lightTokens,
+            darkTokens: input.darkTokens,
+            vars: input.vars,
+          })
+        }
+
+        const txid = await generateTxId(tx)
+        return { txid }
+      })
+    }),
+
+  themeUpdate: authedProcedure
+    .input(
+      z.object({
+        siteId: z.string(),
+        version: z.number().int().min(1).optional(),
+        lightTokens: ThemeTokensZ.optional(),
+        darkTokens: ThemeTokensZ.optional(),
+        vars: ThemeTokensZ.optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id
+      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" })
+
+      const site = (
+        await ctx.db
+          .select({
+            orgId: sitesTable.organizationId,
+            id: sitesTable.id,
+          })
+          .from(sitesTable)
+          .where(eq(sitesTable.id, input.siteId))
+          .limit(1)
+      )[0]
+      if (!site) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertOrgRole(ctx.db, userId, site.orgId, ["owner", "admin"])
+
+      // Minimal patch
+      const patch: Partial<typeof siteThemesTable.$inferInsert> = {}
+      if (input.version !== undefined) patch.version = input.version
+      if (input.lightTokens !== undefined) patch.lightTokens = input.lightTokens
+      if (input.darkTokens !== undefined) patch.darkTokens = input.darkTokens
+      if (input.vars !== undefined) patch.vars = input.vars
+
+      if (!Object.keys(patch).length) return { txid: 0 }
+
+      return await ctx.db.transaction(async (tx) => {
+        const exists = (
+          await tx
+            .select({ siteId: siteThemesTable.siteId })
+            .from(siteThemesTable)
+            .where(eq(siteThemesTable.siteId, input.siteId))
+            .limit(1)
+        )[0]
+        if (!exists) {
+          // Create if missing, with sensible defaults + patch
+          await tx.insert(siteThemesTable).values({
+            siteId: input.siteId,
+            organizationId: site.orgId,
+            version: input.version ?? 1,
+            lightTokens: input.lightTokens ?? {},
+            darkTokens: input.darkTokens ?? {},
+            vars: input.vars ?? {},
+          })
+        } else {
+          await tx
+            .update(siteThemesTable)
+            .set(patch)
+            .where(eq(siteThemesTable.siteId, input.siteId))
+        }
+        const txid = await generateTxId(tx)
+        return { txid }
+      })
+    }),
+
+  themeDelete: authedProcedure
+    .input(
+      z.object({
+        siteId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id
+      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" })
+
+      const site = (
+        await ctx.db
+          .select({ orgId: sitesTable.organizationId })
+          .from(sitesTable)
+          .where(eq(sitesTable.id, input.siteId))
+          .limit(1)
+      )[0]
+      if (!site) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertOrgRole(ctx.db, userId, site.orgId, ["owner", "admin"])
+
+      return await ctx.db.transaction(async (tx) => {
+        await tx
+          .delete(siteThemesTable)
+          .where(eq(siteThemesTable.siteId, input.siteId))
+        const txid = await generateTxId(tx)
+        return { txid }
+      })
     }),
 })

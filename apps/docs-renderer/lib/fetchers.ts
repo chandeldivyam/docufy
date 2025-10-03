@@ -1,4 +1,4 @@
-import type { Manifest, Tree, PageBlob } from './types';
+import type { Manifest, Tree, PageBlob, ThemeJson } from './types';
 import type { Pointer } from './site';
 import { getBlobBaseUrl } from './site';
 import { ManifestZ, TreeZ } from './schema';
@@ -30,6 +30,13 @@ export async function fetchTreeV2(treeUrl: string): Promise<Tree> {
 export async function fetchPageBlob(relBlobKey: string): Promise<PageBlob> {
   const res = await fetch(`${getBlobBaseUrl()}/${relBlobKey}`, { cache: 'force-cache' });
   if (!res.ok) throw new Error(`blob failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchTheme(url?: string | null): Promise<ThemeJson | null> {
+  if (!url) return null;
+  const res = await fetch(url, { cache: 'force-cache' });
+  if (!res.ok) return null;
   return res.json();
 }
 

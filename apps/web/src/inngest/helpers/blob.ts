@@ -23,7 +23,7 @@ export async function blobPut(
 export async function writeVersioned(
   siteId: string,
   buildId: string,
-  key: "manifest.json" | "tree.json",
+  key: "manifest.json" | "tree.json" | "theme.json",
   content: string
 ) {
   return blobPut(
@@ -36,7 +36,12 @@ export async function writeVersioned(
 
 export async function writeLatestPointer(
   siteId: string,
-  payload: { buildId: string; treeUrl: string; manifestUrl: string }
+  payload: {
+    buildId: string
+    treeUrl: string
+    manifestUrl: string
+    themeUrl?: string
+  }
 ) {
   return blobPut(
     `sites/${siteId}/latest.json`,
@@ -48,7 +53,12 @@ export async function writeLatestPointer(
 
 export async function writeDomainPointers(
   hosts: Array<string | null | undefined>,
-  payload: { buildId: string; treeUrl: string; manifestUrl: string }
+  payload: {
+    buildId: string
+    treeUrl: string
+    manifestUrl: string
+    themeUrl?: string
+  }
 ) {
   for (const h of hosts ?? []) {
     const host = h?.toLowerCase().split(":")[0]

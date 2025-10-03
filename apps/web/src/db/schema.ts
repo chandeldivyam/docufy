@@ -12,6 +12,8 @@ import {
   index,
   bigserial,
   boolean,
+  jsonb,
+  integer,
 } from "drizzle-orm/pg-core"
 
 const { createSelectSchema, createInsertSchema } = createSchemaFactory({
@@ -285,3 +287,39 @@ export const createSiteSchema = createInsertSchema(sitesTable)
     id: z.string().uuid().optional(),
     slug: z.string().min(1).optional(),
   })
+
+export const siteThemesTable = pgTable(
+  "site_themes",
+  {
+    siteId: text("site_id")
+      .notNull()
+      .references(() => sitesTable.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    version: integer("version").default(1).notNull(),
+    // minimal, composable structure
+    lightTokens: jsonb("light_tokens")
+      .$type<Record<string, string>>()
+      .notNull()
+      .default({}),
+    darkTokens: jsonb("dark_tokens")
+      .$type<Record<string, string>>()
+      .notNull()
+      .default({}),
+    vars: jsonb("vars").$type<Record<string, string>>().notNull().default({}),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.siteId] }),
+    siteIdx: index("site_themes_site_idx").on(t.siteId),
+  })
+)
+
+export const selectSiteThemesSchema = createSelectSchema(siteThemesTable)
+export const createSiteThemeSchema = createInsertSchema(siteThemesTable).omit({
+  updatedAt: true,
+})

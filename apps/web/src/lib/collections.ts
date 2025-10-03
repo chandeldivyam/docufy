@@ -669,3 +669,109 @@ export function getSiteBuildsCollection(siteId: string) {
     })
   )
 }
+
+const siteThemeRawSchema = z.object({
+  site_id: z.string(),
+  organization_id: z.string(),
+  version: z.coerce.number().default(1),
+  light_tokens: z.record(z.string()).default({}),
+  dark_tokens: z.record(z.string()).default({}),
+  vars: z.record(z.string()).default({}),
+  updated_at: z.coerce.date(),
+})
+export type SiteThemeRow = z.infer<typeof siteThemeRawSchema>
+// Optional: global-ids map if you want to cache per site like others
+type SiteThemeCollection = ReturnType<typeof createSiteThemeCollectionFor>
+const themeBySite = new Map<string, SiteThemeCollection>()
+
+function createSiteThemeCollectionFor(url: string) {
+  return createCollection(
+    electricCollectionOptions({
+      id: `site-theme:${url}`,
+      shapeOptions: {
+        url,
+        parser: electricParsers, // keeps dates as Date
+      },
+      schema: siteThemeRawSchema,
+      // single row keyed by site_id (server returns 0..1 rows)
+      getKey: (row) => row.site_id,
+
+      // Optimistic "create or replace" (upsert) semantics
+      onInsert: async ({ transaction }) => {
+        const { modified: row } = transaction.mutations[0]
+        // Map to your TRPC/mutation shape (camelCase)
+        const result = await trpc.sites.themeUpsert.mutate({
+          siteId: row.site_id,
+          organizationId: row.organization_id,
+          version: row.version,
+          lightTokens: row.light_tokens,
+          darkTokens: row.dark_tokens,
+          vars: row.vars,
+        })
+        return { txid: result.txid ?? 0 }
+      },
+
+      onUpdate: async ({ transaction }) => {
+        const { original: prev, modified: next } = transaction.mutations[0]
+        const patch: {
+          siteId: string
+          version?: number
+          lightTokens?: Record<string, string>
+          darkTokens?: Record<string, string>
+          vars?: Record<string, string>
+        } = { siteId: prev.site_id }
+
+        // Build a minimal patch (only send changes)
+        if (next.version !== prev.version) patch.version = next.version
+        if (
+          JSON.stringify(next.light_tokens) !==
+          JSON.stringify(prev.light_tokens)
+        ) {
+          patch.lightTokens = next.light_tokens
+        }
+        if (
+          JSON.stringify(next.dark_tokens) !== JSON.stringify(prev.dark_tokens)
+        ) {
+          patch.darkTokens = next.dark_tokens
+        }
+        if (JSON.stringify(next.vars) !== JSON.stringify(prev.vars)) {
+          patch.vars = next.vars
+        }
+        // No changes? Avoid a roundtrip.
+        if (Object.keys(patch).length === 1) return { txid: 0 }
+
+        const result = await trpc.sites.themeUpdate.mutate(patch)
+        return { txid: result.txid ?? 0 }
+      },
+
+      onDelete: async ({ transaction }) => {
+        const { original: prev } = transaction.mutations[0]
+        const result = await trpc.sites.themeDelete.mutate({
+          siteId: prev.site_id,
+        })
+        return { txid: result.txid ?? 0 }
+      },
+    })
+  )
+}
+
+// Per-site collection
+export function getSiteThemeCollection(siteId: string) {
+  let col = themeBySite.get(siteId)
+  if (!col) {
+    col = createSiteThemeCollectionFor(
+      getApiUrl(`/api/site-themes?siteId=${siteId}`)
+    )
+    themeBySite.set(siteId, col)
+  }
+  return col
+}
+
+// Local empty collection for stable hooks before siteId is known
+export const emptySiteThemeCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-site-theme",
+    schema: siteThemeRawSchema,
+    getKey: (r) => r.site_id,
+  })
+)

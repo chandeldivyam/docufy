@@ -1,3 +1,4 @@
+@layer base, tokens, components, overrides, user;
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'fumadocs-ui/css/neutral.css';
@@ -5,46 +6,42 @@
 @import 'fumadocs-openapi/css/preset.css';
 
 /* ---------- Design Tokens (scalable) ---------- */
-:root {
-  --radius: 10px;
-  --dfy-content-pad: 28px;
+@layer tokens {
+  :root {
+    --radius: 10px;
+    --dfy-content-pad: 28px;
 
-  /* surfaces */
-  --bg: oklch(1 0 0);
-  --fg: oklch(0.18 0 0);
-  --muted: oklch(0.58 0 0);
-  --border: oklch(0.92 0 0);
+    /* surfaces */
+    --bg: oklch(1 0 0);
+    --fg: oklch(0.18 0 0);
+    --muted: oklch(0.58 0 0);
+    --border: oklch(0.92 0 0);
 
-  /* brand / accents */
-  --primary: oklch(0.38 0.07 240);
-  --primary-fg: oklch(0.98 0 0);
+    /* brand / accents */
+    --primary: oklch(0.38 0.07 240);
+    --primary-fg: oklch(0.98 0 0);
 
-  /* sidebar */
-  --sidebar-bg: oklch(0.985 0 0);
-  --sidebar-fg: oklch(0.18 0 0);
-  --sidebar-fg-muted: oklch(0.45 0 0);
-  --sidebar-border: oklch(0.92 0 0);
-  --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 4%, var(--sidebar-bg));
+    /* sidebar */
+    --sidebar-bg: oklch(0.985 0 0);
+    --sidebar-fg: oklch(0.18 0 0);
+    --sidebar-fg-muted: oklch(0.45 0 0);
+    --sidebar-border: oklch(0.92 0 0);
+    --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 4%, var(--sidebar-bg));
+  }
 
-  --step--1: clamp(0.8rem, 0.79rem + 0.1vw, 0.88rem);
-  --step-0: clamp(0.95rem, 0.91rem + 0.22vw, 1.05rem);
-  --step-1: clamp(1.15rem, 1.05rem + 0.4vw, 1.3rem);
-  --step-2: clamp(1.35rem, 1.21rem + 0.62vw, 1.6rem);
-  --step-3: clamp(1.6rem, 1.38rem + 0.92vw, 1.95rem);
-}
-
-:root.dark {
-  --bg: oklch(0.17 0 0);
-  --fg: oklch(0.97 0 0);
-  --muted: oklch(0.7 0 0);
-  --border: oklch(0.28 0 0);
-  --primary: oklch(0.75 0.12 260);
-  --primary-fg: oklch(0.14 0 0);
-  --sidebar-bg: oklch(0.2 0 0);
-  --sidebar-fg: oklch(0.98 0 0);
-  --sidebar-fg-muted: oklch(0.77 0 0);
-  --sidebar-border: oklch(0.3 0 0);
-  --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 10%, var(--sidebar-bg));
+  :root.dark {
+    --bg: oklch(0.17 0 0);
+    --fg: oklch(0.97 0 0);
+    --muted: oklch(0.7 0 0);
+    --border: oklch(0.28 0 0);
+    --primary: oklch(0.75 0.12 260);
+    --primary-fg: oklch(0.14 0 0);
+    --sidebar-bg: oklch(0.2 0 0);
+    --sidebar-fg: oklch(0.98 0 0);
+    --sidebar-fg-muted: oklch(0.77 0 0);
+    --sidebar-border: oklch(0.3 0 0);
+    --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 10%, var(--sidebar-bg));
+  }
 }
 
 /* ---------- Base ---------- */

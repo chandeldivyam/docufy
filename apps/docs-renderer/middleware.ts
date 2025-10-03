@@ -17,13 +17,14 @@ export async function middleware(req: NextRequest) {
   let buildId = '';
   let manifestUrl = '';
   let treeUrl = '';
+  let themeUrl = '';
   try {
     const resp = await fetch(`${base}/domains/${effectiveHost}/latest.json`, {
       cache: 'default',
     });
     if (resp.ok) {
       pointer = await resp.json();
-      ({ buildId, manifestUrl, treeUrl } = pointer);
+      ({ buildId, manifestUrl, treeUrl, themeUrl } = pointer);
     }
   } catch {
     // swallow to keep request flowing
@@ -33,18 +34,20 @@ export async function middleware(req: NextRequest) {
   // 2) Forward pointer to the route as a request header
   const requestHeaders = new Headers(req.headers);
 
-  const res = NextResponse.next({ request: { headers: requestHeaders } });
   if (pointer) {
     requestHeaders.set('x-docufy-build-id', buildId);
     requestHeaders.set('x-docufy-manifest-url', manifestUrl);
     requestHeaders.set('x-docufy-tree-url', treeUrl);
+    if (themeUrl) requestHeaders.set('x-docufy-theme-url', themeUrl);
   }
 
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
   // 3) Hint + cookie for the browser (helps client navigations)
   if (pointer) {
     res.cookies.set(cookieName, buildId, { path: '/', maxAge: 300, httpOnly: false });
     res.headers.append('Link', `<${manifestUrl}>; rel=preload; as=fetch; crossorigin`);
     res.headers.append('Link', `<${treeUrl}>; rel=preload; as=fetch; crossorigin`);
+    res.headers.append('Link', `<${themeUrl}>; rel=preload; as=fetch; crossorigin`);
     res.headers.append('Server-Timing', `ptr;dur=${t1 - t0}`);
   }
   res.headers.set('Vary', ['Host', 'Cookie', 'Accept'].join(', '));
