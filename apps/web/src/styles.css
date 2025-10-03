@@ -87,14 +87,14 @@ body {
   --sb-track: color-mix(in oklch, var(--muted) 60%, var(--background));
   --sb-thumb: color-mix(in oklch, var(--foreground) 20%, var(--muted));
   --sb-thumb-hover: color-mix(in oklch, var(--foreground) 35%, var(--muted));
-  --syntax-base: oklch(0.3 0 0);
-  --syntax-comment: oklch(0.52 0 0);
-  --syntax-keyword: oklch(0.55 0.12 250);
-  --syntax-string: oklch(0.55 0.12 145);
-  --syntax-number: oklch(0.55 0.11 75);
-  --syntax-title: oklch(0.45 0.1 200);
-  --syntax-attr: oklch(0.45 0.12 30);
-  --syntax-meta: oklch(0.45 0.07 260);
+  --syntax-base: oklch(0.2 0 0);
+  --syntax-comment: oklch(0.43 0.05 140); /* slightly more green */
+  --syntax-keyword: oklch(0.42 0.17 290); /* richer purple */
+  --syntax-string: oklch(0.45 0.14 20); /* richer red */
+  --syntax-number: oklch(0.48 0.15 140); /* richer green */
+  --syntax-title: oklch(0.52 0.16 70); /* richer yellow */
+  --syntax-attr: oklch(0.5 0.13 210); /* richer blue */
+  --syntax-meta: oklch(0.48 0.12 60); /* golden yellow */
   --syntax-emph: var(--syntax-base);
   --syntax-strong: var(--syntax-base);
 }
@@ -138,14 +138,14 @@ body {
     var(--foreground) 60%,
     var(--secondary)
   );
-  --syntax-base: oklch(0.9 0 0);
-  --syntax-comment: oklch(0.7 0 0);
-  --syntax-keyword: oklch(0.8 0.12 230); /* cyan/blue */
-  --syntax-string: oklch(0.86 0.11 145); /* green */
-  --syntax-number: oklch(0.82 0.12 80); /* amber */
-  --syntax-title: oklch(0.95 0.12 105); /* yellow */
-  --syntax-attr: oklch(0.78 0.2 25); /* pink/red */
-  --syntax-meta: oklch(0.78 0.08 260); /* subtle blue */
+  --syntax-base: oklch(0.85 0 0); /* light gray - good */
+  --syntax-comment: oklch(0.5 0.03 140); /* slightly more saturated green */
+  --syntax-keyword: oklch(0.68 0.17 290); /* more vibrant purple */
+  --syntax-string: oklch(0.67 0.15 20); /* more vibrant coral/red */
+  --syntax-number: oklch(0.73 0.14 140); /* brighter green */
+  --syntax-title: oklch(0.82 0.15 85); /* brighter yellow for functions */
+  --syntax-attr: oklch(0.73 0.13 210); /* brighter blue */
+  --syntax-meta: oklch(0.7 0.12 260); /* subtle purple-blue */
   --syntax-emph: var(--syntax-base);
   --syntax-strong: var(--syntax-base);
 }
@@ -361,7 +361,7 @@ html {
       ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "JetBrainsMono",
       "Liberation Mono", monospace;
     font-size: 0.86em;
-    background: color-mix(in oklch, var(--muted) 80%, var(--background));
+    background: var(--muted);
     color: color-mix(in oklch, var(--foreground) 90%, black);
     border: 1px solid var(--border);
     border-radius: calc(var(--radius-sm));
@@ -733,6 +733,81 @@ html {
 .tiptap pre .hljs-strong {
   font-weight: 700;
   color: var(--syntax-strong);
+}
+
+.tiptap pre .hljs-type,
+.tiptap pre .hljs-class,
+.tiptap pre .hljs-interface {
+  color: var(--syntax-title);
+}
+
+/* Operators */
+.tiptap pre .hljs-operator {
+  color: var(--syntax-keyword);
+}
+
+/* Function calls (different from definitions) */
+.tiptap pre .hljs-function {
+  color: var(--syntax-title);
+}
+
+/* Property access */
+.tiptap pre .hljs-property {
+  color: var(--syntax-attr);
+}
+
+/* Punctuation */
+.tiptap pre .hljs-punctuation {
+  color: var(--syntax-base);
+}
+
+/* Doctags (@param, @returns, etc.) */
+.tiptap pre .hljs-doctag {
+  color: var(--syntax-meta);
+  font-weight: 600;
+}
+
+/* Deletion (for diffs) */
+.tiptap pre .hljs-deletion {
+  color: var(--destructive);
+  background: color-mix(in oklch, var(--destructive) 10%, transparent);
+}
+
+/* Addition (for diffs) */
+.tiptap pre .hljs-addition {
+  color: var(--chart-2);
+  background: color-mix(in oklch, var(--chart-2) 10%, transparent);
+}
+
+/* Template strings / interpolation */
+.tiptap pre .hljs-template-tag {
+  color: var(--syntax-string);
+}
+
+/* Subst inside template literals */
+.tiptap pre .hljs-subst {
+  color: var(--syntax-base);
+}
+
+.tiptap pre .hljs-ln-numbers {
+  color: var(--muted-foreground);
+  opacity: 0.5;
+  padding-right: 1rem;
+  text-align: right;
+  user-select: none;
+}
+
+/* Highlighted lines */
+.tiptap pre .hljs-ln-line.highlighted {
+  background: color-mix(in oklch, var(--primary) 8%, transparent);
+  display: block;
+  margin: 0 -1rem;
+  padding: 0 1rem;
+}
+
+/* Better scrollbar for code blocks in dark mode */
+.dark .tiptap pre::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--foreground) 25%, var(--secondary));
 }
 
 :root .tiptap pre {

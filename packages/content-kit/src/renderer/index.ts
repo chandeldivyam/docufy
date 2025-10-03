@@ -8,6 +8,24 @@ import { decode as decodeEntities } from 'html-entities'; // or `he`
 import { processScopedHtmlComponents } from './scoped-html.js';
 export type TocItem = { level: number; text: string; id: string };
 
+function escapeHtml(s: string) {
+  // Make idempotent: decode then escape once
+  const d = decodeEntities(s);
+  return d
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function preEscapeCodeBlocks(html: string) {
+  return html.replace(
+    /(<pre\b[^>]*\bclass="[^"]*\btt-codeblock-pre\b[^"]*"[^>]*>\s*<code\b[^>]*>)([\s\S]*?)(<\/code>)/gi,
+    (_m, open, body, close) => open + escapeHtml(body) + close,
+  );
+}
+
 function slugify(s: string) {
   return s
     .trim()
@@ -61,32 +79,21 @@ function addHeadingIds(html: string, toc: TocItem[]) {
  * Dual theme (light/dark) with 0 runtime JS.
  */
 async function highlightWithShiki(html: string) {
-  // Parse as fragment (no <html><body> wrappers)
-  const $ = cheerio.load(html, undefined, false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const $ = cheerio.load(html, { decodeEntities: true } as any, false);
 
-  const blocks = $('div.tt-codeblock-group > pre.tt-codeblock-pre > code').toArray();
-
-  for (const el of blocks) {
+  for (const el of $('div.tt-codeblock-group > pre.tt-codeblock-pre > code').toArray()) {
     const $code = $(el);
 
-    // --- Reconstruct RAW source robustly ---
-    // 1) Get innerHTML as string (may contain real tags if parser reinterpreted text)
-    const inner = $code.html() || '';
+    // Lossless now, because the code was escaped before parsing
+    const raw = $code.text();
 
-    // 2) Neutralize any tags into entities so everything becomes TEXT again
-    //    (This also converts any already-escaped code safely to entities)
-    const neutralized = inner.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-    // 3) Decode entities to get the literal code string with real "<" and ">"
-    const raw = decodeEntities(neutralized);
-
-    // Optional: language hinting (diff/tsx helps your snippets)
     const hinted = ($code.attr('data-language') || '').trim();
     const lang =
       hinted ||
       (/^[-+].*$/m.test(raw)
         ? 'diff'
-        : /[<][A-Za-z]/.test(raw) && /\bclass(Name)?=/.test(raw)
+        : /<[A-Za-z]/.test(raw) && /\bclass(Name)?=/.test(raw)
           ? 'tsx'
           : 'text');
 
@@ -95,26 +102,25 @@ async function highlightWithShiki(html: string) {
       themes: { light: 'github-light', dark: 'github-dark' },
     });
 
-    // Parse Shiki result as fragment and ADOPT nodes (no html string round-trips)
+    // Adopt Shiki nodes as before
     const $$ = cheerio.load(shikiHtml, undefined, false);
     const $shikiPre = $$('pre.shiki').first();
     const $shikiCode = $shikiPre.find('code').first();
 
     const $ourPre = $code.parent('pre.tt-codeblock-pre');
-
-    // Mirror Shiki classes & styles onto your <pre>
     const cls = $shikiPre.attr('class') || '';
     if (cls) $ourPre.addClass(cls);
     const style = $shikiPre.attr('style');
     if (style) $ourPre.attr('style', style);
 
-    // Replace <code> contents by *adopting* nodes
     $code.empty();
-    $shikiCode.contents().each((_, node) => {
-      $code.append(node);
-    });
+    $shikiCode
+      .contents()
+      .get()
+      .forEach((node) => {
+        $code.append(node);
+      });
 
-    // Ensure classes on <code>
     const incoming = $shikiCode.attr('class') || '';
     const current = $code.attr('class') || '';
     $code.attr('class', [current, incoming, 'shiki', `language-${lang}`].filter(Boolean).join(' '));
@@ -126,6 +132,7 @@ async function highlightWithShiki(html: string) {
 export async function serialize(pmDoc: JSONContent | null) {
   const extensions = getExtensions('static');
   let html = renderToHTMLString({ extensions, content: pmDoc ?? { type: 'doc', content: [] } });
+  html = preEscapeCodeBlocks(html);
 
   const toc = extractToc(pmDoc ?? { type: 'doc', content: [] });
   html = addHeadingIds(html, toc);

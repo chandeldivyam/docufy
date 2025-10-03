@@ -66,7 +66,7 @@ export function CodeBlockView(props: any) {
 
   const onChangeLanguage: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
     const v = e.target.value;
-    updateAttributes({ language: v === 'auto' ? null : v });
+    updateAttributes({ language: v === 'typescript' ? null : v });
     editor?.commands.focus();
   };
 
@@ -93,11 +93,10 @@ export function CodeBlockView(props: any) {
           <select
             id="tt-lang"
             className="tt-codeblock-select"
-            value={current ?? 'auto'}
+            value={current ?? 'typescript'}
             onChange={onChangeLanguage}
             aria-label="Select code language"
           >
-            <option value="auto">Auto detect</option>
             {supported.map((l) => (
               <option key={l} value={l}>
                 {l}
