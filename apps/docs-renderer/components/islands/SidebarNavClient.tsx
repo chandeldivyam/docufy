@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-// import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
+import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
 import type { UiTreeItem } from '../../lib/types';
 
 const INDENT = 12;
@@ -240,9 +240,9 @@ function Node({
             aria-current={isActive ? 'page' : undefined}
           >
             {isApiRoute && getMethodBadge(node)}
-            {/* {node.iconName && (
+            {node.iconName && (
               <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
-            )} */}
+            )}
             <SmartTitle title={node.title} />
           </Link>
         </div>
@@ -259,9 +259,9 @@ function Node({
             aria-current={isActive ? 'page' : undefined}
             onClick={() => onToggle(nodeId, !isExpanded)}
           >
-            {/* {node.iconName && (
+            {node.iconName && (
               <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
-            )} */}
+            )}
             <SmartTitle title={node.title} />
           </div>
           <button
