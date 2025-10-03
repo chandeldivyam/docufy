@@ -287,6 +287,7 @@ function SiteDetailPage() {
               accept=".svg,.png,.jpg,.jpeg,.webp"
               currentUrl={site?.logo_url_light}
               kind="logo-light"
+              previewClassName="bg-white p-1 rounded w-[120px]"
             />
             <UploadField
               id="logo-dark"
@@ -294,7 +295,7 @@ function SiteDetailPage() {
               accept=".svg,.png,.jpg,.jpeg,.webp"
               currentUrl={site?.logo_url_dark}
               kind="logo-dark"
-              previewClassName="bg-black p-1 rounded"
+              previewClassName="bg-black p-1 rounded w-[120px]"
             />
             <UploadField
               id="favicon"
