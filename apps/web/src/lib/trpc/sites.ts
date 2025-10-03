@@ -458,17 +458,24 @@ export const sitesRouter = router({
       const id = input.id ?? crypto.randomUUID()
       const d = input.domain.trim().toLowerCase()
 
-      const res = await ctx.db.transaction(async (tx) => {
-        await tx.insert(siteDomainsTable).values({
-          id,
-          siteId: input.siteId,
-          domain: d,
-          verified: false,
-          organizationId: s.organizationId,
+      let res
+      try {
+        res = await ctx.db.transaction(async (tx) => {
+          await tx.insert(siteDomainsTable).values({
+            id,
+            siteId: input.siteId,
+            domain: d,
+            verified: false,
+            organizationId: s.organizationId,
+          })
+          return await generateTxId(tx)
         })
-        return await generateTxId(tx)
-      })
-
+      } catch {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Failed to add domain",
+        })
+      }
       // enqueue connect
       await inngest.send({
         name: "domain/connect",

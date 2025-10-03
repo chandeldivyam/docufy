@@ -5,6 +5,7 @@ import {
 import { electricCollectionOptions } from "@tanstack/electric-db-collection"
 import { z } from "zod"
 import { trpc } from "@/lib/trpc-client"
+import { notifyCollectionError } from "./collection-errors"
 
 const electricParsers = {
   // parse both timestamp flavors into JS Date
@@ -537,6 +538,7 @@ const siteDomainsRawSchema = z.object({
   site_id: z.string(),
   domain: z.string(),
   verified: z.boolean(),
+  error: z.string().nullable().optional(),
   last_checked_at: z.coerce.date().nullable(),
   created_at: z.coerce.date(),
   updated_at: z.coerce.date(),
@@ -556,12 +558,20 @@ export function getSiteDomainsCollection(siteId: string) {
 
       onInsert: async ({ transaction }) => {
         const { modified: d } = transaction.mutations[0]
-        const res = await trpc.sites.addDomain.mutate({
-          id: d.id,
-          siteId: d.site_id,
-          domain: d.domain,
-        })
-        return { txid: res.txid }
+        try {
+          const res = await trpc.sites.addDomain.mutate({
+            id: d.id,
+            siteId: d.site_id,
+            domain: d.domain,
+          })
+          return { txid: res.txid }
+        } catch (error) {
+          notifyCollectionError(
+            error instanceof Error ? error : new Error(String(error)),
+            { operation: "addDomain", collectionId: `site-domains:${siteId}` }
+          )
+          throw error
+        }
       },
 
       // NEW: trigger verify when last_checked_at is changed locally

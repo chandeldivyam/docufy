@@ -1,4 +1,3 @@
-// src/routes/__root.tsx
 import {
   Outlet,
   HeadContent,
@@ -8,6 +7,9 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 import { ThemeProvider, ThemeScript } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
+import { setCollectionErrorHandler } from "@/lib/collection-errors"
+import { toast } from "sonner"
+import { useEffect } from "react"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -39,7 +41,6 @@ export const Route = createRootRoute({
       },
     ],
   }),
-
   component: () => (
     <ThemeProvider defaultTheme="system" enableSystem>
       <RootDocument>
@@ -53,11 +54,17 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    setCollectionErrorHandler((error, context) => {
+      const message = error.message || `Operation failed: ${context.operation}`
+      toast.error(message)
+    })
+  }, [])
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        {/* This script prevents FOUC by applying theme before React hydrates */}
         <ThemeScript storageKey="ui-theme" />
       </head>
       <body>

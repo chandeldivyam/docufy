@@ -195,6 +195,7 @@ export const siteDomainsTable = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     verified: boolean("verified").default(false).notNull(),
+    error: text("error"),
     lastCheckedAt: timestamp("last_checked_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

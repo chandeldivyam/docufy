@@ -43,14 +43,19 @@ export async function connectDomainOnVercel(domain: string) {
     `/v10/projects/${encodeURIComponent(VERCEL_RENDERER_PROJECT)}/domains`,
     { method: "POST", body: JSON.stringify({ name: domain }) }
   )
-  if (!add.ok) throw new Error(`Vercel add domain failed: ${await add.text()}`)
+  if (!add.ok) {
+    const add_response = await add.json()
+    throw new Error(`Vercel add domain failed: ${add_response.error.code}`)
+  }
   // Kick project-domain verification (ownership challenge), not DNS
   const verify = await vfetch(
     `/v10/projects/${encodeURIComponent(VERCEL_RENDERER_PROJECT)}/domains/${encodeURIComponent(domain)}/verify`,
     { method: "POST" }
   )
   if (!verify.ok)
-    throw new Error(`Failed to verify project-domain: ${await verify.text()}`)
+    throw new Error(
+      `Failed to verify project-domain: ${await verify.json().then((j) => j.message)}`
+    )
 }
 
 // Query Vercel's Domain Config API (authoritative DNS readiness signal)

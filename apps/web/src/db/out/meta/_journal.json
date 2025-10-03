@@ -64,6 +64,13 @@
       "when": 1759424671757,
       "tag": "0008_productive_vance_astro",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1759511891161,
+      "tag": "0009_flashy_tinkerer",
+      "breakpoints": true
     }
   ]
 }

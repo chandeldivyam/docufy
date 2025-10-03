@@ -1,0 +1,1 @@
+ALTER TABLE "site_domains" ADD COLUMN "error" text;
