@@ -69,7 +69,7 @@ export default $config({
       },
       // Health: keep it simple; ALB will hit / (200). If you added /api/healthz, you can set health.path.
       health: {
-        command: ['CMD-SHELL', 'curl -f http://localhost:3000/api/healthz || exit 1'],
+        command: ['CMD-SHELL', 'curl -f https://app.trydocufy.com/api/healthz || exit 1'],
         startPeriod: '10 seconds',
         timeout: '5 seconds',
         retries: 3,
