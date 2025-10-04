@@ -16,6 +16,8 @@ export default [
       '**/convex/_generated/**',
       '**/.output/**',
       '**/.vercel/**',
+      '**/sst.config.ts',
+      '**/.sst/**',
     ],
   },
 ];
