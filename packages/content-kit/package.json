@@ -58,7 +58,6 @@
     "react": "^18 || ^19"
   },
   "dependencies": {
-    "@convex-dev/prosemirror-sync": "^0.1.28",
     "@floating-ui/dom": "^1.7.4",
     "@tiptap/extension-details": "^3.6.1",
     "@tiptap/extension-emoji": "^3.6.1",

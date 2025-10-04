@@ -44,10 +44,5 @@
     "lint": "turbo run lint",
     "prepare": "husky",
     "typecheck": "turbo run typecheck"
-  },
-  "pnpm": {
-    "overrides": {
-      "@convex-dev/prosemirror-sync": "github:chandeldivyam/prosemirror-sync"
-    }
   }
 }
