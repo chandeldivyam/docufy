@@ -15,6 +15,7 @@ import {
   jsonb,
   integer,
 } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 
 const { createSelectSchema, createInsertSchema } = createSchemaFactory({
   zodInstance: z,
@@ -154,6 +155,26 @@ export const sitesTable = pgTable(
     logoUrlLight: text("logo_url_light"),
     logoUrlDark: text("logo_url_dark"),
     faviconUrl: text("favicon_url"),
+    // a jsonb column to store the array of button (with slug, href "could be external link or internal route", icon name, label, rank, type (sidebar_buttom, sidebar_top, topbar_left, topbar_right))
+    buttons: jsonb("buttons")
+      .$type<
+        Array<{
+          id: string
+          label: string
+          href: string
+          iconName?: string | null
+          slug?: string | null
+          position:
+            | "sidebar_top"
+            | "sidebar_bottom"
+            | "topbar_left"
+            | "topbar_right"
+          rank: number
+          target?: "_self" | "_blank"
+        }>
+      >()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
   },
   (t) => ({
     orgSlugUnique: uniqueIndex("sites_org_slug_unique").on(
@@ -287,6 +308,25 @@ export const createSiteSchema = createInsertSchema(sitesTable)
   .extend({
     id: z.string().uuid().optional(),
     slug: z.string().min(1).optional(),
+    buttons: z
+      .array(
+        z.object({
+          id: z.string(),
+          label: z.string().min(1),
+          href: z.string().min(1),
+          iconName: z.string().nullable().optional(),
+          slug: z.string().nullable().optional(),
+          position: z.enum([
+            "sidebar_top",
+            "sidebar_bottom",
+            "topbar_left",
+            "topbar_right",
+          ]),
+          rank: z.number().int(),
+          target: z.enum(["_self", "_blank"]).optional(),
+        })
+      )
+      .optional(),
   })
 
 export const siteThemesTable = pgTable(

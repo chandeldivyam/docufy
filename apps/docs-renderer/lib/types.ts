@@ -72,6 +72,40 @@ export type Tree = {
   publishedAt: number;
   nav: { spaces: Array<{ slug: string; name: string; order?: number; iconName?: string }> };
   spaces: UiTreeSpace[];
+  buttons: {
+    sidebar_top: Array<{
+      id: string;
+      label: string;
+      href: string;
+      iconName?: string | null;
+      target?: '_self' | '_blank';
+      slug?: string | null;
+    }>;
+    sidebar_bottom: Array<{
+      id: string;
+      label: string;
+      href: string;
+      iconName?: string | null;
+      target?: '_self' | '_blank';
+      slug?: string | null;
+    }>;
+    topbar_left: Array<{
+      id: string;
+      label: string;
+      href: string;
+      iconName?: string | null;
+      target?: '_self' | '_blank';
+      slug?: string | null;
+    }>;
+    topbar_right: Array<{
+      id: string;
+      label: string;
+      href: string;
+      iconName?: string | null;
+      target?: '_self' | '_blank';
+      slug?: string | null;
+    }>;
+  };
 };
 
 export type PageBlob = {

@@ -378,6 +378,8 @@ export const emptyDocumentsCollection = createCollection(
   })
 )
 
+// TODO - in the sitesRawSchema and other relevant places where we fetch the data from, we need to also fetch the buttons array
+
 const sitesRawSchema = z.object({
   id: z.string(),
   organization_id: z.string(),
@@ -394,6 +396,25 @@ const sitesRawSchema = z.object({
   logo_url_light: z.string().nullable().optional(),
   logo_url_dark: z.string().nullable().optional(),
   favicon_url: z.string().nullable().optional(),
+  buttons: z
+    .array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+        href: z.string(),
+        iconName: z.string().nullable().optional(),
+        slug: z.string().nullable().optional(),
+        position: z.enum([
+          "sidebar_top",
+          "sidebar_bottom",
+          "topbar_left",
+          "topbar_right",
+        ]),
+        rank: z.number(),
+        target: z.enum(["_self", "_blank"]).optional(),
+      })
+    )
+    .default([]),
 })
 export type SiteRow = z.infer<typeof sitesRawSchema>
 
@@ -414,6 +435,7 @@ function createSitesCollectionFor(url: string) {
           slug: s.slug,
           baseUrl: s.base_url,
           storeId: s.store_id,
+          buttons: s.buttons ?? [],
         })
         return { txid: result.txid }
       },
@@ -430,6 +452,7 @@ function createSitesCollectionFor(url: string) {
           logoUrlLight?: string | null
           logoUrlDark?: string | null
           faviconUrl?: string | null
+          buttons?: typeof next.buttons
         } = { id: prev.id }
         if (next.name !== prev.name) payload.name = next.name
         if (next.slug !== prev.slug) payload.slug = next.slug
@@ -443,6 +466,12 @@ function createSitesCollectionFor(url: string) {
           payload.logoUrlDark = next.logo_url_dark ?? null
         if (next.favicon_url !== prev.favicon_url)
           payload.faviconUrl = next.favicon_url ?? null
+        if (
+          JSON.stringify(next.buttons ?? []) !==
+          JSON.stringify(prev.buttons ?? [])
+        ) {
+          payload.buttons = next.buttons ?? []
+        }
         const result = await trpc.sites.update.mutate(payload)
         return { txid: result.txid }
       },

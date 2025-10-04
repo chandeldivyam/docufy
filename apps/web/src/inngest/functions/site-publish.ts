@@ -531,7 +531,49 @@ export const sitePublish = inngest.createFunction(
       buildId,
       publishedAt: now,
       nav: { spaces: navSpaces.map(({ style: _s, ...rest }) => rest) },
-      spaces: uiTreeSpaces, // ✅ include full UI tree like before
+      spaces: uiTreeSpaces,
+      buttons: (() => {
+        type Pos =
+          | "sidebar_top"
+          | "sidebar_bottom"
+          | "topbar_left"
+          | "topbar_right"
+        const empty: Record<
+          Pos,
+          Array<{
+            id: string
+            label: string
+            href: string
+            iconName?: string | null
+            target?: "_self" | "_blank"
+            slug?: string | null
+          }>
+        > = {
+          sidebar_top: [],
+          sidebar_bottom: [],
+          topbar_left: [],
+          topbar_right: [],
+        }
+        const list = Array.isArray(site.buttons) ? site.buttons : []
+        const sorted = list.slice().sort((a, b) => {
+          if (a.position !== b.position)
+            return a.position.localeCompare(b.position)
+          return (a.rank ?? 0) - (b.rank ?? 0)
+        })
+        for (const b of sorted) {
+          if (!b || !b.position) continue
+          const pos = b.position as Pos
+          empty[pos].push({
+            id: b.id,
+            label: b.label,
+            href: b.href,
+            iconName: b.iconName ?? null,
+            target: b.target ?? "_self",
+            slug: b.slug ?? null,
+          })
+        }
+        return empty
+      })(),
     }
 
     // 6.5) Write theme.json (MVP: tokens + shiki)

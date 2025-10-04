@@ -10,6 +10,7 @@ import {
   emptySitesCollection,
   emptySpacesCollection,
   type SpaceRow,
+  type SiteRow,
 } from "@/lib/collections"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,6 +51,7 @@ import {
   Loader2,
   ChevronDown,
   Upload,
+  GripVertical,
 } from "lucide-react"
 import { toast } from "sonner"
 import { uploadSiteAssetToBlob } from "@/lib/blob-uploader"
@@ -713,6 +715,18 @@ function SiteDetailPage() {
                   )}
                 </div>
               </div>
+              {/* TODO - we need to a beautiful UX for the user to add his buttons for renderer here. They should also have the ability to edit and delete the buttons and change the rank */}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Navigation Buttons</CardTitle>
+              <CardDescription>
+                Configure quick-access buttons and where they appear in the UI.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <ButtonsEditor site={site} sitesCol={sitesCol} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -1178,6 +1192,216 @@ function SiteDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  )
+}
+
+function ButtonsEditor({
+  site,
+  sitesCol,
+}: {
+  site: SiteRow
+  sitesCol: ReturnType<typeof getOrgSitesCollection> | null
+}) {
+  const positions = [
+    { value: "sidebar_top", label: "Sidebar (Top)" },
+    { value: "sidebar_bottom", label: "Sidebar (Bottom)" },
+    { value: "topbar_left", label: "Topbar (Left)" },
+    { value: "topbar_right", label: "Topbar (Right)" },
+  ] as const
+
+  type Btn = {
+    id: string
+    label: string
+    href: string
+    iconName?: string | null
+    slug?: string | null
+    position: (typeof positions)[number]["value"]
+    rank: number
+    target?: "_self" | "_blank"
+  }
+
+  const buttons: Btn[] = Array.isArray(site.buttons) ? site.buttons : []
+
+  function byPos(p: Btn["position"]) {
+    return buttons
+      .filter((b) => b.position === p)
+      .slice()
+      .sort((a, b) => a.rank - b.rank)
+  }
+
+  async function apply(next: Btn[]) {
+    await sitesCol?.update(site.id, (draft) => void (draft.buttons = next))
+  }
+
+  async function addButton() {
+    const id = crypto.randomUUID()
+    const next: Btn = {
+      id,
+      label: "New Button",
+      href: "/",
+      iconName: null,
+      slug: null,
+      position: "sidebar_top",
+      rank: (byPos("sidebar_top").at(-1)?.rank ?? -1) + 1,
+      target: "_self",
+    }
+    await apply([...buttons, next])
+  }
+
+  function move(b: Btn, dir: -1 | 1) {
+    const siblings = byPos(b.position)
+    const idx = siblings.findIndex((x) => x.id === b.id)
+    const swapWith = siblings[idx + dir]
+    if (!swapWith) return
+    const aRank = b.rank
+    const bRank = swapWith.rank
+    const next = buttons.map((x) =>
+      x.id === b.id
+        ? { ...x, rank: bRank }
+        : x.id === swapWith.id
+          ? { ...x, rank: aRank }
+          : x
+    )
+    apply(next)
+  }
+
+  function update(b: Btn, patch: Partial<Btn>) {
+    const candidate = { ...b, ...patch }
+    // simple validation:
+    if (!candidate.label.trim()) {
+      console.warn("skip update: label empty")
+      return
+    }
+    if (!candidate.href.trim()) {
+      console.warn("skip update: href empty")
+      return
+    }
+    // optionally: validate that href is valid URL or path
+    const next = buttons.map((x) => (x.id === b.id ? candidate : x))
+    // same logic for position/rank
+    if (patch.position && patch.position !== b.position) {
+      const end = (byPos(patch.position).at(-1)?.rank ?? -1) + 1
+      next.forEach((n) => {
+        if (n.id === b.id) n.rank = end
+      })
+    }
+    apply(next)
+  }
+
+  function remove(b: Btn) {
+    apply(buttons.filter((x) => x.id !== b.id))
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Buttons can link to internal routes (e.g.{" "}
+          <code className="px-1">/space/slug/page</code>) or external URLs. Use
+          the position and rank to control placement & order.
+        </p>
+        <Button size="sm" onClick={addButton}>
+          <Plus className="h-4 w-4 mr-1" />
+          Add Button
+        </Button>
+      </div>
+
+      {positions.map((pos) => {
+        const items = byPos(pos.value)
+        return (
+          <div key={pos.value} className="space-y-2">
+            <h4 className="text-sm font-medium">{pos.label}</h4>
+            {items.length === 0 ? (
+              <div className="border-2 border-dashed rounded-lg p-4 text-xs text-muted-foreground">
+                No buttons in this section
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {items.map((b, idx) => (
+                  <div
+                    key={b.id}
+                    className="flex flex-col sm:flex-row gap-2 sm:items-center p-3 border rounded-lg bg-card"
+                  >
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={b.label}
+                        onChange={(e) => update(b, { label: e.target.value })}
+                        className="w-[160px]"
+                        placeholder="Label"
+                      />
+                      <Input
+                        value={b.href}
+                        onChange={(e) => update(b, { href: e.target.value })}
+                        className="w-[260px]"
+                        placeholder="/docs/getting-started or https://…"
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+                      <select
+                        className="h-9 rounded-md border bg-background px-2 text-sm"
+                        value={b.position}
+                        onChange={(e) =>
+                          update(b, {
+                            position: e.target.value as Btn["position"],
+                          })
+                        }
+                      >
+                        {positions.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="h-9 rounded-md border bg-background px-2 text-sm"
+                        value={b.target ?? "_blank"}
+                        onChange={(e) =>
+                          update(b, {
+                            target: e.target.value as "_self" | "_blank",
+                          })
+                        }
+                      >
+                        <option value="_blank">New tab</option>
+                        <option value="_self">Same tab</option>
+                      </select>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          disabled={idx === 0}
+                          onClick={() => move(b, -1)}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          disabled={idx === items.length - 1}
+                          onClick={() => move(b, +1)}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => remove(b)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

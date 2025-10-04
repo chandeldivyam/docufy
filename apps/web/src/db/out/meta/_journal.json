@@ -71,6 +71,13 @@
       "when": 1759511891161,
       "tag": "0009_flashy_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1759546483222,
+      "tag": "0010_woozy_starhawk",
+      "breakpoints": true
     }
   ]
 }

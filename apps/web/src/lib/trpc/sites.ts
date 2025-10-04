@@ -61,6 +61,22 @@ function newBuildId() {
 }
 
 const ThemeTokensZ = z.record(z.string())
+const ButtonPositionZ = z.enum([
+  "sidebar_top",
+  "sidebar_bottom",
+  "topbar_left",
+  "topbar_right",
+])
+const ButtonZ = z.object({
+  id: z.string(),
+  label: z.string().min(1),
+  href: z.string().min(1),
+  iconName: z.string().nullable().optional(),
+  slug: z.string().nullable().optional(),
+  position: ButtonPositionZ,
+  rank: z.number().int(),
+  target: z.enum(["_self", "_blank"]).optional(),
+})
 
 export const sitesRouter = router({
   create: authedProcedure
@@ -72,6 +88,7 @@ export const sitesRouter = router({
         slug: z.string().min(1).optional(),
         baseUrl: z.string().url(),
         storeId: z.string().min(1),
+        buttons: z.array(ButtonZ).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -111,6 +128,7 @@ export const sitesRouter = router({
           storeId: input.storeId,
           baseUrl: input.baseUrl,
           primaryHost: allocatePrimaryHost(slug),
+          buttons: input.buttons ?? [],
         })
         const txid = await generateTxId(tx)
         return { txid }
@@ -130,6 +148,7 @@ export const sitesRouter = router({
         logoUrlLight: z.string().url().nullable().optional(),
         logoUrlDark: z.string().url().nullable().optional(),
         faviconUrl: z.string().url().nullable().optional(),
+        buttons: z.array(ButtonZ).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -162,6 +181,7 @@ export const sitesRouter = router({
         patch.logoUrlLight = input.logoUrlLight
       if (input.logoUrlDark !== undefined) patch.logoUrlDark = input.logoUrlDark
       if (input.faviconUrl !== undefined) patch.faviconUrl = input.faviconUrl
+      if (input.buttons !== undefined) patch.buttons = input.buttons
 
       if (input.slug !== undefined) {
         const next = slugify(input.slug)
@@ -810,4 +830,6 @@ export const sitesRouter = router({
         return { txid }
       })
     }),
+
+  // Adding a mutation so that we can add all our buttons correctly (with ranks) in the database
 })

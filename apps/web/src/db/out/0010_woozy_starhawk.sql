@@ -1,0 +1,1 @@
+ALTER TABLE "sites" ADD COLUMN "buttons" jsonb DEFAULT '[]'::jsonb NOT NULL;
