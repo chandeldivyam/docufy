@@ -1,0 +1,3 @@
+ALTER TABLE "documents" ADD COLUMN "spec_source_id" text;--> statement-breakpoint
+ALTER TABLE "documents" ADD CONSTRAINT "documents_spec_source_id_documents_id_fk" FOREIGN KEY ("spec_source_id") REFERENCES "public"."documents"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "documents_api_path_method_source_unique" ON "documents" USING btree ("api_path","api_method","spec_source_id") WHERE "documents"."api_path" IS NOT NULL AND "documents"."api_method" IS NOT NULL AND "documents"."spec_source_id" IS NOT NULL;

@@ -81,6 +81,7 @@ export const documentsTable = pgTable(
     apiPath: text("api_path"),
     apiMethod: text("api_method"),
     archivedAt: timestamp("archived_at"),
+    specSourceId: text("spec_source_id"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -94,6 +95,16 @@ export const documentsTable = pgTable(
       columns: [t.parentId],
       foreignColumns: [t.id],
     }).onDelete("set null"),
+    specSourceFk: foreignKey({
+      name: "documents_spec_source_id_documents_id_fk", // optional but nice
+      columns: [t.specSourceId],
+      foreignColumns: [t.id],
+    }).onDelete("set null"),
+    apiUniqueIdx: uniqueIndex("documents_api_path_method_source_unique")
+      .on(t.apiPath, t.apiMethod, t.specSourceId)
+      .where(
+        sql`${t.apiPath} IS NOT NULL AND ${t.apiMethod} IS NOT NULL AND ${t.specSourceId} IS NOT NULL`
+      ),
   })
 )
 
@@ -131,6 +142,7 @@ export const createDocumentSchema = createInsertSchema(documentsTable)
     apiSpecBlobKey: z.string().optional(),
     apiPath: z.string().optional(),
     apiMethod: z.string().optional(),
+    specSourceId: z.string().optional(),
   })
 
 export const sitesTable = pgTable(

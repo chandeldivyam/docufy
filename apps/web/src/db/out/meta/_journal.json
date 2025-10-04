@@ -78,6 +78,13 @@
       "when": 1759546483222,
       "tag": "0010_woozy_starhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1759555227600,
+      "tag": "0011_loud_sabretooth",
+      "breakpoints": true
     }
   ]
 }

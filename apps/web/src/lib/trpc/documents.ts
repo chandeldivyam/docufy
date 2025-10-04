@@ -135,6 +135,7 @@ export const documentsRouter = router({
           apiSpecBlobKey: input.apiSpecBlobKey ?? null,
           apiPath: input.apiPath ?? null,
           apiMethod: input.apiMethod ?? null,
+          specSourceId: input.apiPath ? parentId : null,
         })
 
         const txid = await generateTxId(tx)
