@@ -1,0 +1,9 @@
+**/node_modules
+**/.next
+**/.output
+**/dist
+**/.turbo
+.sst
+.git
+.gitignore
+Dockerfile

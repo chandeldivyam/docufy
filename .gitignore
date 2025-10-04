@@ -39,3 +39,6 @@ guidelines
 plans
 .vercel
 .env*.local
+
+# sst
+.sst

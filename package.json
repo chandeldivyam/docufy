@@ -15,12 +15,13 @@
   ],
   "prettier": "@docufy/prettier-config",
   "devDependencies": {
-    "@docufy/eslint-config": "workspace:*",
-    "@docufy/prettier-config": "workspace:*",
     "@changesets/cli": "^2.27.0",
     "@commitlint/cli": "^19.0.0",
     "@commitlint/config-conventional": "^19.0.0",
+    "@docufy/eslint-config": "workspace:*",
+    "@docufy/prettier-config": "workspace:*",
     "@eslint/js": "^9.0.0",
+    "@types/aws-lambda": "8.10.155",
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "globals": "^14.0.0",
@@ -30,18 +31,19 @@
     "prettier-plugin-tailwindcss": "^0.5.0",
     "turbo": "^2.0.0",
     "typescript": "^5.6.0",
-    "typescript-eslint": "^8.0.0"
+    "typescript-eslint": "^8.0.0",
+    "sst": "3.17.14"
   },
   "scripts": {
-    "dev": "turbo run dev --parallel",
     "build": "turbo run build",
     "build:packages": "turbo run build --filter='./packages/*'",
-    "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
+    "ci:verify": "pnpm -s lint && pnpm -s typecheck && pnpm -s build",
+    "dev": "turbo run dev --parallel",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "ci:verify": "pnpm -s lint && pnpm -s typecheck && pnpm -s build",
-    "prepare": "husky"
+    "lint": "turbo run lint",
+    "prepare": "husky",
+    "typecheck": "turbo run typecheck"
   },
   "pnpm": {
     "overrides": {

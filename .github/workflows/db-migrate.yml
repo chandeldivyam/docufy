@@ -1,0 +1,53 @@
+name: Apply DB migrations (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Which environment to migrate?'
+        type: choice
+        options: [prod, staging]
+        default: prod
+      dry_run:
+        description: 'Print SQL only (no writes)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-migrate-${{ github.event.inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Select DATABASE_URL for target
+        run: |
+          if [ "${{ inputs.target }}" = "prod" ]; then
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+          else
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL_STAGING }}" >> $GITHUB_ENV
+          fi
+
+      - name: Apply migrations
+        # Package "web" defines: "migrate": "drizzle-kit migrate"
+        run: pnpm --filter web migrate $([[ "${{ inputs.dry_run }}" == "true" ]] && echo "--print" || true)
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}

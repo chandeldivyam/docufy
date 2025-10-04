@@ -1,0 +1,80 @@
+name: Deploy (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'SST stage to deploy'
+        type: choice
+        options: [prod, staging]
+        default: prod
+      print_logs:
+        description: 'Print verbose SST logs to console'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  # If you use OIDC, uncomment the next line and the OIDC step below.
+  # id-token: write
+
+concurrency:
+  group: deploy-${{ github.event.inputs.stage }}
+  cancel-in-progress: false
+
+env:
+  # Required by your sst.config.ts for Vercel-managed DNS
+  VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+  VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+  DOCKER_BUILDKIT: '1'
+  # Print SST logs inline (optional)
+  SST_PRINT_LOGS: ${{ inputs.print_logs }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # --- Choose ONE auth method ---
+
+      # (Recommended) OIDC — short-lived credentials via IAM Role
+      # - name: Configure AWS credentials (OIDC)
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      #     aws-region: us-east-1  # or your region
+
+      # (Simple) Long-lived keys stored as GitHub secrets
+      - name: Configure AWS credentials (access keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # set to your region
+
+      # Install just enough to run the SST CLI
+      - name: Install workspace deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Show SST secrets (sanity check)
+        run: pnpm dlx sst secret list --stage ${{ inputs.stage }}
+
+      - name: Deploy with SST
+        run: pnpm dlx sst deploy --stage ${{ inputs.stage }} --print-logs
+
+      # Basic prod smoke test against your health endpoint
+      - name: Health check (prod only)
+        if: ${{ inputs.stage == 'prod' }}
+        run: |
+          set -euo pipefail
+          curl -fsS https://app.trydocufy.com/api/healthz

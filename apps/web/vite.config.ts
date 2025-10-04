@@ -20,7 +20,7 @@ const config = defineConfig({
       spa: {
         enabled: true,
       },
-      target: "vercel",
+      target: "node_server",
     }),
   ],
   ssr: {
