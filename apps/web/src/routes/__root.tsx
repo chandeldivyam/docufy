@@ -1,3 +1,4 @@
+import * as React from "react"
 import {
   Outlet,
   HeadContent,
@@ -41,13 +42,14 @@ export const Route = createRootRoute({
       },
     ],
   }),
+  shellComponent: RootDocument,
   component: () => (
     <ThemeProvider defaultTheme="system" enableSystem>
-      <RootDocument>
+      <>
         <Outlet />
         <TanStackRouterDevtools />
         <Toaster />
-      </RootDocument>
+      </>
     </ThemeProvider>
   ),
   notFoundComponent: () => <div>Not found</div>,

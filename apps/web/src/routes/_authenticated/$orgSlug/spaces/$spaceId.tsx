@@ -1,4 +1,3 @@
-// apps/web/src/routes/_authenticated/$orgSlug/spaces/$spaceId.tsx
 import {
   createFileRoute,
   Outlet,

@@ -1,3 +1,4 @@
+import * as React from "react"
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 import { authClient } from "@/lib/auth-client"

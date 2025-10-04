@@ -57,7 +57,7 @@ export function CollaborativeEditor({
         { orgSlug, documentId }
       ),
       autofocus: "start",
-      shouldRerenderOnTransaction: true,
+      shouldRerenderOnTransaction: false,
       editorProps: {
         attributes: {
           class:
