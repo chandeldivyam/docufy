@@ -8,45 +8,41 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { createServerRootRoute } from "@tanstack/react-start/server"
-
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as LogoutRouteImport } from "./routes/logout"
 import { Route as LoginRouteImport } from "./routes/login"
 import { Route as AuthenticatedRouteImport } from "./routes/_authenticated"
+import { Route as ApiUserInvitationsRouteImport } from "./routes/api/user-invitations"
+import { Route as ApiSpacesRouteImport } from "./routes/api/spaces"
+import { Route as ApiSitesRouteImport } from "./routes/api/sites"
+import { Route as ApiSiteThemesRouteImport } from "./routes/api/site-themes"
+import { Route as ApiSiteSpacesRouteImport } from "./routes/api/site-spaces"
+import { Route as ApiSiteDomainsRouteImport } from "./routes/api/site-domains"
+import { Route as ApiSiteBuildsRouteImport } from "./routes/api/site-builds"
+import { Route as ApiOrgUserProfilesRouteImport } from "./routes/api/org-user-profiles"
+import { Route as ApiMyOrganizationsRouteImport } from "./routes/api/my-organizations"
+import { Route as ApiInvitationsRouteImport } from "./routes/api/invitations"
+import { Route as ApiInngestRouteImport } from "./routes/api/inngest"
+import { Route as ApiHelloRouteImport } from "./routes/api/hello"
+import { Route as ApiHealthzRouteImport } from "./routes/api/healthz"
+import { Route as ApiDocumentsRouteImport } from "./routes/api/documents"
+import { Route as ApiDocumentUpdatesRouteImport } from "./routes/api/document-updates"
+import { Route as ApiAwarenessUpdatesRouteImport } from "./routes/api/awareness-updates"
 import { Route as AuthenticatedOrgsRouteImport } from "./routes/_authenticated/orgs"
 import { Route as AuthenticatedActiveOrgRouteImport } from "./routes/_authenticated/_active-org"
 import { Route as AuthenticatedOrgSlugRouteImport } from "./routes/_authenticated/$orgSlug"
 import { Route as AuthenticatedActiveOrgIndexRouteImport } from "./routes/_authenticated/_active-org/index"
 import { Route as AuthenticatedOrgSlugIndexRouteImport } from "./routes/_authenticated/$orgSlug/index"
+import { Route as ApiTrpcSplatRouteImport } from "./routes/api/trpc/$"
+import { Route as ApiShapeSplatRouteImport } from "./routes/api/shape/$"
+import { Route as ApiBlobUploadRouteImport } from "./routes/api/blob/upload"
+import { Route as ApiAuthSplatRouteImport } from "./routes/api/auth/$"
 import { Route as AuthenticatedActiveOrgSettingsRouteImport } from "./routes/_authenticated/_active-org/settings"
 import { Route as AuthenticatedOrgSlugSettingsRouteImport } from "./routes/_authenticated/$orgSlug/settings"
 import { Route as AuthenticatedOrgSlugSpacesIndexRouteImport } from "./routes/_authenticated/$orgSlug/spaces/index"
 import { Route as AuthenticatedOrgSlugSpacesSpaceIdRouteImport } from "./routes/_authenticated/$orgSlug/spaces/$spaceId"
 import { Route as AuthenticatedOrgSlugSitesSiteIdRouteImport } from "./routes/_authenticated/$orgSlug/sites/$siteId"
 import { Route as AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport } from "./routes/_authenticated/$orgSlug/spaces/$spaceId/document/$docId"
-import { ServerRoute as ApiUserInvitationsServerRouteImport } from "./routes/api/user-invitations"
-import { ServerRoute as ApiSpacesServerRouteImport } from "./routes/api/spaces"
-import { ServerRoute as ApiSitesServerRouteImport } from "./routes/api/sites"
-import { ServerRoute as ApiSiteThemesServerRouteImport } from "./routes/api/site-themes"
-import { ServerRoute as ApiSiteSpacesServerRouteImport } from "./routes/api/site-spaces"
-import { ServerRoute as ApiSiteDomainsServerRouteImport } from "./routes/api/site-domains"
-import { ServerRoute as ApiSiteBuildsServerRouteImport } from "./routes/api/site-builds"
-import { ServerRoute as ApiOrgUserProfilesServerRouteImport } from "./routes/api/org-user-profiles"
-import { ServerRoute as ApiMyOrganizationsServerRouteImport } from "./routes/api/my-organizations"
-import { ServerRoute as ApiInvitationsServerRouteImport } from "./routes/api/invitations"
-import { ServerRoute as ApiInngestServerRouteImport } from "./routes/api/inngest"
-import { ServerRoute as ApiHelloServerRouteImport } from "./routes/api/hello"
-import { ServerRoute as ApiHealthzServerRouteImport } from "./routes/api/healthz"
-import { ServerRoute as ApiDocumentsServerRouteImport } from "./routes/api/documents"
-import { ServerRoute as ApiDocumentUpdatesServerRouteImport } from "./routes/api/document-updates"
-import { ServerRoute as ApiAwarenessUpdatesServerRouteImport } from "./routes/api/awareness-updates"
-import { ServerRoute as ApiTrpcSplatServerRouteImport } from "./routes/api/trpc/$"
-import { ServerRoute as ApiShapeSplatServerRouteImport } from "./routes/api/shape/$"
-import { ServerRoute as ApiBlobUploadServerRouteImport } from "./routes/api/blob/upload"
-import { ServerRoute as ApiAuthSplatServerRouteImport } from "./routes/api/auth/$"
-
-const rootServerRouteImport = createServerRootRoute()
 
 const LogoutRoute = LogoutRouteImport.update({
   id: "/logout",
@@ -60,6 +56,86 @@ const LoginRoute = LoginRouteImport.update({
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: "/_authenticated",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUserInvitationsRoute = ApiUserInvitationsRouteImport.update({
+  id: "/api/user-invitations",
+  path: "/api/user-invitations",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSpacesRoute = ApiSpacesRouteImport.update({
+  id: "/api/spaces",
+  path: "/api/spaces",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSitesRoute = ApiSitesRouteImport.update({
+  id: "/api/sites",
+  path: "/api/sites",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSiteThemesRoute = ApiSiteThemesRouteImport.update({
+  id: "/api/site-themes",
+  path: "/api/site-themes",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSiteSpacesRoute = ApiSiteSpacesRouteImport.update({
+  id: "/api/site-spaces",
+  path: "/api/site-spaces",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSiteDomainsRoute = ApiSiteDomainsRouteImport.update({
+  id: "/api/site-domains",
+  path: "/api/site-domains",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSiteBuildsRoute = ApiSiteBuildsRouteImport.update({
+  id: "/api/site-builds",
+  path: "/api/site-builds",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOrgUserProfilesRoute = ApiOrgUserProfilesRouteImport.update({
+  id: "/api/org-user-profiles",
+  path: "/api/org-user-profiles",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMyOrganizationsRoute = ApiMyOrganizationsRouteImport.update({
+  id: "/api/my-organizations",
+  path: "/api/my-organizations",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInvitationsRoute = ApiInvitationsRouteImport.update({
+  id: "/api/invitations",
+  path: "/api/invitations",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInngestRoute = ApiInngestRouteImport.update({
+  id: "/api/inngest",
+  path: "/api/inngest",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHelloRoute = ApiHelloRouteImport.update({
+  id: "/api/hello",
+  path: "/api/hello",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthzRoute = ApiHealthzRouteImport.update({
+  id: "/api/healthz",
+  path: "/api/healthz",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDocumentsRoute = ApiDocumentsRouteImport.update({
+  id: "/api/documents",
+  path: "/api/documents",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDocumentUpdatesRoute = ApiDocumentUpdatesRouteImport.update({
+  id: "/api/document-updates",
+  path: "/api/document-updates",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAwarenessUpdatesRoute = ApiAwarenessUpdatesRouteImport.update({
+  id: "/api/awareness-updates",
+  path: "/api/awareness-updates",
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedOrgsRoute = AuthenticatedOrgsRouteImport.update({
@@ -88,6 +164,26 @@ const AuthenticatedOrgSlugIndexRoute =
     path: "/",
     getParentRoute: () => AuthenticatedOrgSlugRoute,
   } as any)
+const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
+  id: "/api/trpc/$",
+  path: "/api/trpc/$",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiShapeSplatRoute = ApiShapeSplatRouteImport.update({
+  id: "/api/shape/$",
+  path: "/api/shape/$",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBlobUploadRoute = ApiBlobUploadRouteImport.update({
+  id: "/api/blob/upload",
+  path: "/api/blob/upload",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: "/api/auth/$",
+  path: "/api/auth/$",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedActiveOrgSettingsRoute =
   AuthenticatedActiveOrgSettingsRouteImport.update({
     id: "/settings",
@@ -124,119 +220,34 @@ const AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute =
     path: "/document/$docId",
     getParentRoute: () => AuthenticatedOrgSlugSpacesSpaceIdRoute,
   } as any)
-const ApiUserInvitationsServerRoute =
-  ApiUserInvitationsServerRouteImport.update({
-    id: "/api/user-invitations",
-    path: "/api/user-invitations",
-    getParentRoute: () => rootServerRouteImport,
-  } as any)
-const ApiSpacesServerRoute = ApiSpacesServerRouteImport.update({
-  id: "/api/spaces",
-  path: "/api/spaces",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiSitesServerRoute = ApiSitesServerRouteImport.update({
-  id: "/api/sites",
-  path: "/api/sites",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiSiteThemesServerRoute = ApiSiteThemesServerRouteImport.update({
-  id: "/api/site-themes",
-  path: "/api/site-themes",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiSiteSpacesServerRoute = ApiSiteSpacesServerRouteImport.update({
-  id: "/api/site-spaces",
-  path: "/api/site-spaces",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiSiteDomainsServerRoute = ApiSiteDomainsServerRouteImport.update({
-  id: "/api/site-domains",
-  path: "/api/site-domains",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiSiteBuildsServerRoute = ApiSiteBuildsServerRouteImport.update({
-  id: "/api/site-builds",
-  path: "/api/site-builds",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiOrgUserProfilesServerRoute =
-  ApiOrgUserProfilesServerRouteImport.update({
-    id: "/api/org-user-profiles",
-    path: "/api/org-user-profiles",
-    getParentRoute: () => rootServerRouteImport,
-  } as any)
-const ApiMyOrganizationsServerRoute =
-  ApiMyOrganizationsServerRouteImport.update({
-    id: "/api/my-organizations",
-    path: "/api/my-organizations",
-    getParentRoute: () => rootServerRouteImport,
-  } as any)
-const ApiInvitationsServerRoute = ApiInvitationsServerRouteImport.update({
-  id: "/api/invitations",
-  path: "/api/invitations",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiInngestServerRoute = ApiInngestServerRouteImport.update({
-  id: "/api/inngest",
-  path: "/api/inngest",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiHelloServerRoute = ApiHelloServerRouteImport.update({
-  id: "/api/hello",
-  path: "/api/hello",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiHealthzServerRoute = ApiHealthzServerRouteImport.update({
-  id: "/api/healthz",
-  path: "/api/healthz",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiDocumentsServerRoute = ApiDocumentsServerRouteImport.update({
-  id: "/api/documents",
-  path: "/api/documents",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiDocumentUpdatesServerRoute =
-  ApiDocumentUpdatesServerRouteImport.update({
-    id: "/api/document-updates",
-    path: "/api/document-updates",
-    getParentRoute: () => rootServerRouteImport,
-  } as any)
-const ApiAwarenessUpdatesServerRoute =
-  ApiAwarenessUpdatesServerRouteImport.update({
-    id: "/api/awareness-updates",
-    path: "/api/awareness-updates",
-    getParentRoute: () => rootServerRouteImport,
-  } as any)
-const ApiTrpcSplatServerRoute = ApiTrpcSplatServerRouteImport.update({
-  id: "/api/trpc/$",
-  path: "/api/trpc/$",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiShapeSplatServerRoute = ApiShapeSplatServerRouteImport.update({
-  id: "/api/shape/$",
-  path: "/api/shape/$",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiBlobUploadServerRoute = ApiBlobUploadServerRouteImport.update({
-  id: "/api/blob/upload",
-  path: "/api/blob/upload",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
-const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
-  id: "/api/auth/$",
-  path: "/api/auth/$",
-  getParentRoute: () => rootServerRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   "/login": typeof LoginRoute
   "/logout": typeof LogoutRoute
   "/$orgSlug": typeof AuthenticatedOrgSlugRouteWithChildren
   "/orgs": typeof AuthenticatedOrgsRoute
+  "/api/awareness-updates": typeof ApiAwarenessUpdatesRoute
+  "/api/document-updates": typeof ApiDocumentUpdatesRoute
+  "/api/documents": typeof ApiDocumentsRoute
+  "/api/healthz": typeof ApiHealthzRoute
+  "/api/hello": typeof ApiHelloRoute
+  "/api/inngest": typeof ApiInngestRoute
+  "/api/invitations": typeof ApiInvitationsRoute
+  "/api/my-organizations": typeof ApiMyOrganizationsRoute
+  "/api/org-user-profiles": typeof ApiOrgUserProfilesRoute
+  "/api/site-builds": typeof ApiSiteBuildsRoute
+  "/api/site-domains": typeof ApiSiteDomainsRoute
+  "/api/site-spaces": typeof ApiSiteSpacesRoute
+  "/api/site-themes": typeof ApiSiteThemesRoute
+  "/api/sites": typeof ApiSitesRoute
+  "/api/spaces": typeof ApiSpacesRoute
+  "/api/user-invitations": typeof ApiUserInvitationsRoute
   "/$orgSlug/settings": typeof AuthenticatedOrgSlugSettingsRoute
   "/settings": typeof AuthenticatedActiveOrgSettingsRoute
+  "/api/auth/$": typeof ApiAuthSplatRoute
+  "/api/blob/upload": typeof ApiBlobUploadRoute
+  "/api/shape/$": typeof ApiShapeSplatRoute
+  "/api/trpc/$": typeof ApiTrpcSplatRoute
   "/$orgSlug/": typeof AuthenticatedOrgSlugIndexRoute
   "/": typeof AuthenticatedActiveOrgIndexRoute
   "/$orgSlug/sites/$siteId": typeof AuthenticatedOrgSlugSitesSiteIdRoute
@@ -248,8 +259,28 @@ export interface FileRoutesByTo {
   "/login": typeof LoginRoute
   "/logout": typeof LogoutRoute
   "/orgs": typeof AuthenticatedOrgsRoute
+  "/api/awareness-updates": typeof ApiAwarenessUpdatesRoute
+  "/api/document-updates": typeof ApiDocumentUpdatesRoute
+  "/api/documents": typeof ApiDocumentsRoute
+  "/api/healthz": typeof ApiHealthzRoute
+  "/api/hello": typeof ApiHelloRoute
+  "/api/inngest": typeof ApiInngestRoute
+  "/api/invitations": typeof ApiInvitationsRoute
+  "/api/my-organizations": typeof ApiMyOrganizationsRoute
+  "/api/org-user-profiles": typeof ApiOrgUserProfilesRoute
+  "/api/site-builds": typeof ApiSiteBuildsRoute
+  "/api/site-domains": typeof ApiSiteDomainsRoute
+  "/api/site-spaces": typeof ApiSiteSpacesRoute
+  "/api/site-themes": typeof ApiSiteThemesRoute
+  "/api/sites": typeof ApiSitesRoute
+  "/api/spaces": typeof ApiSpacesRoute
+  "/api/user-invitations": typeof ApiUserInvitationsRoute
   "/$orgSlug/settings": typeof AuthenticatedOrgSlugSettingsRoute
   "/settings": typeof AuthenticatedActiveOrgSettingsRoute
+  "/api/auth/$": typeof ApiAuthSplatRoute
+  "/api/blob/upload": typeof ApiBlobUploadRoute
+  "/api/shape/$": typeof ApiShapeSplatRoute
+  "/api/trpc/$": typeof ApiTrpcSplatRoute
   "/$orgSlug": typeof AuthenticatedOrgSlugIndexRoute
   "/": typeof AuthenticatedActiveOrgIndexRoute
   "/$orgSlug/sites/$siteId": typeof AuthenticatedOrgSlugSitesSiteIdRoute
@@ -265,8 +296,28 @@ export interface FileRoutesById {
   "/_authenticated/$orgSlug": typeof AuthenticatedOrgSlugRouteWithChildren
   "/_authenticated/_active-org": typeof AuthenticatedActiveOrgRouteWithChildren
   "/_authenticated/orgs": typeof AuthenticatedOrgsRoute
+  "/api/awareness-updates": typeof ApiAwarenessUpdatesRoute
+  "/api/document-updates": typeof ApiDocumentUpdatesRoute
+  "/api/documents": typeof ApiDocumentsRoute
+  "/api/healthz": typeof ApiHealthzRoute
+  "/api/hello": typeof ApiHelloRoute
+  "/api/inngest": typeof ApiInngestRoute
+  "/api/invitations": typeof ApiInvitationsRoute
+  "/api/my-organizations": typeof ApiMyOrganizationsRoute
+  "/api/org-user-profiles": typeof ApiOrgUserProfilesRoute
+  "/api/site-builds": typeof ApiSiteBuildsRoute
+  "/api/site-domains": typeof ApiSiteDomainsRoute
+  "/api/site-spaces": typeof ApiSiteSpacesRoute
+  "/api/site-themes": typeof ApiSiteThemesRoute
+  "/api/sites": typeof ApiSitesRoute
+  "/api/spaces": typeof ApiSpacesRoute
+  "/api/user-invitations": typeof ApiUserInvitationsRoute
   "/_authenticated/$orgSlug/settings": typeof AuthenticatedOrgSlugSettingsRoute
   "/_authenticated/_active-org/settings": typeof AuthenticatedActiveOrgSettingsRoute
+  "/api/auth/$": typeof ApiAuthSplatRoute
+  "/api/blob/upload": typeof ApiBlobUploadRoute
+  "/api/shape/$": typeof ApiShapeSplatRoute
+  "/api/trpc/$": typeof ApiTrpcSplatRoute
   "/_authenticated/$orgSlug/": typeof AuthenticatedOrgSlugIndexRoute
   "/_authenticated/_active-org/": typeof AuthenticatedActiveOrgIndexRoute
   "/_authenticated/$orgSlug/sites/$siteId": typeof AuthenticatedOrgSlugSitesSiteIdRoute
@@ -281,8 +332,28 @@ export interface FileRouteTypes {
     | "/logout"
     | "/$orgSlug"
     | "/orgs"
+    | "/api/awareness-updates"
+    | "/api/document-updates"
+    | "/api/documents"
+    | "/api/healthz"
+    | "/api/hello"
+    | "/api/inngest"
+    | "/api/invitations"
+    | "/api/my-organizations"
+    | "/api/org-user-profiles"
+    | "/api/site-builds"
+    | "/api/site-domains"
+    | "/api/site-spaces"
+    | "/api/site-themes"
+    | "/api/sites"
+    | "/api/spaces"
+    | "/api/user-invitations"
     | "/$orgSlug/settings"
     | "/settings"
+    | "/api/auth/$"
+    | "/api/blob/upload"
+    | "/api/shape/$"
+    | "/api/trpc/$"
     | "/$orgSlug/"
     | "/"
     | "/$orgSlug/sites/$siteId"
@@ -294,8 +365,28 @@ export interface FileRouteTypes {
     | "/login"
     | "/logout"
     | "/orgs"
+    | "/api/awareness-updates"
+    | "/api/document-updates"
+    | "/api/documents"
+    | "/api/healthz"
+    | "/api/hello"
+    | "/api/inngest"
+    | "/api/invitations"
+    | "/api/my-organizations"
+    | "/api/org-user-profiles"
+    | "/api/site-builds"
+    | "/api/site-domains"
+    | "/api/site-spaces"
+    | "/api/site-themes"
+    | "/api/sites"
+    | "/api/spaces"
+    | "/api/user-invitations"
     | "/$orgSlug/settings"
     | "/settings"
+    | "/api/auth/$"
+    | "/api/blob/upload"
+    | "/api/shape/$"
+    | "/api/trpc/$"
     | "/$orgSlug"
     | "/"
     | "/$orgSlug/sites/$siteId"
@@ -310,8 +401,28 @@ export interface FileRouteTypes {
     | "/_authenticated/$orgSlug"
     | "/_authenticated/_active-org"
     | "/_authenticated/orgs"
+    | "/api/awareness-updates"
+    | "/api/document-updates"
+    | "/api/documents"
+    | "/api/healthz"
+    | "/api/hello"
+    | "/api/inngest"
+    | "/api/invitations"
+    | "/api/my-organizations"
+    | "/api/org-user-profiles"
+    | "/api/site-builds"
+    | "/api/site-domains"
+    | "/api/site-spaces"
+    | "/api/site-themes"
+    | "/api/sites"
+    | "/api/spaces"
+    | "/api/user-invitations"
     | "/_authenticated/$orgSlug/settings"
     | "/_authenticated/_active-org/settings"
+    | "/api/auth/$"
+    | "/api/blob/upload"
+    | "/api/shape/$"
+    | "/api/trpc/$"
     | "/_authenticated/$orgSlug/"
     | "/_authenticated/_active-org/"
     | "/_authenticated/$orgSlug/sites/$siteId"
@@ -324,164 +435,26 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   LogoutRoute: typeof LogoutRoute
-}
-export interface FileServerRoutesByFullPath {
-  "/api/awareness-updates": typeof ApiAwarenessUpdatesServerRoute
-  "/api/document-updates": typeof ApiDocumentUpdatesServerRoute
-  "/api/documents": typeof ApiDocumentsServerRoute
-  "/api/healthz": typeof ApiHealthzServerRoute
-  "/api/hello": typeof ApiHelloServerRoute
-  "/api/inngest": typeof ApiInngestServerRoute
-  "/api/invitations": typeof ApiInvitationsServerRoute
-  "/api/my-organizations": typeof ApiMyOrganizationsServerRoute
-  "/api/org-user-profiles": typeof ApiOrgUserProfilesServerRoute
-  "/api/site-builds": typeof ApiSiteBuildsServerRoute
-  "/api/site-domains": typeof ApiSiteDomainsServerRoute
-  "/api/site-spaces": typeof ApiSiteSpacesServerRoute
-  "/api/site-themes": typeof ApiSiteThemesServerRoute
-  "/api/sites": typeof ApiSitesServerRoute
-  "/api/spaces": typeof ApiSpacesServerRoute
-  "/api/user-invitations": typeof ApiUserInvitationsServerRoute
-  "/api/auth/$": typeof ApiAuthSplatServerRoute
-  "/api/blob/upload": typeof ApiBlobUploadServerRoute
-  "/api/shape/$": typeof ApiShapeSplatServerRoute
-  "/api/trpc/$": typeof ApiTrpcSplatServerRoute
-}
-export interface FileServerRoutesByTo {
-  "/api/awareness-updates": typeof ApiAwarenessUpdatesServerRoute
-  "/api/document-updates": typeof ApiDocumentUpdatesServerRoute
-  "/api/documents": typeof ApiDocumentsServerRoute
-  "/api/healthz": typeof ApiHealthzServerRoute
-  "/api/hello": typeof ApiHelloServerRoute
-  "/api/inngest": typeof ApiInngestServerRoute
-  "/api/invitations": typeof ApiInvitationsServerRoute
-  "/api/my-organizations": typeof ApiMyOrganizationsServerRoute
-  "/api/org-user-profiles": typeof ApiOrgUserProfilesServerRoute
-  "/api/site-builds": typeof ApiSiteBuildsServerRoute
-  "/api/site-domains": typeof ApiSiteDomainsServerRoute
-  "/api/site-spaces": typeof ApiSiteSpacesServerRoute
-  "/api/site-themes": typeof ApiSiteThemesServerRoute
-  "/api/sites": typeof ApiSitesServerRoute
-  "/api/spaces": typeof ApiSpacesServerRoute
-  "/api/user-invitations": typeof ApiUserInvitationsServerRoute
-  "/api/auth/$": typeof ApiAuthSplatServerRoute
-  "/api/blob/upload": typeof ApiBlobUploadServerRoute
-  "/api/shape/$": typeof ApiShapeSplatServerRoute
-  "/api/trpc/$": typeof ApiTrpcSplatServerRoute
-}
-export interface FileServerRoutesById {
-  __root__: typeof rootServerRouteImport
-  "/api/awareness-updates": typeof ApiAwarenessUpdatesServerRoute
-  "/api/document-updates": typeof ApiDocumentUpdatesServerRoute
-  "/api/documents": typeof ApiDocumentsServerRoute
-  "/api/healthz": typeof ApiHealthzServerRoute
-  "/api/hello": typeof ApiHelloServerRoute
-  "/api/inngest": typeof ApiInngestServerRoute
-  "/api/invitations": typeof ApiInvitationsServerRoute
-  "/api/my-organizations": typeof ApiMyOrganizationsServerRoute
-  "/api/org-user-profiles": typeof ApiOrgUserProfilesServerRoute
-  "/api/site-builds": typeof ApiSiteBuildsServerRoute
-  "/api/site-domains": typeof ApiSiteDomainsServerRoute
-  "/api/site-spaces": typeof ApiSiteSpacesServerRoute
-  "/api/site-themes": typeof ApiSiteThemesServerRoute
-  "/api/sites": typeof ApiSitesServerRoute
-  "/api/spaces": typeof ApiSpacesServerRoute
-  "/api/user-invitations": typeof ApiUserInvitationsServerRoute
-  "/api/auth/$": typeof ApiAuthSplatServerRoute
-  "/api/blob/upload": typeof ApiBlobUploadServerRoute
-  "/api/shape/$": typeof ApiShapeSplatServerRoute
-  "/api/trpc/$": typeof ApiTrpcSplatServerRoute
-}
-export interface FileServerRouteTypes {
-  fileServerRoutesByFullPath: FileServerRoutesByFullPath
-  fullPaths:
-    | "/api/awareness-updates"
-    | "/api/document-updates"
-    | "/api/documents"
-    | "/api/healthz"
-    | "/api/hello"
-    | "/api/inngest"
-    | "/api/invitations"
-    | "/api/my-organizations"
-    | "/api/org-user-profiles"
-    | "/api/site-builds"
-    | "/api/site-domains"
-    | "/api/site-spaces"
-    | "/api/site-themes"
-    | "/api/sites"
-    | "/api/spaces"
-    | "/api/user-invitations"
-    | "/api/auth/$"
-    | "/api/blob/upload"
-    | "/api/shape/$"
-    | "/api/trpc/$"
-  fileServerRoutesByTo: FileServerRoutesByTo
-  to:
-    | "/api/awareness-updates"
-    | "/api/document-updates"
-    | "/api/documents"
-    | "/api/healthz"
-    | "/api/hello"
-    | "/api/inngest"
-    | "/api/invitations"
-    | "/api/my-organizations"
-    | "/api/org-user-profiles"
-    | "/api/site-builds"
-    | "/api/site-domains"
-    | "/api/site-spaces"
-    | "/api/site-themes"
-    | "/api/sites"
-    | "/api/spaces"
-    | "/api/user-invitations"
-    | "/api/auth/$"
-    | "/api/blob/upload"
-    | "/api/shape/$"
-    | "/api/trpc/$"
-  id:
-    | "__root__"
-    | "/api/awareness-updates"
-    | "/api/document-updates"
-    | "/api/documents"
-    | "/api/healthz"
-    | "/api/hello"
-    | "/api/inngest"
-    | "/api/invitations"
-    | "/api/my-organizations"
-    | "/api/org-user-profiles"
-    | "/api/site-builds"
-    | "/api/site-domains"
-    | "/api/site-spaces"
-    | "/api/site-themes"
-    | "/api/sites"
-    | "/api/spaces"
-    | "/api/user-invitations"
-    | "/api/auth/$"
-    | "/api/blob/upload"
-    | "/api/shape/$"
-    | "/api/trpc/$"
-  fileServerRoutesById: FileServerRoutesById
-}
-export interface RootServerRouteChildren {
-  ApiAwarenessUpdatesServerRoute: typeof ApiAwarenessUpdatesServerRoute
-  ApiDocumentUpdatesServerRoute: typeof ApiDocumentUpdatesServerRoute
-  ApiDocumentsServerRoute: typeof ApiDocumentsServerRoute
-  ApiHealthzServerRoute: typeof ApiHealthzServerRoute
-  ApiHelloServerRoute: typeof ApiHelloServerRoute
-  ApiInngestServerRoute: typeof ApiInngestServerRoute
-  ApiInvitationsServerRoute: typeof ApiInvitationsServerRoute
-  ApiMyOrganizationsServerRoute: typeof ApiMyOrganizationsServerRoute
-  ApiOrgUserProfilesServerRoute: typeof ApiOrgUserProfilesServerRoute
-  ApiSiteBuildsServerRoute: typeof ApiSiteBuildsServerRoute
-  ApiSiteDomainsServerRoute: typeof ApiSiteDomainsServerRoute
-  ApiSiteSpacesServerRoute: typeof ApiSiteSpacesServerRoute
-  ApiSiteThemesServerRoute: typeof ApiSiteThemesServerRoute
-  ApiSitesServerRoute: typeof ApiSitesServerRoute
-  ApiSpacesServerRoute: typeof ApiSpacesServerRoute
-  ApiUserInvitationsServerRoute: typeof ApiUserInvitationsServerRoute
-  ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute
-  ApiBlobUploadServerRoute: typeof ApiBlobUploadServerRoute
-  ApiShapeSplatServerRoute: typeof ApiShapeSplatServerRoute
-  ApiTrpcSplatServerRoute: typeof ApiTrpcSplatServerRoute
+  ApiAwarenessUpdatesRoute: typeof ApiAwarenessUpdatesRoute
+  ApiDocumentUpdatesRoute: typeof ApiDocumentUpdatesRoute
+  ApiDocumentsRoute: typeof ApiDocumentsRoute
+  ApiHealthzRoute: typeof ApiHealthzRoute
+  ApiHelloRoute: typeof ApiHelloRoute
+  ApiInngestRoute: typeof ApiInngestRoute
+  ApiInvitationsRoute: typeof ApiInvitationsRoute
+  ApiMyOrganizationsRoute: typeof ApiMyOrganizationsRoute
+  ApiOrgUserProfilesRoute: typeof ApiOrgUserProfilesRoute
+  ApiSiteBuildsRoute: typeof ApiSiteBuildsRoute
+  ApiSiteDomainsRoute: typeof ApiSiteDomainsRoute
+  ApiSiteSpacesRoute: typeof ApiSiteSpacesRoute
+  ApiSiteThemesRoute: typeof ApiSiteThemesRoute
+  ApiSitesRoute: typeof ApiSitesRoute
+  ApiSpacesRoute: typeof ApiSpacesRoute
+  ApiUserInvitationsRoute: typeof ApiUserInvitationsRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiBlobUploadRoute: typeof ApiBlobUploadRoute
+  ApiShapeSplatRoute: typeof ApiShapeSplatRoute
+  ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
 declare module "@tanstack/react-router" {
@@ -505,6 +478,118 @@ declare module "@tanstack/react-router" {
       path: ""
       fullPath: ""
       preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/user-invitations": {
+      id: "/api/user-invitations"
+      path: "/api/user-invitations"
+      fullPath: "/api/user-invitations"
+      preLoaderRoute: typeof ApiUserInvitationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/spaces": {
+      id: "/api/spaces"
+      path: "/api/spaces"
+      fullPath: "/api/spaces"
+      preLoaderRoute: typeof ApiSpacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/sites": {
+      id: "/api/sites"
+      path: "/api/sites"
+      fullPath: "/api/sites"
+      preLoaderRoute: typeof ApiSitesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/site-themes": {
+      id: "/api/site-themes"
+      path: "/api/site-themes"
+      fullPath: "/api/site-themes"
+      preLoaderRoute: typeof ApiSiteThemesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/site-spaces": {
+      id: "/api/site-spaces"
+      path: "/api/site-spaces"
+      fullPath: "/api/site-spaces"
+      preLoaderRoute: typeof ApiSiteSpacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/site-domains": {
+      id: "/api/site-domains"
+      path: "/api/site-domains"
+      fullPath: "/api/site-domains"
+      preLoaderRoute: typeof ApiSiteDomainsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/site-builds": {
+      id: "/api/site-builds"
+      path: "/api/site-builds"
+      fullPath: "/api/site-builds"
+      preLoaderRoute: typeof ApiSiteBuildsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/org-user-profiles": {
+      id: "/api/org-user-profiles"
+      path: "/api/org-user-profiles"
+      fullPath: "/api/org-user-profiles"
+      preLoaderRoute: typeof ApiOrgUserProfilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/my-organizations": {
+      id: "/api/my-organizations"
+      path: "/api/my-organizations"
+      fullPath: "/api/my-organizations"
+      preLoaderRoute: typeof ApiMyOrganizationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/invitations": {
+      id: "/api/invitations"
+      path: "/api/invitations"
+      fullPath: "/api/invitations"
+      preLoaderRoute: typeof ApiInvitationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/inngest": {
+      id: "/api/inngest"
+      path: "/api/inngest"
+      fullPath: "/api/inngest"
+      preLoaderRoute: typeof ApiInngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/hello": {
+      id: "/api/hello"
+      path: "/api/hello"
+      fullPath: "/api/hello"
+      preLoaderRoute: typeof ApiHelloRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/healthz": {
+      id: "/api/healthz"
+      path: "/api/healthz"
+      fullPath: "/api/healthz"
+      preLoaderRoute: typeof ApiHealthzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/documents": {
+      id: "/api/documents"
+      path: "/api/documents"
+      fullPath: "/api/documents"
+      preLoaderRoute: typeof ApiDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/document-updates": {
+      id: "/api/document-updates"
+      path: "/api/document-updates"
+      fullPath: "/api/document-updates"
+      preLoaderRoute: typeof ApiDocumentUpdatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/awareness-updates": {
+      id: "/api/awareness-updates"
+      path: "/api/awareness-updates"
+      fullPath: "/api/awareness-updates"
+      preLoaderRoute: typeof ApiAwarenessUpdatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/_authenticated/orgs": {
@@ -541,6 +626,34 @@ declare module "@tanstack/react-router" {
       fullPath: "/$orgSlug/"
       preLoaderRoute: typeof AuthenticatedOrgSlugIndexRouteImport
       parentRoute: typeof AuthenticatedOrgSlugRoute
+    }
+    "/api/trpc/$": {
+      id: "/api/trpc/$"
+      path: "/api/trpc/$"
+      fullPath: "/api/trpc/$"
+      preLoaderRoute: typeof ApiTrpcSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/shape/$": {
+      id: "/api/shape/$"
+      path: "/api/shape/$"
+      fullPath: "/api/shape/$"
+      preLoaderRoute: typeof ApiShapeSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/blob/upload": {
+      id: "/api/blob/upload"
+      path: "/api/blob/upload"
+      fullPath: "/api/blob/upload"
+      preLoaderRoute: typeof ApiBlobUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/api/auth/$": {
+      id: "/api/auth/$"
+      path: "/api/auth/$"
+      fullPath: "/api/auth/$"
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     "/_authenticated/_active-org/settings": {
       id: "/_authenticated/_active-org/settings"
@@ -583,150 +696,6 @@ declare module "@tanstack/react-router" {
       fullPath: "/$orgSlug/spaces/$spaceId/document/$docId"
       preLoaderRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport
       parentRoute: typeof AuthenticatedOrgSlugSpacesSpaceIdRoute
-    }
-  }
-}
-declare module "@tanstack/react-start/server" {
-  interface ServerFileRoutesByPath {
-    "/api/user-invitations": {
-      id: "/api/user-invitations"
-      path: "/api/user-invitations"
-      fullPath: "/api/user-invitations"
-      preLoaderRoute: typeof ApiUserInvitationsServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/spaces": {
-      id: "/api/spaces"
-      path: "/api/spaces"
-      fullPath: "/api/spaces"
-      preLoaderRoute: typeof ApiSpacesServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/sites": {
-      id: "/api/sites"
-      path: "/api/sites"
-      fullPath: "/api/sites"
-      preLoaderRoute: typeof ApiSitesServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/site-themes": {
-      id: "/api/site-themes"
-      path: "/api/site-themes"
-      fullPath: "/api/site-themes"
-      preLoaderRoute: typeof ApiSiteThemesServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/site-spaces": {
-      id: "/api/site-spaces"
-      path: "/api/site-spaces"
-      fullPath: "/api/site-spaces"
-      preLoaderRoute: typeof ApiSiteSpacesServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/site-domains": {
-      id: "/api/site-domains"
-      path: "/api/site-domains"
-      fullPath: "/api/site-domains"
-      preLoaderRoute: typeof ApiSiteDomainsServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/site-builds": {
-      id: "/api/site-builds"
-      path: "/api/site-builds"
-      fullPath: "/api/site-builds"
-      preLoaderRoute: typeof ApiSiteBuildsServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/org-user-profiles": {
-      id: "/api/org-user-profiles"
-      path: "/api/org-user-profiles"
-      fullPath: "/api/org-user-profiles"
-      preLoaderRoute: typeof ApiOrgUserProfilesServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/my-organizations": {
-      id: "/api/my-organizations"
-      path: "/api/my-organizations"
-      fullPath: "/api/my-organizations"
-      preLoaderRoute: typeof ApiMyOrganizationsServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/invitations": {
-      id: "/api/invitations"
-      path: "/api/invitations"
-      fullPath: "/api/invitations"
-      preLoaderRoute: typeof ApiInvitationsServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/inngest": {
-      id: "/api/inngest"
-      path: "/api/inngest"
-      fullPath: "/api/inngest"
-      preLoaderRoute: typeof ApiInngestServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/hello": {
-      id: "/api/hello"
-      path: "/api/hello"
-      fullPath: "/api/hello"
-      preLoaderRoute: typeof ApiHelloServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/healthz": {
-      id: "/api/healthz"
-      path: "/api/healthz"
-      fullPath: "/api/healthz"
-      preLoaderRoute: typeof ApiHealthzServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/documents": {
-      id: "/api/documents"
-      path: "/api/documents"
-      fullPath: "/api/documents"
-      preLoaderRoute: typeof ApiDocumentsServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/document-updates": {
-      id: "/api/document-updates"
-      path: "/api/document-updates"
-      fullPath: "/api/document-updates"
-      preLoaderRoute: typeof ApiDocumentUpdatesServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/awareness-updates": {
-      id: "/api/awareness-updates"
-      path: "/api/awareness-updates"
-      fullPath: "/api/awareness-updates"
-      preLoaderRoute: typeof ApiAwarenessUpdatesServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/trpc/$": {
-      id: "/api/trpc/$"
-      path: "/api/trpc/$"
-      fullPath: "/api/trpc/$"
-      preLoaderRoute: typeof ApiTrpcSplatServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/shape/$": {
-      id: "/api/shape/$"
-      path: "/api/shape/$"
-      fullPath: "/api/shape/$"
-      preLoaderRoute: typeof ApiShapeSplatServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/blob/upload": {
-      id: "/api/blob/upload"
-      path: "/api/blob/upload"
-      fullPath: "/api/blob/upload"
-      preLoaderRoute: typeof ApiBlobUploadServerRouteImport
-      parentRoute: typeof rootServerRouteImport
-    }
-    "/api/auth/$": {
-      id: "/api/auth/$"
-      path: "/api/auth/$"
-      fullPath: "/api/auth/$"
-      preLoaderRoute: typeof ApiAuthSplatServerRouteImport
-      parentRoute: typeof rootServerRouteImport
     }
   }
 }
@@ -802,32 +771,37 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   LogoutRoute: LogoutRoute,
+  ApiAwarenessUpdatesRoute: ApiAwarenessUpdatesRoute,
+  ApiDocumentUpdatesRoute: ApiDocumentUpdatesRoute,
+  ApiDocumentsRoute: ApiDocumentsRoute,
+  ApiHealthzRoute: ApiHealthzRoute,
+  ApiHelloRoute: ApiHelloRoute,
+  ApiInngestRoute: ApiInngestRoute,
+  ApiInvitationsRoute: ApiInvitationsRoute,
+  ApiMyOrganizationsRoute: ApiMyOrganizationsRoute,
+  ApiOrgUserProfilesRoute: ApiOrgUserProfilesRoute,
+  ApiSiteBuildsRoute: ApiSiteBuildsRoute,
+  ApiSiteDomainsRoute: ApiSiteDomainsRoute,
+  ApiSiteSpacesRoute: ApiSiteSpacesRoute,
+  ApiSiteThemesRoute: ApiSiteThemesRoute,
+  ApiSitesRoute: ApiSitesRoute,
+  ApiSpacesRoute: ApiSpacesRoute,
+  ApiUserInvitationsRoute: ApiUserInvitationsRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiBlobUploadRoute: ApiBlobUploadRoute,
+  ApiShapeSplatRoute: ApiShapeSplatRoute,
+  ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-const rootServerRouteChildren: RootServerRouteChildren = {
-  ApiAwarenessUpdatesServerRoute: ApiAwarenessUpdatesServerRoute,
-  ApiDocumentUpdatesServerRoute: ApiDocumentUpdatesServerRoute,
-  ApiDocumentsServerRoute: ApiDocumentsServerRoute,
-  ApiHealthzServerRoute: ApiHealthzServerRoute,
-  ApiHelloServerRoute: ApiHelloServerRoute,
-  ApiInngestServerRoute: ApiInngestServerRoute,
-  ApiInvitationsServerRoute: ApiInvitationsServerRoute,
-  ApiMyOrganizationsServerRoute: ApiMyOrganizationsServerRoute,
-  ApiOrgUserProfilesServerRoute: ApiOrgUserProfilesServerRoute,
-  ApiSiteBuildsServerRoute: ApiSiteBuildsServerRoute,
-  ApiSiteDomainsServerRoute: ApiSiteDomainsServerRoute,
-  ApiSiteSpacesServerRoute: ApiSiteSpacesServerRoute,
-  ApiSiteThemesServerRoute: ApiSiteThemesServerRoute,
-  ApiSitesServerRoute: ApiSitesServerRoute,
-  ApiSpacesServerRoute: ApiSpacesServerRoute,
-  ApiUserInvitationsServerRoute: ApiUserInvitationsServerRoute,
-  ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
-  ApiBlobUploadServerRoute: ApiBlobUploadServerRoute,
-  ApiShapeSplatServerRoute: ApiShapeSplatServerRoute,
-  ApiTrpcSplatServerRoute: ApiTrpcSplatServerRoute,
+
+import type { getRouter } from "./router.tsx"
+import type { startInstance } from "./start.tsx"
+declare module "@tanstack/react-start" {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
 }
-export const serverRouteTree = rootServerRouteImport
-  ._addFileChildren(rootServerRouteChildren)
-  ._addFileTypes<FileServerRouteTypes>()

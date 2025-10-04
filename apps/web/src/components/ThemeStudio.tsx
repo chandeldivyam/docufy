@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { getSiteThemeCollection } from "@/lib/collections"
-import { TOKEN_REGISTRY, type TokenDef } from "./tokens"
-import { computePickerValue, hexToOklchOrNull } from "./color"
+import { TOKEN_REGISTRY, type TokenDef } from "@/components/tokens"
+import { computePickerValue, hexToOklchOrNull } from "@/components/color"
 
 type ThemeMap = Record<string, string>
 type ThemeDraft = { light: ThemeMap; dark: ThemeMap; vars: ThemeMap }

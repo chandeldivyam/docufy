@@ -55,7 +55,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { uploadSiteAssetToBlob } from "@/lib/blob-uploader"
-import { ThemeStudio } from "./ThemeStudio"
+import { ThemeStudio } from "@/components/ThemeStudio"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug/sites/$siteId")({
   ssr: false,

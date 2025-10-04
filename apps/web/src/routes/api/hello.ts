@@ -1,15 +1,19 @@
 // apps/web/src/routes/api/hello.ts
-import { createServerFileRoute } from "@tanstack/react-start/server"
+import { createFileRoute } from "@tanstack/react-router"
 import { inngest } from "@/inngest"
 
-export const ServerRoute = createServerFileRoute("/api/hello").methods({
-  GET: async () => {
-    await inngest.send({
-      name: "app/hello",
-      data: { name: "TanStack + Inngest" },
-    })
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { "content-type": "application/json" },
-    })
+export const Route = createFileRoute("/api/hello")({
+  server: {
+    handlers: {
+      GET: async () => {
+        await inngest.send({
+          name: "app/hello",
+          data: { name: "TanStack + Inngest" },
+        })
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { "content-type": "application/json" },
+        })
+      },
+    },
   },
 })

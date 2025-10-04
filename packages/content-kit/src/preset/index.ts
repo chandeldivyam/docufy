@@ -60,6 +60,10 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
     TableKit.configure({
       table: { resizable: true },
     }),
+    Emoji.configure({
+      emojis: gitHubEmojis,
+      suggestion,
+    }),
   ];
 
   const extra = opts.extra ?? [];
@@ -76,10 +80,6 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       }),
       CustomKeymap,
       GlobalDragHandle,
-      Emoji.configure({
-        emojis: gitHubEmojis,
-        suggestion,
-      }),
       HtmlComponent,
       ...extra,
     ];

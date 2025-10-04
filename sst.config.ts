@@ -69,9 +69,9 @@ export default $config({
       },
       // Health: keep it simple; ALB will hit / (200). If you added /api/healthz, you can set health.path.
       health: {
-        command: ['CMD-SHELL', 'curl -f http://localhost:3000/api/healthz || exit 1'],
+        command: ['CMD-SHELL', 'node -e "require(\'http\').get(\'http://localhost:3000/api/healthz\', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on(\'error\', () => process.exit(1))"'],
         startPeriod: '10 seconds',
-        timeout: '5 seconds',
+        timeout: '10 seconds',
         retries: 3,
         interval: '30 seconds',
       },

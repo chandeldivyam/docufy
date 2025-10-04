@@ -23,9 +23,13 @@ export function usePresenceUser(orgSlug?: string) {
     myOrgs?.find((o) => o.org_slug === orgSlug)?.organization_id ??
     session?.session?.activeOrganizationId
 
-  const profilesCollection = orgId
-    ? getOrgUserProfilesCollection(orgId)
-    : emptyOrgUserProfilesCollection
+  const profilesCollection = useMemo(
+    () =>
+      orgId
+        ? getOrgUserProfilesCollection(orgId)
+        : emptyOrgUserProfilesCollection,
+    [orgId]
+  )
 
   const { data: profiles } = useLiveQuery(
     (q) => q.from({ users: profilesCollection }),
