@@ -332,14 +332,6 @@ echo "Access: https://search.trydocufy.com"
         Environment: $app.stage,
       },
     })
-
-    const typesenseDns = new vercel.DnsRecord("typesense-dns", {
-      domain: 'trydocufy.com',
-      type: 'A',
-      name: 'search',
-      value: typesenseInstance.publicIp,
-      ttl: 3600,
-    })
       
 
     // ------- Web app on ECS/Fargate w/ ALB + domain -------
