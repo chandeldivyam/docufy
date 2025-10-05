@@ -66,9 +66,6 @@ jobs:
       - name: Install workspace deps
         run: pnpm install --frozen-lockfile
 
-      - name: Show SST secrets (sanity check)
-        run: pnpm dlx sst secret list --stage ${{ inputs.stage }}
-
       - name: Deploy with SST
         run: pnpm dlx sst deploy --stage ${{ inputs.stage }} --print-logs
 

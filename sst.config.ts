@@ -239,7 +239,7 @@ cd /opt/typesense && docker compose up -d
       userData: userDataScript,
       rootBlockDevice: {
         volumeType: "gp3",
-        volumeSize: 20,
+        volumeSize: 30,
         deleteOnTermination: true,
       },
       tags: { Name: `typesense-${$app.stage}` },
