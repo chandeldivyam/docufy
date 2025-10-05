@@ -81,185 +81,125 @@ export default $config({
     })
 
     // =======================
-    //   TYPESENSE on EC2
-    // =======================
+//   TYPESENSE on EC2
+// =======================
 
-    const domain = $app.stage === "prod" ? "search.trydocufy.com" : `search-${$app.stage}.trydocufy.com`
+const domain = $app.stage === "prod" ? "search.trydocufy.com" : `search-${$app.stage}.trydocufy.com`
 
-    // SSM Parameter for admin key
-    const typesenseParam = new aws.ssm.Parameter("TypesenseAdminKeyParam", {
-      type: "SecureString",
-      name: `/docufy/${$app.stage}/typesense/admin-key`,
-      value: TypesenseAdminKey.value,
-    })
+// SSM Parameter for admin key
+const typesenseParam = new aws.ssm.Parameter("TypesenseAdminKeyParam", {
+  type: "SecureString",
+  name: `/docufy/${$app.stage}/typesense/admin-key`,
+  value: TypesenseAdminKey.value,
+})
 
-    // Security Group
-    const sg = new aws.ec2.SecurityGroup("TypesenseSg", {
-      vpcId: vpc.id,
-      description: "Allow HTTPS to Caddy",
-      ingress: [
-        { protocol: "tcp", fromPort: 80, toPort: 80, cidrBlocks: ["0.0.0.0/0"], ipv6CidrBlocks: [] },
-        { protocol: "tcp", fromPort: 443, toPort: 443, cidrBlocks: ["0.0.0.0/0"], ipv6CidrBlocks: [] },
-      ],
-      egress: [{ protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"], ipv6CidrBlocks: [] }],
-    })
+// Security Group
+const sg = new aws.ec2.SecurityGroup("TypesenseSg", {
+  vpcId: vpc.id,
+  description: "Allow HTTPS to Caddy",
+  ingress: [
+    { protocol: "tcp", fromPort: 80, toPort: 80, cidrBlocks: ["0.0.0.0/0"], ipv6CidrBlocks: [] },
+    { protocol: "tcp", fromPort: 443, toPort: 443, cidrBlocks: ["0.0.0.0/0"], ipv6CidrBlocks: [] },
+  ],
+  egress: [{ protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"], ipv6CidrBlocks: [] }],
+})
 
-    // Instance Role
-    const role = new aws.iam.Role("TypesenseEc2Role", {
-      assumeRolePolicy: JSON.stringify({
-        Version: "2012-10-17",
-        Statement: [{
-          Effect: "Allow",
-          Principal: { Service: "ec2.amazonaws.com" },
-          Action: "sts:AssumeRole"
-        }]
-      }),
-    })
-    
-    new aws.iam.RolePolicyAttachment("TypesenseSsmCore", {
-      role: role.name,
-      policyArn: "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
-    })
-    
-    new aws.iam.RolePolicy("TypesenseParamRead", {
-      role: role.name,
-      policy: pulumi.all([typesenseParam.arn]).apply(([arn]) =>
-        JSON.stringify({
-          Version: "2012-10-17",
-          Statement: [
-            { Effect: "Allow", Action: ["ssm:GetParameter"], Resource: arn },
-            { Effect: "Allow", Action: ["kms:Decrypt"], Resource: "*" },
-          ],
-        })
-      ),
-    })
-    
-    const profile = new aws.iam.InstanceProfile("TypesenseEc2Profile", { role: role.name })
+// Instance Role
+const role = new aws.iam.Role("TypesenseEc2Role", {
+  assumeRolePolicy: JSON.stringify({
+    Version: "2012-10-17",
+    Statement: [{
+      Effect: "Allow",
+      Principal: { Service: "ec2.amazonaws.com" },
+      Action: "sts:AssumeRole"
+    }]
+  }),
+})
 
-    // AL2023 ARM64 AMI
-    const ami = await aws.ec2.getAmi({
-      owners: ["amazon"],
-      mostRecent: true,
-      filters: [
-        { name: "name", values: ["al2023-ami-*-kernel-6.*-arm64"] },
-        { name: "architecture", values: ["arm64"] },
-        { name: "state", values: ["available"] },
+new aws.iam.RolePolicyAttachment("TypesenseSsmCore", {
+  role: role.name,
+  policyArn: "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+})
+
+new aws.iam.RolePolicy("TypesenseParamRead", {
+  role: role.name,
+  policy: pulumi.all([typesenseParam.arn]).apply(([arn]) =>
+    JSON.stringify({
+      Version: "2012-10-17",
+      Statement: [
+        { Effect: "Allow", Action: ["ssm:GetParameter"], Resource: arn },
+        { Effect: "Allow", Action: ["kms:Decrypt"], Resource: "*" },
       ],
     })
+  ),
+})
 
-    // Build userData script - keep it concise to avoid serialization issues
-    const userDataScript = `#!/bin/bash
+const profile = new aws.iam.InstanceProfile("TypesenseEc2Profile", { role: role.name })
+
+// AL2023 ARM64 AMI
+const ami = await aws.ec2.getAmi({
+  owners: ["amazon"],
+  mostRecent: true,
+  filters: [
+    { name: "name", values: ["al2023-ami-*-kernel-6.*-arm64"] },
+    { name: "architecture", values: ["arm64"] },
+    { name: "state", values: ["available"] },
+  ],
+})
+
+// Get current git branch and commit SHA
+const branch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "main"
+const scriptRef = branch // or use commit SHA for immutability
+
+// Minimal userData that downloads and executes the setup script
+const userDataScript = pulumi.interpolate`#!/bin/bash
 set -euxo pipefail
 
-# Install Docker
-curl -fsSL https://get.docker.com | sh
-systemctl enable --now docker
+# Download setup script from your public repo (using branch: ${scriptRef})
+curl -fsSL https://raw.githubusercontent.com/chandeldivyam/docufy/${scriptRef}/scripts/typesense-setup.sh -o /tmp/setup.sh
+chmod +x /tmp/setup.sh
 
-# Create directories
-mkdir -p /opt/typesense /opt/caddy /var/lib/typesense /var/log/typesense
-
-# Get admin key from SSM
-REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
-ADMIN_KEY=$(aws ssm get-parameter --region $REGION --with-decryption --name "/docufy/${$app.stage}/typesense/admin-key" --query "Parameter.Value" --output text)
-
-# Install Docker Compose
-ARCH=$(uname -m)
-if [ "$ARCH" = "aarch64" ]; then
-  COMP_URL="https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-linux-aarch64"
-else
-  COMP_URL="https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-linux-x86_64"
-fi
-mkdir -p /usr/libexec/docker/cli-plugins
-curl -L "$COMP_URL" -o /usr/libexec/docker/cli-plugins/docker-compose
-chmod +x /usr/libexec/docker/cli-plugins/docker-compose
-
-# Create docker-compose.yml
-cat >/opt/typesense/docker-compose.yml <<'EOF'
-services:
-  typesense:
-    image: typesense/typesense:29.0
-    restart: unless-stopped
-    command: --data-dir=/data --api-address=0.0.0.0 --api-port=8108 --enable-cors=false --api-key=\${TYPESENSE_API_KEY}
-    environment:
-      - TYPESENSE_LOG_DIR=/var/log/typesense
-    volumes:
-      - /var/lib/typesense:/data
-      - /var/log/typesense:/var/log/typesense
-    networks: [web]
-  caddy:
-    image: caddy:2
-    restart: unless-stopped
-    ports: ['80:80', '443:443']
-    volumes:
-      - /opt/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on: [typesense]
-    networks: [web]
-volumes:
-  caddy_data:
-  caddy_config:
-networks:
-  web:
-    name: typesense-net
-EOF
-
-# Create Caddyfile
-cat >/opt/caddy/Caddyfile <<'EOF'
-${domain} {
-  encode zstd gzip
-  @preflight method OPTIONS
-  header {
-    Access-Control-Allow-Origin "{http.request.header.Origin}"
-    Access-Control-Allow-Methods "GET, POST, OPTIONS"
-    Access-Control-Allow-Headers "Content-Type, X-TYPESENSE-API-KEY"
-    Access-Control-Max-Age "86400"
-    Vary "Origin"
-  }
-  respond @preflight 204
-  reverse_proxy 127.0.0.1:8108
-}
-EOF
-
-# Start services
-export TYPESENSE_API_KEY="$ADMIN_KEY"
-cd /opt/typesense && docker compose up -d
+# Execute with environment variables
+STAGE="${$app.stage}" \
+SSM_PARAM_NAME="${typesenseParam.name}" \
+DOMAIN="${domain}" \
+/tmp/setup.sh
 `
 
-    // Get first public subnet
-    const subnetId = vpc.publicSubnets.apply(subnets => subnets[0])
+// Get first public subnet
+const subnetId = vpc.publicSubnets.apply(subnets => subnets[0])
 
-    // EC2 Instance
-    const instance = new aws.ec2.Instance("TypesenseInstance", {
-      ami: ami.id,
-      instanceType: "t4g.small",
-      subnetId: subnetId,
-      vpcSecurityGroupIds: [sg.id],
-      iamInstanceProfile: profile.name,
-      userData: userDataScript,
-      rootBlockDevice: {
-        volumeType: "gp3",
-        volumeSize: 30,
-        deleteOnTermination: true,
-      },
-      tags: { Name: `typesense-${$app.stage}` },
-    })
+// EC2 Instance
+const instance = new aws.ec2.Instance("TypesenseInstance", {
+  ami: ami.id,
+  instanceType: "t4g.small",
+  subnetId: subnetId,
+  vpcSecurityGroupIds: [sg.id],
+  iamInstanceProfile: profile.name,
+  userData: userDataScript,
+  rootBlockDevice: {
+    volumeType: "gp3",
+    volumeSize: 30,
+    deleteOnTermination: true,
+  },
+  tags: { Name: `typesense-${$app.stage}` },
+})
 
-    // Elastic IP
-    const eip = new aws.ec2.Eip("TypesenseEip", { 
-      instance: instance.id, 
-      domain: "vpc" 
-    })
+// Elastic IP
+const eip = new aws.ec2.Eip("TypesenseEip", { 
+  instance: instance.id, 
+  domain: "vpc" 
+})
 
-    // DNS Record
-    const dns = sst.vercel.dns({ domain: "trydocufy.com" })
-    const hostLabel = $app.stage === "prod" ? "search" : `search-${$app.stage}`
-    
-    dns.createRecord("TypesenseARecord", {
-      name: hostLabel,
-      type: "A",
-      value: eip.publicIp,
-    }, { parent: eip })
+// DNS Record
+const dns = sst.vercel.dns({ domain: "trydocufy.com" })
+const hostLabel = $app.stage === "prod" ? "search" : `search-${$app.stage}`
+
+dns.createRecord("TypesenseARecord", {
+  name: hostLabel,
+  type: "A",
+  value: eip.publicIp,
+}, { parent: eip })
 
     return {
       WebURL: web.url,
