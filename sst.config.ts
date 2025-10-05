@@ -6,8 +6,8 @@ export default $config({
       name: "docufy",
       home: "aws",
       providers: {
-        aws: {},      // reads region/profile from your env/CLI
-        vercel: {},   // uses VERCEL_API_TOKEN / VERCEL_TEAM_ID
+        aws: {},
+        vercel: {},
       },
       removal: input?.stage === "prod" ? "retain" : "remove",
     }
@@ -33,11 +33,9 @@ export default $config({
     const BlobReadWriteToken = new sst.Secret("BlobReadWriteToken")
     const VercelBlobStoreId = new sst.Secret("VercelBlobStoreId")
     const VercelBlobBaseUrl = new sst.Secret("VercelBlobBaseUrl")
-
-    // NEW: Typesense Admin Key (set with: pnpm dlx sst secret set TypesenseAdminKey)
     const TypesenseAdminKey = new sst.Secret("TypesenseAdminKey")
 
-    // ------- Web app on ECS/Fargate (existing) -------
+    // ------- Web app on ECS/Fargate -------
     const web = new sst.aws.Service("Web", {
       cluster,
       image: {
@@ -51,23 +49,13 @@ export default $config({
         NODE_ENV: "production",
         PORT: "3000",
         PUBLIC_URL: "https://app.trydocufy.com",
-
-        // Supabase
         DATABASE_URL: DatabaseUrl.value,
-
-        // Electric Cloud (server-side)
         ELECTRIC_SOURCE_ID: ElectricSourceId.value,
         ELECTRIC_SOURCE_SECRET: ElectricSourceSecret.value,
-
-        // Inngest Cloud
         INNGEST_SIGNING_KEY: InngestSigningKey.value,
         INNGEST_EVENT_KEY: InngestEventKey.value,
-
-        // Auth & email
         BETTER_AUTH_SECRET: BetterAuthSecret.value,
         RESEND_API_KEY: ResendApiKey.value,
-
-        // Vercel Blob
         BLOB_READ_WRITE_TOKEN: BlobReadWriteToken.value,
         VITE_PUBLIC_VERCEL_BLOB_STORE_ID: VercelBlobStoreId.value,
         VITE_PUBLIC_VERCEL_BLOB_BASE_URL: VercelBlobBaseUrl.value,
@@ -97,14 +85,17 @@ export default $config({
     //   TYPESENSE on EC2
     // =======================
 
-    // Mirror the SST secret into SSM Parameter Store so the instance can fetch it at boot
+    // Domain per stage
+    const domain = $app.stage === "prod" ? "search.trydocufy.com" : `search-${$app.stage}.trydocufy.com`
+
+    // Mirror the SST secret into SSM Parameter Store
     const typesenseParam = new aws.ssm.Parameter("TypesenseAdminKeyParam", {
       type: "SecureString",
       name: `/docufy/${$app.stage}/typesense/admin-key`,
       value: TypesenseAdminKey.value,
     })
 
-    // Security Group: expose 80/443 publicly; keep 8108 internal via Caddy
+    // Security Group
     const sg = new aws.ec2.SecurityGroup("TypesenseSg", {
       vpcId: vpc.id,
       description: "Allow HTTPS to Caddy; deny direct Typesense",
@@ -115,7 +106,7 @@ export default $config({
       egress: [{ protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }],
     })
 
-    // Instance Role: SSM + read our SSM parameter
+    // Instance Role
     const role = new aws.iam.Role("TypesenseEc2Role", {
       assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({ Service: "ec2.amazonaws.com" }),
     })
@@ -125,19 +116,25 @@ export default $config({
     })
     new aws.iam.RolePolicy("TypesenseParamRead", {
       role: role.id,
-      policy: typesenseParam.arn.apply((arn) =>
-        JSON.stringify({
-          Version: "2012-10-17",
-          Statement: [
-            { Effect: "Allow", Action: ["ssm:GetParameter"], Resource: arn },
-            { Effect: "Allow", Action: ["kms:Decrypt"], Resource: "*" },
-          ],
-        }),
-      ),
+      policy: pulumi.interpolate`{
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["ssm:GetParameter"],
+            "Resource": "${typesenseParam.arn}"
+          },
+          {
+            "Effect": "Allow",
+            "Action": ["kms:Decrypt"],
+            "Resource": "*"
+          }
+        ]
+      }`,
     })
     const profile = new aws.iam.InstanceProfile("TypesenseEc2Profile", { role: role.name })
 
-    // AL2023 ARM64 AMI (latest)
+    // AL2023 ARM64 AMI
     const ami = await aws.ec2.getAmi({
       owners: ["amazon"],
       mostRecent: true,
@@ -148,18 +145,8 @@ export default $config({
       ],
     })
 
-    // Domain per stage
-    const domain =
-      $app.stage === "prod" ? "search.trydocufy.com" : `search-${$app.stage}.trydocufy.com`
-
-    // Cloud-init (userData) — installs Docker, Caddy, composes Typesense + Caddy
-    const cloud = new cloudinit.Config("typesense-cloudinit", {
-      gzip: false,
-      base64Encode: false,
-      parts: [
-        {
-          contentType: "text/cloud-config",
-          content: `#cloud-config
+    // Build cloud-init using interpolate for better handling
+    const cloudConfig = pulumi.interpolate`#cloud-config
 package_update: true
 packages:
   - jq
@@ -172,7 +159,6 @@ runcmd:
   - mkdir -p /opt/typesense /opt/caddy /var/lib/typesense /var/log/typesense
   - REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
   - ADMIN_KEY=$(aws ssm get-parameter --region $REGION --with-decryption --name "/docufy/${$app.stage}/typesense/admin-key" --query "Parameter.Value" --output text)
-  # docker compose plugin (arm64/x86)
   - ARCH=$(uname -m)
   - |
       if [ "$ARCH" = "aarch64" ]; then
@@ -183,8 +169,6 @@ runcmd:
   - mkdir -p /usr/libexec/docker/cli-plugins
   - curl -L "$COMP_URL" -o /usr/libexec/docker/cli-plugins/docker-compose
   - chmod +x /usr/libexec/docker/cli-plugins/docker-compose
-
-  # docker-compose.yml
   - cat >/opt/typesense/docker-compose.yml <<'YML'
 version: '3.8'
 services:
@@ -192,16 +176,14 @@ services:
     image: typesense/typesense:29.0
     restart: unless-stopped
     ulimits:
-      nofile:
-        soft: 65535
-        hard: 65535
+      nofile: { soft: 65535, hard: 65535 }
     command: >
       --data-dir=/data
       --api-address=0.0.0.0
       --api-port=8108
       --peering-address=127.0.0.1
       --enable-cors=false
-      --api-key=${'${'}TYPESENSE_API_KEY}
+      --api-key=\${TYPESENSE_API_KEY}
     environment:
       - TYPESENSE_LOG_DIR=/var/log/typesense
     volumes:
@@ -223,8 +205,6 @@ services:
 volumes: { caddy_data: {}, caddy_config: {} }
 networks: { web: { name: typesense-net } }
 YML
-
-  # Caddyfile — TLS + dynamic CORS (reflect Origin; no creds)
   - cat >/opt/caddy/Caddyfile <<'CADDY'
 ${domain} {
   encode zstd gzip
@@ -240,27 +220,21 @@ ${domain} {
   reverse_proxy 127.0.0.1:8108
 }
 CADDY
-
   - export TYPESENSE_API_KEY="$ADMIN_KEY"
   - cd /opt/typesense && docker compose up -d
-`,
-        },
-      ],
-    })
+`
 
-    // Subnet: pick the first public subnet (handle Output<Output<string>[]> safely)
-    const subnetId = pulumi
-      .output(vpc.publicSubnets)
-      .apply((ids: any[]) => pulumi.output(ids[0]))
+    // Simplified subnet selection
+    const subnetId = vpc.publicSubnets.apply((subnets) => subnets[0])
 
-    // EC2 Instance
+    // EC2 Instance - use interpolate for userData
     const instance = new aws.ec2.Instance("TypesenseInstance", {
       ami: ami.id,
       instanceType: "t4g.small",
-      subnetId,
+      subnetId: subnetId,
       vpcSecurityGroupIds: [sg.id],
       iamInstanceProfile: profile.name,
-      userData: cloud.rendered,
+      userData: cloudConfig,
       rootBlockDevice: {
         volumeType: "gp3",
         volumeSize: 20,
@@ -270,12 +244,15 @@ CADDY
     })
 
     // Elastic IP
-    const eip = new aws.ec2.Eip("TypesenseEip", { instance: instance.id, domain: "vpc" })
+    const eip = new aws.ec2.Eip("TypesenseEip", { 
+      instance: instance.id, 
+      domain: "vpc" 
+    })
 
-    // Vercel DNS A record via SST's DNS adapter
+    // Vercel DNS A record
     const dns = sst.vercel.dns({ domain: "trydocufy.com" })
-    const hostLabel =
-      $app.stage === "prod" ? "search" : `search-${$app.stage}`
+    const hostLabel = $app.stage === "prod" ? "search" : `search-${$app.stage}`
+    
     dns.createRecord("TypesenseARecord", {
       name: hostLabel,
       type: "A",
@@ -284,7 +261,7 @@ CADDY
 
     return {
       WebURL: web.url,
-      TypesenseURL: `https://${hostLabel}.trydocufy.com`,
+      TypesenseURL: pulumi.interpolate`https://${hostLabel}.trydocufy.com`,
       TypesenseIp: eip.publicIp,
     }
   },
