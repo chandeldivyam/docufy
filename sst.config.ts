@@ -152,19 +152,23 @@ const branch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "ma
 const scriptRef = branch // or use commit SHA for immutability
 
 // Minimal userData that downloads and executes the setup script
-const userDataScript = pulumi.interpolate`#!/bin/bash
+const userDataScript = pulumi.all([
+  typesenseParam.name,
+  $app.stage,
+]).apply(([paramName, stage]) => {
+  const script = `#!/bin/bash
 set -euxo pipefail
 
-# Download setup script from your public repo (using branch: ${scriptRef})
 curl -fsSL https://raw.githubusercontent.com/chandeldivyam/docufy/${scriptRef}/scripts/typesense-setup.sh -o /tmp/setup.sh
 chmod +x /tmp/setup.sh
 
-# Execute with environment variables
-STAGE="${$app.stage}" \
-SSM_PARAM_NAME="${typesenseParam.name}" \
+STAGE="${stage}" \
+SSM_PARAM_NAME="${paramName}" \
 DOMAIN="${domain}" \
 /tmp/setup.sh
 `
+  return Buffer.from(script).toString('base64')
+})
 
 // Get first public subnet
 const subnetId = vpc.publicSubnets.apply(subnets => subnets[0])
@@ -176,7 +180,7 @@ const instance = new aws.ec2.Instance("TypesenseInstance", {
   subnetId: subnetId,
   vpcSecurityGroupIds: [sg.id],
   iamInstanceProfile: profile.name,
-  userData: userDataScript,
+  userDataBase64: userDataScript,
   rootBlockDevice: {
     volumeType: "gp3",
     volumeSize: 30,
