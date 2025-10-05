@@ -75,7 +75,7 @@ export default $config({
       filters: [
           {
               name: "name",
-              values: ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"],
+              values: ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"],
           },
           {
               name: "virtualization-type",
@@ -84,6 +84,7 @@ export default $config({
       ],
       owners: ["099720109477"],
     });
+    
 
     const typesenseUserData = $interpolate`#!/bin/bash
 set -euxo pipefail
