@@ -61,6 +61,16 @@ export default $config({
       ipProtocol: "tcp",
       description: "Allow HTTPS from Internet",
     });
+
+    const typesenseIngressSsh = new aws.vpc.SecurityGroupIngressRule("typesense-ingress-ssh", {
+      securityGroupId: typesenseSg.id,
+      cidrIpv4: "0.0.0.0/0", // Change to your IP for better security: "YOUR_IP/32"
+      fromPort: 22,
+      toPort: 22,
+      ipProtocol: "tcp",
+      description: "Allow SSH access",
+    });
+    
     
     // Egress: Allow all outbound traffic
     const typesenseEgress = new aws.vpc.SecurityGroupEgressRule("typesense-egress-all", {
@@ -305,6 +315,7 @@ echo "Access: https://search.trydocufy.com"
       vpcSecurityGroupIds: [typesenseSg.id],
       subnetId: vpc.publicSubnets.apply(subnets => subnets[0]),
       userData: typesenseUserData,
+      keyName: "divyam-local",
       ebsBlockDevices: [
         {
           deviceName: "/dev/sdf",
