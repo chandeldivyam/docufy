@@ -31,6 +31,21 @@ services:
       - "3000:3000"
     depends_on:
       - postgres
+  typesense:
+    image: typesense/typesense:29.0
+    container_name: typesense
+    ports:
+      - "8108:8108"
+    command: >
+      /opt/typesense-server
+      --api-address=0.0.0.0
+      --listen-port=8108
+      --data-dir=/data
+      --api-key=devtypesense
+      --enable-cors=true
+    volumes:
+      - typesense_data:/data
 
 volumes:
   postgres_data:
+  typesense_data:

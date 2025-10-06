@@ -40,6 +40,7 @@ import { Route as ApiAuthSplatRouteImport } from "./routes/api/auth/$"
 import { Route as AuthenticatedActiveOrgSettingsRouteImport } from "./routes/_authenticated/_active-org/settings"
 import { Route as AuthenticatedOrgSlugSettingsRouteImport } from "./routes/_authenticated/$orgSlug/settings"
 import { Route as AuthenticatedOrgSlugSpacesIndexRouteImport } from "./routes/_authenticated/$orgSlug/spaces/index"
+import { Route as ApiSitesSiteIdSearchKeyRouteImport } from "./routes/api/sites/$siteId/search-key"
 import { Route as AuthenticatedOrgSlugSpacesSpaceIdRouteImport } from "./routes/_authenticated/$orgSlug/spaces/$spaceId"
 import { Route as AuthenticatedOrgSlugSitesSiteIdRouteImport } from "./routes/_authenticated/$orgSlug/sites/$siteId"
 import { Route as AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRouteImport } from "./routes/_authenticated/$orgSlug/spaces/$spaceId/document/$docId"
@@ -202,6 +203,11 @@ const AuthenticatedOrgSlugSpacesIndexRoute =
     path: "/spaces/",
     getParentRoute: () => AuthenticatedOrgSlugRoute,
   } as any)
+const ApiSitesSiteIdSearchKeyRoute = ApiSitesSiteIdSearchKeyRouteImport.update({
+  id: "/$siteId/search-key",
+  path: "/$siteId/search-key",
+  getParentRoute: () => ApiSitesRoute,
+} as any)
 const AuthenticatedOrgSlugSpacesSpaceIdRoute =
   AuthenticatedOrgSlugSpacesSpaceIdRouteImport.update({
     id: "/spaces/$spaceId",
@@ -239,7 +245,7 @@ export interface FileRoutesByFullPath {
   "/api/site-domains": typeof ApiSiteDomainsRoute
   "/api/site-spaces": typeof ApiSiteSpacesRoute
   "/api/site-themes": typeof ApiSiteThemesRoute
-  "/api/sites": typeof ApiSitesRoute
+  "/api/sites": typeof ApiSitesRouteWithChildren
   "/api/spaces": typeof ApiSpacesRoute
   "/api/user-invitations": typeof ApiUserInvitationsRoute
   "/$orgSlug/settings": typeof AuthenticatedOrgSlugSettingsRoute
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   "/": typeof AuthenticatedActiveOrgIndexRoute
   "/$orgSlug/sites/$siteId": typeof AuthenticatedOrgSlugSitesSiteIdRoute
   "/$orgSlug/spaces/$spaceId": typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  "/api/sites/$siteId/search-key": typeof ApiSitesSiteIdSearchKeyRoute
   "/$orgSlug/spaces": typeof AuthenticatedOrgSlugSpacesIndexRoute
   "/$orgSlug/spaces/$spaceId/document/$docId": typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
@@ -272,7 +279,7 @@ export interface FileRoutesByTo {
   "/api/site-domains": typeof ApiSiteDomainsRoute
   "/api/site-spaces": typeof ApiSiteSpacesRoute
   "/api/site-themes": typeof ApiSiteThemesRoute
-  "/api/sites": typeof ApiSitesRoute
+  "/api/sites": typeof ApiSitesRouteWithChildren
   "/api/spaces": typeof ApiSpacesRoute
   "/api/user-invitations": typeof ApiUserInvitationsRoute
   "/$orgSlug/settings": typeof AuthenticatedOrgSlugSettingsRoute
@@ -285,6 +292,7 @@ export interface FileRoutesByTo {
   "/": typeof AuthenticatedActiveOrgIndexRoute
   "/$orgSlug/sites/$siteId": typeof AuthenticatedOrgSlugSitesSiteIdRoute
   "/$orgSlug/spaces/$spaceId": typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  "/api/sites/$siteId/search-key": typeof ApiSitesSiteIdSearchKeyRoute
   "/$orgSlug/spaces": typeof AuthenticatedOrgSlugSpacesIndexRoute
   "/$orgSlug/spaces/$spaceId/document/$docId": typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
@@ -309,7 +317,7 @@ export interface FileRoutesById {
   "/api/site-domains": typeof ApiSiteDomainsRoute
   "/api/site-spaces": typeof ApiSiteSpacesRoute
   "/api/site-themes": typeof ApiSiteThemesRoute
-  "/api/sites": typeof ApiSitesRoute
+  "/api/sites": typeof ApiSitesRouteWithChildren
   "/api/spaces": typeof ApiSpacesRoute
   "/api/user-invitations": typeof ApiUserInvitationsRoute
   "/_authenticated/$orgSlug/settings": typeof AuthenticatedOrgSlugSettingsRoute
@@ -322,6 +330,7 @@ export interface FileRoutesById {
   "/_authenticated/_active-org/": typeof AuthenticatedActiveOrgIndexRoute
   "/_authenticated/$orgSlug/sites/$siteId": typeof AuthenticatedOrgSlugSitesSiteIdRoute
   "/_authenticated/$orgSlug/spaces/$spaceId": typeof AuthenticatedOrgSlugSpacesSpaceIdRouteWithChildren
+  "/api/sites/$siteId/search-key": typeof ApiSitesSiteIdSearchKeyRoute
   "/_authenticated/$orgSlug/spaces/": typeof AuthenticatedOrgSlugSpacesIndexRoute
   "/_authenticated/$orgSlug/spaces/$spaceId/document/$docId": typeof AuthenticatedOrgSlugSpacesSpaceIdDocumentDocIdRoute
 }
@@ -358,6 +367,7 @@ export interface FileRouteTypes {
     | "/"
     | "/$orgSlug/sites/$siteId"
     | "/$orgSlug/spaces/$spaceId"
+    | "/api/sites/$siteId/search-key"
     | "/$orgSlug/spaces"
     | "/$orgSlug/spaces/$spaceId/document/$docId"
   fileRoutesByTo: FileRoutesByTo
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | "/"
     | "/$orgSlug/sites/$siteId"
     | "/$orgSlug/spaces/$spaceId"
+    | "/api/sites/$siteId/search-key"
     | "/$orgSlug/spaces"
     | "/$orgSlug/spaces/$spaceId/document/$docId"
   id:
@@ -427,6 +438,7 @@ export interface FileRouteTypes {
     | "/_authenticated/_active-org/"
     | "/_authenticated/$orgSlug/sites/$siteId"
     | "/_authenticated/$orgSlug/spaces/$spaceId"
+    | "/api/sites/$siteId/search-key"
     | "/_authenticated/$orgSlug/spaces/"
     | "/_authenticated/$orgSlug/spaces/$spaceId/document/$docId"
   fileRoutesById: FileRoutesById
@@ -448,7 +460,7 @@ export interface RootRouteChildren {
   ApiSiteDomainsRoute: typeof ApiSiteDomainsRoute
   ApiSiteSpacesRoute: typeof ApiSiteSpacesRoute
   ApiSiteThemesRoute: typeof ApiSiteThemesRoute
-  ApiSitesRoute: typeof ApiSitesRoute
+  ApiSitesRoute: typeof ApiSitesRouteWithChildren
   ApiSpacesRoute: typeof ApiSpacesRoute
   ApiUserInvitationsRoute: typeof ApiUserInvitationsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -676,6 +688,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedOrgSlugSpacesIndexRouteImport
       parentRoute: typeof AuthenticatedOrgSlugRoute
     }
+    "/api/sites/$siteId/search-key": {
+      id: "/api/sites/$siteId/search-key"
+      path: "/$siteId/search-key"
+      fullPath: "/api/sites/$siteId/search-key"
+      preLoaderRoute: typeof ApiSitesSiteIdSearchKeyRouteImport
+      parentRoute: typeof ApiSitesRoute
+    }
     "/_authenticated/$orgSlug/spaces/$spaceId": {
       id: "/_authenticated/$orgSlug/spaces/$spaceId"
       path: "/spaces/$spaceId"
@@ -767,6 +786,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren
 )
 
+interface ApiSitesRouteChildren {
+  ApiSitesSiteIdSearchKeyRoute: typeof ApiSitesSiteIdSearchKeyRoute
+}
+
+const ApiSitesRouteChildren: ApiSitesRouteChildren = {
+  ApiSitesSiteIdSearchKeyRoute: ApiSitesSiteIdSearchKeyRoute,
+}
+
+const ApiSitesRouteWithChildren = ApiSitesRoute._addFileChildren(
+  ApiSitesRouteChildren
+)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
@@ -784,7 +815,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSiteDomainsRoute: ApiSiteDomainsRoute,
   ApiSiteSpacesRoute: ApiSiteSpacesRoute,
   ApiSiteThemesRoute: ApiSiteThemesRoute,
-  ApiSitesRoute: ApiSitesRoute,
+  ApiSitesRoute: ApiSitesRouteWithChildren,
   ApiSpacesRoute: ApiSpacesRoute,
   ApiUserInvitationsRoute: ApiUserInvitationsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

@@ -3,6 +3,8 @@ import SidebarNavClient from './islands/SidebarNavClient';
 import SidebarSpaceSwitcher from './islands/SidebarSpaceSwitcher';
 import ThemeToggle from './islands/ThemeToggle';
 import { Button } from './ui/button';
+import SearchTrigger from './search/SearchTrigger';
+import SearchCommand from './search/SearchCommand';
 
 function sortSpaces(manifest: Manifest) {
   return manifest.nav.spaces.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -102,6 +104,8 @@ export default function SidebarNav({
         </div>
         <ThemeToggle />
       </div>
+      <SearchTrigger />
+      <SearchCommand />
       <SidebarSpaceSwitcher
         spaces={spaceOptions}
         currentSpace={currentSpace}

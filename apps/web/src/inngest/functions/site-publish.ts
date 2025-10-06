@@ -19,6 +19,7 @@ import {
   blobPut,
 } from "../helpers/blob"
 import { sha256, byteLengthUtf8 } from "../helpers/hash"
+import { makeTypesenseAdminClient } from "../helpers/typesense"
 import * as Y from "yjs"
 import { yDocToProsemirrorJSON } from "y-prosemirror"
 import type { JSONContent } from "@tiptap/core"
@@ -132,6 +133,89 @@ function extractPlain(pm: JSONContent | null): string {
 // small helper that uses blobPut with immutable caching
 async function writeBlobImmutable(key: string, content: string) {
   await blobPut(key, content, "application/json", { immutable: true })
+}
+
+async function indexDocsInTypesense({
+  siteId,
+  buildId,
+  pages,
+}: {
+  siteId: string
+  buildId: string
+  pages: Array<{
+    id: string
+    spaceSlug: string
+    route: string
+    title: string
+    kind: "page" | "api"
+    headings: string[]
+    apiPath?: string | null
+    apiMethod?: string | null
+    plain: string
+    updatedAt: number
+  }>
+}) {
+  const ts = makeTypesenseAdminClient()
+  const coll = `docs_${siteId}_${buildId}`
+  const alias = `docs_${siteId}`
+
+  // 1) Create (or recreate) the versioned collection
+  try {
+    await ts.collections(coll).retrieve()
+    await ts.collections(coll).delete()
+  } catch {
+    console.log("Collection not found!")
+  }
+  await ts.collections().create({
+    name: coll,
+    token_separators: ["-", "_", "/", "."],
+    fields: [
+      { name: "id", type: "string" },
+      { name: "site_id", type: "string", facet: true },
+      { name: "build_id", type: "string", facet: true },
+      { name: "space_slug", type: "string", facet: true },
+      { name: "route", type: "string", infix: true },
+      { name: "title", type: "string", infix: true },
+      { name: "headings", type: "string[]" },
+      { name: "api_method", type: "string", facet: true },
+      { name: "api_path", type: "string", infix: true },
+      { name: "plain", type: "string" },
+      { name: "kind", type: "string", facet: true },
+      { name: "updated_at", type: "int64", sort: true },
+    ],
+    default_sorting_field: "updated_at",
+  })
+
+  // 2) JSONL bulk upsert (fastest path)
+  // Create compact objects and stream as JSON lines
+  const jsonl = pages
+    .map((p) =>
+      JSON.stringify({
+        id: p.id,
+        site_id: siteId,
+        build_id: buildId,
+        space_slug: p.spaceSlug,
+        route: p.route,
+        title: p.title,
+        headings: p.headings ?? [],
+        api_method: p.apiMethod ?? "",
+        api_path: p.apiPath ?? "",
+        plain: p.plain ?? "",
+        kind: p.kind,
+        updated_at: p.updatedAt ?? Date.now(),
+      })
+    )
+    .join("\n")
+
+  await ts.collections(coll).documents().import(jsonl, { action: "upsert" }) // bulk upsert :contentReference[oaicite:23]{index=23}
+
+  // 3) Swap alias atomically to the new collection
+  // If alias exists, update; else create
+  try {
+    await ts.aliases().upsert(alias, { collection_name: coll })
+  } catch {
+    console.log("Alias not found!")
+  } // Collection Alias :contentReference[oaicite:24]{index=24}
 }
 
 export const sitePublish = inngest.createFunction(
@@ -307,6 +391,7 @@ export const sitePublish = inngest.createFunction(
       plain?: string
       source?: JSONContent
     }
+    const docMetadata = new Map<string, { headings: string[]; plain: string }>()
 
     for (const p of flatPages) {
       const bundleObj: PageBundle = {
@@ -340,6 +425,7 @@ export const sitePublish = inngest.createFunction(
         bundleObj.rendered = { html, toc }
         bundleObj.plain = plain
         bundleObj.source = pmDoc ?? {}
+        docMetadata.set(p.id, { headings: toc.map((t) => t.text), plain })
       }
 
       const body = JSON.stringify(bundleObj)
@@ -621,6 +707,24 @@ export const sitePublish = inngest.createFunction(
       [site.primaryHost, ...customDomains.map((d) => d.domain)],
       { buildId, manifestUrl, treeUrl, themeUrl }
     )
+
+    const pagesForIndex = flatPages.map((p) => {
+      const meta = docMetadata.get(p.id)
+      return {
+        id: p.id,
+        spaceSlug: p.spaceSlug,
+        route: routeFor(p.spaceSlug, p.trail, p.type === "api"),
+        title: p.title,
+        kind: p.type === "api" ? "api" : ("page" as "api" | "page"),
+        headings: meta?.headings ?? [],
+        apiPath: p.apiPath ?? null,
+        apiMethod: p.apiMethod ?? null,
+        plain: meta?.plain ?? "",
+        updatedAt: p.updatedAt ? p.updatedAt.getTime() : now,
+      }
+    })
+
+    await indexDocsInTypesense({ siteId, buildId, pages: pagesForIndex })
 
     // 8) Finalize build
     await db
