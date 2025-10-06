@@ -32,6 +32,60 @@ export default $config({
     const VercelBlobBaseUrl = new sst.Secret('VercelBlobBaseUrl');
     const TypesenseApiKey = new sst.Secret('TypesenseApiKey');
 
+    const web = new sst.aws.Service('Web', {
+      cluster,
+      image: {
+        context: '.',
+        dockerfile: 'apps/web/Dockerfile',
+      },
+      // modest defaults; tune as you learn traffic patterns
+      cpu: '0.25 vCPU',
+      memory: '0.5 GB',
+      storage: '20 GB',
+      environment: {
+        NODE_ENV: 'production',
+        PORT: '3000',
+        PUBLIC_URL: 'https://app.trydocufy.com',
+
+        // Supabase
+        DATABASE_URL: DatabaseUrl.value,
+
+        // Electric Cloud (server-side)
+        ELECTRIC_SOURCE_ID: ElectricSourceId.value,
+        ELECTRIC_SOURCE_SECRET: ElectricSourceSecret.value,
+
+        // Inngest Cloud
+        INNGEST_SIGNING_KEY: InngestSigningKey.value,
+        INNGEST_EVENT_KEY: InngestEventKey.value,
+
+        // Auth & email
+        BETTER_AUTH_SECRET: BetterAuthSecret.value,
+        RESEND_API_KEY: ResendApiKey.value,
+
+        // Vercel Blob
+        BLOB_READ_WRITE_TOKEN: BlobReadWriteToken.value,
+        VITE_PUBLIC_VERCEL_BLOB_STORE_ID: VercelBlobStoreId.value,
+        VITE_PUBLIC_VERCEL_BLOB_BASE_URL: VercelBlobBaseUrl.value,
+      },
+      // Health: keep it simple; ALB will hit / (200). If you added /api/healthz, you can set health.path.
+      health: {
+        command: ['CMD-SHELL', 'node -e "require(\'http\').get(\'http://localhost:3000/api/healthz\', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on(\'error\', () => process.exit(1))"'],
+        startPeriod: '10 seconds',
+        timeout: '10 seconds',
+        retries: 3,
+        interval: '30 seconds',
+      },
+      scaling: { min: 2, max: 4, cpuUtilization: 60, memoryUtilization: 60 },
+      loadBalancer: {
+        domain: {
+          name: 'app.trydocufy.com',
+          dns: sst.vercel.dns({ domain: 'trydocufy.com' }),
+        },
+        rules: [{ listen: '80/http' }, { listen: '443/https', forward: '3000/http' }],
+      },
+      logging: { retention: '1 week' },
+    });
+
     const typesenseSg = new aws.ec2.SecurityGroup("typesense-sg", {
       name: `${$app.name}-${$app.stage}-typesense-sg`,
       description: "Security group for Typesense server",
@@ -95,6 +149,15 @@ export default $config({
       owners: ["099720109477"],
     });
 
+    const userData = $interpolate`#!/bin/bash
+set -e
+
+# Fetch the API key from SST Secret (you'd need to store this in SSM first)
+# For now, we'll pass it directly via user data
+export TYPESENSE_API_KEY="${TypesenseApiKey.value}"
+`;
+
+
     const typesenseInstance = new aws.ec2.Instance("typesense-ec2", {
       ami: ubuntu.then(ubuntu => ubuntu.id),
       instanceType: aws.ec2.InstanceType.T4g_Small,
@@ -102,6 +165,7 @@ export default $config({
       vpcSecurityGroupIds: [typesenseSg.id],
       subnetId: vpc.publicSubnets.apply(subnets => subnets[0]),
       keyName: "divyam-local",
+      userData: userData,
       ebsBlockDevices: [
         {
           deviceName: "/dev/sdf",
@@ -118,65 +182,10 @@ export default $config({
         Environment: $app.stage,
       },
     })
-      
-
-    // ------- Web app on ECS/Fargate w/ ALB + domain -------
-    const web = new sst.aws.Service('Web', {
-      cluster,
-      image: {
-        context: '.',
-        dockerfile: 'apps/web/Dockerfile',
-      },
-      // modest defaults; tune as you learn traffic patterns
-      cpu: '0.25 vCPU',
-      memory: '0.5 GB',
-      storage: '20 GB',
-      environment: {
-        NODE_ENV: 'production',
-        PORT: '3000',
-        PUBLIC_URL: 'https://app.trydocufy.com',
-
-        // Supabase
-        DATABASE_URL: DatabaseUrl.value,
-
-        // Electric Cloud (server-side)
-        ELECTRIC_SOURCE_ID: ElectricSourceId.value,
-        ELECTRIC_SOURCE_SECRET: ElectricSourceSecret.value,
-
-        // Inngest Cloud
-        INNGEST_SIGNING_KEY: InngestSigningKey.value,
-        INNGEST_EVENT_KEY: InngestEventKey.value,
-
-        // Auth & email
-        BETTER_AUTH_SECRET: BetterAuthSecret.value,
-        RESEND_API_KEY: ResendApiKey.value,
-
-        // Vercel Blob
-        BLOB_READ_WRITE_TOKEN: BlobReadWriteToken.value,
-        VITE_PUBLIC_VERCEL_BLOB_STORE_ID: VercelBlobStoreId.value,
-        VITE_PUBLIC_VERCEL_BLOB_BASE_URL: VercelBlobBaseUrl.value,
-      },
-      // Health: keep it simple; ALB will hit / (200). If you added /api/healthz, you can set health.path.
-      health: {
-        command: ['CMD-SHELL', 'node -e "require(\'http\').get(\'http://localhost:3000/api/healthz\', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on(\'error\', () => process.exit(1))"'],
-        startPeriod: '10 seconds',
-        timeout: '10 seconds',
-        retries: 3,
-        interval: '30 seconds',
-      },
-      scaling: { min: 2, max: 4, cpuUtilization: 60, memoryUtilization: 60 },
-      loadBalancer: {
-        domain: {
-          name: 'app.trydocufy.com',
-          dns: sst.vercel.dns({ domain: 'trydocufy.com' }),
-        },
-        rules: [{ listen: '80/http' }, { listen: '443/https', forward: '3000/http' }],
-      },
-      logging: { retention: '1 week' },
-    });
 
     return {
       WebURL: web.url,
+      TypesensePublicIP: typesenseInstance.publicIp,
     };
   },
 });

@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 # Update package index
 sudo apt update
 
@@ -39,12 +42,17 @@ mkdir -p ./typesense-data
 mkdir -p ./caddy-data
 mkdir -p ./caddy-config
 
-# Generate a secure random API key
-export TYPESENSE_API_KEY=$(openssl rand -hex 32)
+# Use existing TYPESENSE_API_KEY if set, otherwise generate a new one
+if [ -z "$TYPESENSE_API_KEY" ]; then
+  echo "No TYPESENSE_API_KEY found, generating a new one..."
+  export TYPESENSE_API_KEY=$(openssl rand -hex 32)
+  echo "Generated new API key. Please save it securely!"
+else
+  echo "Using existing TYPESENSE_API_KEY from environment"
+fi
 
 # Save it to a file for later reference
 echo "TYPESENSE_API_KEY=$TYPESENSE_API_KEY" > .env
-echo "Please save this API key securely!"
 
 cat > docker-compose.yml <<'EOF'
 version: '3.8'
@@ -125,21 +133,24 @@ search.trydocufy.com {
 }
 EOF
 
-# Make sure you're in the ~/typesense directory
-cd ~/typesense
-
 # Start the services
 docker compose up -d
 
 # Check if containers are running
 docker compose ps
 
+# Wait a moment for services to start
+sleep 5
+
 # Check health endpoint (from inside the EC2)
+echo "Checking health endpoint..."
 curl http://localhost:8108/health
 
 # Check with API key
+echo "Checking collections endpoint with API key..."
 curl -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" \
   http://localhost:8108/collections
 
-# Once DNS is configured, test from outside
-curl https://search.trydocufy.com/health
+echo ""
+echo "Setup complete! Once DNS is configured, test from outside:"
+echo "curl https://search.trydocufy.com/health"
