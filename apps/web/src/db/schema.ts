@@ -376,3 +376,25 @@ export const selectSiteThemesSchema = createSelectSchema(siteThemesTable)
 export const createSiteThemeSchema = createInsertSchema(siteThemesTable).omit({
   updatedAt: true,
 })
+
+export const siteSearchKeysTable = pgTable(
+  "site_search_keys",
+  {
+    siteId: text("site_id")
+      .notNull()
+      .references(() => sitesTable.id, { onDelete: "cascade" }),
+    keyValue: text("key_value").notNull(), // The parent search-only key (value as returned at creation)
+    expiresAt: timestamp("expires_at"), // Optional TTL if you rotate periodically
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.siteId] }),
+  })
+)
+
+export const selectSiteSearchKeysSchema =
+  createSelectSchema(siteSearchKeysTable)

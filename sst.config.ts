@@ -31,6 +31,7 @@ export default $config({
     const VercelBlobStoreId = new sst.Secret('VercelBlobStoreId');
     const VercelBlobBaseUrl = new sst.Secret('VercelBlobBaseUrl');
     const TypesenseApiKey = new sst.Secret('TypesenseApiKey');
+    const DocsSearchSharedSecret = new sst.Secret('DocsSearchSharedSecret');
 
     const web = new sst.aws.Service('Web', {
       cluster,
@@ -66,10 +67,19 @@ export default $config({
         BLOB_READ_WRITE_TOKEN: BlobReadWriteToken.value,
         VITE_PUBLIC_VERCEL_BLOB_STORE_ID: VercelBlobStoreId.value,
         VITE_PUBLIC_VERCEL_BLOB_BASE_URL: VercelBlobBaseUrl.value,
+
+        DOCS_TS_ADMIN_KEY: TypesenseApiKey.value,
+        DOCS_TS_HOST: 'search.trydocufy.com',
+        DOCS_TS_PORT: '443',
+        DOCS_TS_PROTOCOL: 'https',
+        DOCS_SEARCH_SHARED_SECRET: DocsSearchSharedSecret.value,
       },
       // Health: keep it simple; ALB will hit / (200). If you added /api/healthz, you can set health.path.
       health: {
-        command: ['CMD-SHELL', 'node -e "require(\'http\').get(\'http://localhost:3000/api/healthz\', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on(\'error\', () => process.exit(1))"'],
+        command: [
+          'CMD-SHELL',
+          "node -e \"require('http').get('http://localhost:3000/api/healthz', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\"",
+        ],
         startPeriod: '10 seconds',
         timeout: '10 seconds',
         retries: 3,
@@ -86,67 +96,66 @@ export default $config({
       logging: { retention: '1 week' },
     });
 
-    const typesenseSg = new aws.ec2.SecurityGroup("typesense-sg", {
+    const typesenseSg = new aws.ec2.SecurityGroup('typesense-sg', {
       name: `${$app.name}-${$app.stage}-typesense-sg`,
-      description: "Security group for Typesense server",
+      description: 'Security group for Typesense server',
       vpcId: vpc.id,
       tags: {
         Name: `${$app.name}-${$app.stage}-typesense-sg`,
         Environment: $app.stage,
       },
     });
-    
+
     // Ingress: Allow HTTP (80) from Internet
-    const typesenseIngressHttp = new aws.vpc.SecurityGroupIngressRule("typesense-ingress-http", {
+    const typesenseIngressHttp = new aws.vpc.SecurityGroupIngressRule('typesense-ingress-http', {
       securityGroupId: typesenseSg.id,
-      cidrIpv4: "0.0.0.0/0",
+      cidrIpv4: '0.0.0.0/0',
       fromPort: 80,
       toPort: 80,
-      ipProtocol: "tcp",
-      description: "Allow HTTP from Internet",
-    });
-    
-    // Ingress: Allow HTTPS (443) from Internet
-    const typesenseIngressHttps = new aws.vpc.SecurityGroupIngressRule("typesense-ingress-https", {
-      securityGroupId: typesenseSg.id,
-      cidrIpv4: "0.0.0.0/0",
-      fromPort: 443,
-      toPort: 443,
-      ipProtocol: "tcp",
-      description: "Allow HTTPS from Internet",
+      ipProtocol: 'tcp',
+      description: 'Allow HTTP from Internet',
     });
 
-    const typesenseIngressSsh = new aws.vpc.SecurityGroupIngressRule("typesense-ingress-ssh", {
+    // Ingress: Allow HTTPS (443) from Internet
+    const typesenseIngressHttps = new aws.vpc.SecurityGroupIngressRule('typesense-ingress-https', {
       securityGroupId: typesenseSg.id,
-      cidrIpv4: "0.0.0.0/0", // Change to your IP for better security: "YOUR_IP/32"
+      cidrIpv4: '0.0.0.0/0',
+      fromPort: 443,
+      toPort: 443,
+      ipProtocol: 'tcp',
+      description: 'Allow HTTPS from Internet',
+    });
+
+    const typesenseIngressSsh = new aws.vpc.SecurityGroupIngressRule('typesense-ingress-ssh', {
+      securityGroupId: typesenseSg.id,
+      cidrIpv4: '0.0.0.0/0', // Change to your IP for better security: "YOUR_IP/32"
       fromPort: 22,
       toPort: 22,
-      ipProtocol: "tcp",
-      description: "Allow SSH access",
+      ipProtocol: 'tcp',
+      description: 'Allow SSH access',
     });
-    
-    
+
     // Egress: Allow all outbound traffic
-    const typesenseEgress = new aws.vpc.SecurityGroupEgressRule("typesense-egress-all", {
+    const typesenseEgress = new aws.vpc.SecurityGroupEgressRule('typesense-egress-all', {
       securityGroupId: typesenseSg.id,
-      cidrIpv4: "0.0.0.0/0",
-      ipProtocol: "-1", // All protocols
-      description: "Allow all outbound traffic",
+      cidrIpv4: '0.0.0.0/0',
+      ipProtocol: '-1', // All protocols
+      description: 'Allow all outbound traffic',
     });
 
     const ubuntu = aws.ec2.getAmi({
       mostRecent: true,
       filters: [
-          {
-              name: "name",
-              values: ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"],
-          },
-          {
-              name: "virtualization-type",
-              values: ["hvm"],
-          },
+        {
+          name: 'name',
+          values: ['ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*'],
+        },
+        {
+          name: 'virtualization-type',
+          values: ['hvm'],
+        },
       ],
-      owners: ["099720109477"],
+      owners: ['099720109477'],
     });
 
     const userData = $interpolate`#!/bin/bash
@@ -157,20 +166,19 @@ set -e
 export TYPESENSE_API_KEY="${TypesenseApiKey.value}"
 `;
 
-
-    const typesenseInstance = new aws.ec2.Instance("typesense-ec2", {
-      ami: ubuntu.then(ubuntu => ubuntu.id),
+    const typesenseInstance = new aws.ec2.Instance('typesense-ec2', {
+      ami: ubuntu.then((ubuntu) => ubuntu.id),
       instanceType: aws.ec2.InstanceType.T4g_Small,
       associatePublicIpAddress: true,
       vpcSecurityGroupIds: [typesenseSg.id],
-      subnetId: vpc.publicSubnets.apply(subnets => subnets[0]),
-      keyName: "divyam-local",
+      subnetId: vpc.publicSubnets.apply((subnets) => subnets[0]),
+      keyName: 'divyam-local',
       userData: userData,
       ebsBlockDevices: [
         {
-          deviceName: "/dev/sdf",
+          deviceName: '/dev/sdf',
           volumeSize: 50,
-          volumeType: "gp3",
+          volumeType: 'gp3',
           iops: 3000,
           throughput: 125,
           encrypted: true,
@@ -181,7 +189,7 @@ export TYPESENSE_API_KEY="${TypesenseApiKey.value}"
         Name: `${$app.name}-${$app.stage}-typesense-ec2`,
         Environment: $app.stage,
       },
-    })
+    });
 
     return {
       WebURL: web.url,
