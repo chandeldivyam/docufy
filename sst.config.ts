@@ -30,8 +30,8 @@ export default $config({
     const BlobReadWriteToken = new sst.Secret('BlobReadWriteToken');
     const VercelBlobStoreId = new sst.Secret('VercelBlobStoreId');
     const VercelBlobBaseUrl = new sst.Secret('VercelBlobBaseUrl');
+    const TypesenseApiKey = new sst.Secret('TypesenseApiKey');
 
-    // ------- Web app on ECS/Fargate w/ ALB + domain -------
     const web = new sst.aws.Service('Web', {
       cluster,
       image: {
@@ -86,8 +86,106 @@ export default $config({
       logging: { retention: '1 week' },
     });
 
+    const typesenseSg = new aws.ec2.SecurityGroup("typesense-sg", {
+      name: `${$app.name}-${$app.stage}-typesense-sg`,
+      description: "Security group for Typesense server",
+      vpcId: vpc.id,
+      tags: {
+        Name: `${$app.name}-${$app.stage}-typesense-sg`,
+        Environment: $app.stage,
+      },
+    });
+    
+    // Ingress: Allow HTTP (80) from Internet
+    const typesenseIngressHttp = new aws.vpc.SecurityGroupIngressRule("typesense-ingress-http", {
+      securityGroupId: typesenseSg.id,
+      cidrIpv4: "0.0.0.0/0",
+      fromPort: 80,
+      toPort: 80,
+      ipProtocol: "tcp",
+      description: "Allow HTTP from Internet",
+    });
+    
+    // Ingress: Allow HTTPS (443) from Internet
+    const typesenseIngressHttps = new aws.vpc.SecurityGroupIngressRule("typesense-ingress-https", {
+      securityGroupId: typesenseSg.id,
+      cidrIpv4: "0.0.0.0/0",
+      fromPort: 443,
+      toPort: 443,
+      ipProtocol: "tcp",
+      description: "Allow HTTPS from Internet",
+    });
+
+    const typesenseIngressSsh = new aws.vpc.SecurityGroupIngressRule("typesense-ingress-ssh", {
+      securityGroupId: typesenseSg.id,
+      cidrIpv4: "0.0.0.0/0", // Change to your IP for better security: "YOUR_IP/32"
+      fromPort: 22,
+      toPort: 22,
+      ipProtocol: "tcp",
+      description: "Allow SSH access",
+    });
+    
+    
+    // Egress: Allow all outbound traffic
+    const typesenseEgress = new aws.vpc.SecurityGroupEgressRule("typesense-egress-all", {
+      securityGroupId: typesenseSg.id,
+      cidrIpv4: "0.0.0.0/0",
+      ipProtocol: "-1", // All protocols
+      description: "Allow all outbound traffic",
+    });
+
+    const ubuntu = aws.ec2.getAmi({
+      mostRecent: true,
+      filters: [
+          {
+              name: "name",
+              values: ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"],
+          },
+          {
+              name: "virtualization-type",
+              values: ["hvm"],
+          },
+      ],
+      owners: ["099720109477"],
+    });
+
+    const userData = $interpolate`#!/bin/bash
+set -e
+
+# Fetch the API key from SST Secret (you'd need to store this in SSM first)
+# For now, we'll pass it directly via user data
+export TYPESENSE_API_KEY="${TypesenseApiKey.value}"
+`;
+
+
+    const typesenseInstance = new aws.ec2.Instance("typesense-ec2", {
+      ami: ubuntu.then(ubuntu => ubuntu.id),
+      instanceType: aws.ec2.InstanceType.T4g_Small,
+      associatePublicIpAddress: true,
+      vpcSecurityGroupIds: [typesenseSg.id],
+      subnetId: vpc.publicSubnets.apply(subnets => subnets[0]),
+      keyName: "divyam-local",
+      userData: userData,
+      ebsBlockDevices: [
+        {
+          deviceName: "/dev/sdf",
+          volumeSize: 50,
+          volumeType: "gp3",
+          iops: 3000,
+          throughput: 125,
+          encrypted: true,
+          deleteOnTermination: true,
+        },
+      ],
+      tags: {
+        Name: `${$app.name}-${$app.stage}-typesense-ec2`,
+        Environment: $app.stage,
+      },
+    })
+
     return {
       WebURL: web.url,
+      TypesensePublicIP: typesenseInstance.publicIp,
     };
   },
 });
