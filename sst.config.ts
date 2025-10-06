@@ -177,7 +177,6 @@ export default $config({
 
     return {
       WebURL: web.url,
-      TypesensePublicIp: typesenseInstance.publicIp,
     };
   },
 });
