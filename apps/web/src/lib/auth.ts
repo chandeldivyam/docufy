@@ -42,7 +42,7 @@ if (isProduction) {
 } else {
   // Development origins
   trustedOrigins.push(
-    "https://web.localhost",
+    // "https://web.localhost",
     `https://${networkIP}`,
     "http://localhost:5173",
     "http://localhost:3000"
@@ -56,9 +56,21 @@ export const auth = betterAuth({
     schema,
   }),
   emailAndPassword: {
-    enabled: true,
+    enabled: false,
     // Require stronger passwords in production
     minPasswordLength: isProduction ? 8 : 1,
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID! as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET! as string,
+      accessType: "offline",
+      prompt: "select_account consent",
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID! as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET! as string,
+    },
   },
   trustedOrigins: trustedOrigins.filter(Boolean),
   plugins: [organization(), reactStartCookies()],

@@ -104,7 +104,7 @@ function OrgsPage() {
 
       // set active and enter app at slugged URL
       await authClient.organization.setActive({ organizationId: data.id })
-      navigate({ to: `/${finalSlug}` })
+      window.location.href = `/${finalSlug}`
     } catch (e) {
       console.error(e)
       toast.error("Unable to create organization")

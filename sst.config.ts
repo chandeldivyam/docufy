@@ -32,6 +32,10 @@ export default $config({
     const VercelBlobBaseUrl = new sst.Secret('VercelBlobBaseUrl');
     const TypesenseApiKey = new sst.Secret('TypesenseApiKey');
     const DocsSearchSharedSecret = new sst.Secret('DocsSearchSharedSecret');
+    const GoogleClientId = new sst.Secret('GoogleClientId');
+    const GoogleClientSecret = new sst.Secret('GoogleClientSecret');
+    const GithubClientId = new sst.Secret('GithubClientId');
+    const GithubClientSecret = new sst.Secret('GithubClientSecret');
 
     const web = new sst.aws.Service('Web', {
       cluster,
@@ -73,6 +77,12 @@ export default $config({
         DOCS_TS_PORT: '443',
         DOCS_TS_PROTOCOL: 'https',
         DOCS_SEARCH_SHARED_SECRET: DocsSearchSharedSecret.value,
+
+        // Auth
+        GOOGLE_CLIENT_ID: GoogleClientId.value,
+        GOOGLE_CLIENT_SECRET: GoogleClientSecret.value,
+        GITHUB_CLIENT_ID: GithubClientId.value,
+        GITHUB_CLIENT_SECRET: GithubClientSecret.value,
       },
       // Health: keep it simple; ALB will hit / (200). If you added /api/healthz, you can set health.path.
       health: {
