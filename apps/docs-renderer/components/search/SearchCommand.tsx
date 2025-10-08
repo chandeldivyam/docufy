@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import type { Hit as AlgoliaHit } from 'instantsearch.js';
 import TypesenseInstantSearchAdapter from 'typesense-instantsearch-adapter';
 import { InstantSearch, Configure, Highlight, Snippet, useHits } from 'react-instantsearch';
+import { useRouter } from 'next/navigation'; 
 
 // ---------- Types ----------
 type SearchCfg = {
@@ -200,11 +201,11 @@ function SearchResults({
   const { hits } = useHits<DocHit>();
   const [selected, setSelected] = useState(0);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter(); 
 
   // Track keyboard mode
   const keyboardModeRef = useRef(false);
   const mouseMoveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const selectedRef = useRef(selected);
 
   useEffect(() => {
@@ -273,14 +274,14 @@ function SearchResults({
         } else if (e.shiftKey) {
           window.open(url, '_blank', 'noopener,noreferrer');
         } else {
-          window.location.href = url;
+          router.push(url);
         }
       }
     };
 
     el.addEventListener('keydown', onKeyDown);
     return () => el.removeEventListener('keydown', onKeyDown);
-  }, [hits, query, onAccept, inputRef]);
+  }, [hits, query, onAccept, inputRef, router]);
 
   const activeId =
     hits.length > 0 ? `dfy-hit-${String(hits[selected]?.objectID ?? selected)}` : undefined;
@@ -318,6 +319,7 @@ function SearchResults({
                 className={`dfy-hit ${isSelected ? 'dfy-hit-selected' : ''}`}
                 onClick={() => {
                   addRecent(query);
+                  onAccept();
                 }}
                 onMouseEnter={() => {
                   // Only respond to mouse if not in keyboard mode

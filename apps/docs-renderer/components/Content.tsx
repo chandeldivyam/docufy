@@ -5,6 +5,7 @@ import CopyButtons from './islands/CopyButtons';
 import TocSpy from './islands/TocSpy';
 import TableOfContents from './TableOfContents';
 import DocPageFrame from './DocPageFrame';
+import LinkInterceptor from './islands/LinkInterceptor';
 
 export default async function Content({ blobPromise }: { blobPromise: Promise<PageBlob> }) {
   const blob = await blobPromise;
@@ -25,6 +26,7 @@ export default async function Content({ blobPromise }: { blobPromise: Promise<Pa
           <div dangerouslySetInnerHTML={{ __html: sanitize(blob.rendered.html) }} />
           <CopyButtons />
           <TocSpy />
+          <LinkInterceptor />
         </article>
       </DocPageFrame>
     </div>
