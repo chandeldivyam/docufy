@@ -25,7 +25,19 @@ const config = defineConfig({
         enabled: true,
       },
     }),
-    nitroV2Plugin({ preset: "node-server" }),
+    nitroV2Plugin({ 
+      preset: "node-server" ,
+      rollupConfig: { external: [
+        'postcss',
+        'postcss-prefix-selector',
+        'cssnano',
+        'sanitize-html',
+        'cheerio',
+      ]},
+      commonJS: {
+        transformMixedEsModules: true
+      }
+    }),
     viteReact(),
   ],
   ssr: {
