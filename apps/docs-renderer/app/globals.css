@@ -27,6 +27,15 @@
     --sidebar-fg-muted: oklch(0.45 0 0);
     --sidebar-border: oklch(0.92 0 0);
     --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 4%, var(--sidebar-bg));
+
+    --sb-size: 8px;
+    --sb-size-hover: 10px;
+
+    /* Light theme scrollbar colors */
+    --sb-track: transparent;
+    --sb-thumb: oklch(0.82 0 0 / 0.35);
+    --sb-thumb-hover: oklch(0.72 0 0 / 0.5);
+    --sb-thumb-active: oklch(0.62 0 0 / 0.65);
   }
 
   :root.dark {
@@ -41,6 +50,10 @@
     --sidebar-fg-muted: oklch(0.77 0 0);
     --sidebar-border: oklch(0.3 0 0);
     --sidebar-hover: color-mix(in oklab, var(--sidebar-fg) 10%, var(--sidebar-bg));
+    --sb-track: transparent;
+    --sb-thumb: oklch(0.4 0 0 / 0.4);
+    --sb-thumb-hover: oklch(0.5 0 0 / 0.6);
+    --sb-thumb-active: oklch(0.6 0 0 / 0.75);
   }
 }
 
@@ -676,15 +689,34 @@ html.dark .shiki span {
   width: var(--sb-size);
   height: var(--sb-size);
 }
+
 *::-webkit-scrollbar-track {
   background: var(--sb-track);
+  border-radius: 999px;
 }
+
 *::-webkit-scrollbar-thumb {
   background: var(--sb-thumb);
   border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition:
+    background-color 180ms ease,
+    width 180ms ease;
 }
+
 *::-webkit-scrollbar-thumb:hover {
   background: var(--sb-thumb-hover);
+  width: var(--sb-size-hover);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: var(--sb-thumb-active);
+}
+
+/* Corner where horizontal and vertical scrollbars meet */
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* ======= Search overlay ======= */
