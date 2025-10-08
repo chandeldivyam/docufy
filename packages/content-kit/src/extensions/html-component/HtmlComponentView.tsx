@@ -95,6 +95,8 @@ function buildSrcDoc({
       'br',
       'input',
       'label',
+      'svg',
+      'path',
     ],
     ALLOWED_ATTR: [
       'class',
@@ -120,6 +122,14 @@ function buildSrcDoc({
       'checked',
       'disabled',
       'for',
+      'xmlns',
+      'viewBox',
+      'fill',
+      'stroke',
+      'stroke-width',
+      'stroke-linecap',
+      'stroke-linejoin',
+      'd',
     ],
     ALLOW_DATA_ATTR: true,
   });
