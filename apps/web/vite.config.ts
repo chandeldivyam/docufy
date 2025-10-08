@@ -25,7 +25,7 @@ const config = defineConfig({
         enabled: true,
       },
     }),
-    nitroV2Plugin({ preset: "node-server" }),
+    nitroV2Plugin({ preset: "node_server" }),
     viteReact(),
   ],
   ssr: {

@@ -46,6 +46,8 @@ const HTML_SANITIZE: sanitizeHtml.IOptions = {
     'br',
     'input',
     'label',
+    'svg',
+    'path',
   ],
   allowedAttributes: {
     '*': ['class', 'id', 'aria-*', 'role', 'title', 'data-*', 'style'], // style will still be filtered by CSS sanitizer below.
@@ -53,6 +55,18 @@ const HTML_SANITIZE: sanitizeHtml.IOptions = {
     img: ['src', 'alt', 'width', 'height', 'loading', 'decoding', 'srcset', 'sizes'],
     input: ['type', 'name', 'id', 'checked', 'disabled'],
     label: ['for'],
+    svg: [
+      'xmlns',
+      'width',
+      'height',
+      'viewBox',
+      'fill',
+      'stroke',
+      'stroke-width',
+      'stroke-linecap',
+      'stroke-linejoin',
+    ],
+    path: ['d'],
   },
   allowedSchemes: ['https', 'data', 'mailto'],
   allowProtocolRelative: false,
@@ -122,7 +136,7 @@ async function scopeAndMinify(css: string, scope: string) {
       },
     }),
     cssnano({ preset: 'default' }),
-  ]).process(css, { from: undefined });
+  ]).process(css, { from: `${scope}.css` });
   return result.css;
 }
 
