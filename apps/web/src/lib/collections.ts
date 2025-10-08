@@ -386,7 +386,7 @@ const sitesRawSchema = z.object({
   name: z.string(),
   slug: z.string(),
   store_id: z.string(),
-  base_url: z.string().url(),
+  base_url: z.string(),
   primary_host: z.string().nullable().optional(),
   created_at: z.coerce.date(),
   updated_at: z.coerce.date(),
@@ -433,8 +433,6 @@ function createSitesCollectionFor(url: string) {
           organizationId: s.organization_id,
           name: s.name,
           slug: s.slug,
-          baseUrl: s.base_url,
-          storeId: s.store_id,
           buttons: s.buttons ?? [],
         })
         return { txid: result.txid }

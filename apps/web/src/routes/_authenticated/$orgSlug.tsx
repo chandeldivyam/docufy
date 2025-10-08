@@ -749,17 +749,8 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
           ? crypto.randomUUID()
           : `${Date.now()}`
 
-      const blobStoreId = import.meta.env.VITE_PUBLIC_VERCEL_BLOB_STORE_ID ?? ""
-      const blobStoreUrl =
-        import.meta.env.VITE_PUBLIC_VERCEL_BLOB_BASE_URL ?? ""
-
-      console.log(blobStoreId, blobStoreUrl)
-
-      if (!blobStoreId || !blobStoreUrl) {
-        throw new Error("Blob store ID or URL not found")
-      }
-
-      console.log("trying to insert site")
+      const blobStoreId = ""
+      const blobStoreUrl = ""
 
       await sitesCollection.insert({
         id: siteId,

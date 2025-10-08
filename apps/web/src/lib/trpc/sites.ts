@@ -86,8 +86,6 @@ export const sitesRouter = router({
         organizationId: z.string(),
         name: z.string().min(1),
         slug: z.string().min(1).optional(),
-        baseUrl: z.string().url(),
-        storeId: z.string().min(1),
         buttons: z.array(ButtonZ).optional(),
       })
     )
@@ -119,14 +117,17 @@ export const sitesRouter = router({
           message: "Slug already in use",
         })
 
+      const storeId = process.env.VITE_PUBLIC_VERCEL_BLOB_STORE_ID ?? ""
+      const baseUrl = process.env.VITE_PUBLIC_VERCEL_BLOB_BASE_URL ?? ""
+
       return await ctx.db.transaction(async (tx) => {
         await tx.insert(sitesTable).values({
           id,
           organizationId: input.organizationId,
           name: input.name,
           slug,
-          storeId: input.storeId,
-          baseUrl: input.baseUrl,
+          storeId: storeId,
+          baseUrl: baseUrl,
           primaryHost: allocatePrimaryHost(slug),
           buttons: input.buttons ?? [],
         })
