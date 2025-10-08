@@ -122,7 +122,7 @@ async function scopeAndMinify(css: string, scope: string) {
       },
     }),
     cssnano({ preset: 'default' }),
-  ]).process(css, { from: undefined });
+  ]).process(css, { from: `${scope}.css` });
   return result.css;
 }
 
