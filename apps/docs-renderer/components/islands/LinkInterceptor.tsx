@@ -8,9 +8,6 @@ export default function LinkInterceptor() {
   const router = useRouter();
 
   useEffect(() => {
-    // Get base path if it exists (from current URL)
-    const basePath = window.location.pathname.match(/^(\/[^/]+)?/)?.[1] || '';
-
     const handleClick = (e: Event) => {
       const mouseEvent = e as MouseEvent;
       const target = mouseEvent.target as HTMLElement;
@@ -31,9 +28,8 @@ export default function LinkInterceptor() {
       // Only intercept internal links without modifiers
       if (isInternal && !isHash && !hasModifier && !isNewTab) {
         e.preventDefault();
-        // Don't add basePath if href already includes it
-        const finalHref = href.startsWith(basePath) ? href : `${basePath}${href}`;
-        router.push(finalHref);
+        // Use href as-is - it's already a root-relative path
+        router.push(href);
       }
     };
 
@@ -51,8 +47,7 @@ export default function LinkInterceptor() {
       const isHash = href.startsWith('#');
 
       if (isInternal && !isHash) {
-        const finalHref = href.startsWith(basePath) ? href : `${basePath}${href}`;
-        router.prefetch(finalHref);
+        router.prefetch(href);
       }
     };
 
