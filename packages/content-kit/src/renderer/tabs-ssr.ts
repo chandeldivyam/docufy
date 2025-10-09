@@ -35,7 +35,6 @@ export async function processTabsSSR(html: string) {
     const $tablist = $root.children('[role="tablist"]');
     $tablist.empty();
 
-
     // --- The rest of the logic remains the same ---
     const panels = $content.children('div[data-type="tab"]');
     const max = Math.max(0, panels.length - 1);

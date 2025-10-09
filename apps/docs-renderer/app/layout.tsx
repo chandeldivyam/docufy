@@ -4,6 +4,7 @@ import { ThemeProvider } from '../components/theme-provider';
 import { fetchTheme } from '../lib/fetchers';
 import { getPointer } from '../lib/pointer';
 import type { ThemeJson } from '../lib/types';
+import { SearchProvider } from '../components/search/SearchProvider'; // Import the new provider
 
 export const runtime = 'edge';
 export const preferredRegion = 'auto';
@@ -40,9 +41,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         ) : null}
       </head>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-        </ThemeProvider>
+        <SearchProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+          </ThemeProvider>
+        </SearchProvider>
       </body>
     </html>
   );

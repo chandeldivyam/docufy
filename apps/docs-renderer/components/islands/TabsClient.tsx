@@ -10,8 +10,12 @@ export default function TabsClient() {
     const all = Array.from(document.querySelectorAll<HTMLElement>('div[data-type="tabs"]'));
 
     function setActive(root: HTMLElement, index: number, focus = false) {
-      const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(':scope > [role="tablist"] [role="tab"]'));
-      const panels = Array.from(root.querySelectorAll<HTMLElement>(':scope > .dfy-tabs-content > [role="tabpanel"]'));
+      const tabs = Array.from(
+        root.querySelectorAll<HTMLButtonElement>(':scope > [role="tablist"] [role="tab"]'),
+      );
+      const panels = Array.from(
+        root.querySelectorAll<HTMLElement>(':scope > .dfy-tabs-content > [role="tabpanel"]'),
+      );
       if (!tabs.length || !panels.length) return;
 
       const max = tabs.length - 1;
@@ -70,7 +74,9 @@ export default function TabsClient() {
       const panel = target?.closest<HTMLElement>('[role="tabpanel"]');
       const root = panel?.closest<HTMLElement>('div[data-type="tabs"]');
       if (!panel || !root) return;
-      const panels = Array.from(root.querySelectorAll<HTMLElement>(':scope > .dfy-tabs-content > [role="tabpanel"]'));
+      const panels = Array.from(
+        root.querySelectorAll<HTMLElement>(':scope > .dfy-tabs-content > [role="tabpanel"]'),
+      );
       const idx = panels.indexOf(panel);
       if (idx >= 0) setActive(root, idx);
     }

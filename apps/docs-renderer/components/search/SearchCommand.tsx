@@ -7,15 +7,7 @@ import type { Hit as AlgoliaHit } from 'instantsearch.js';
 import TypesenseInstantSearchAdapter from 'typesense-instantsearch-adapter';
 import { InstantSearch, Configure, Highlight, Snippet, useHits } from 'react-instantsearch';
 import { useRouter } from 'next/navigation';
-
-// ---------- Types ----------
-type SearchCfg = {
-  key: string;
-  collection: string;
-  nodes: Array<{ host: string; port: number; protocol: string }>;
-  expiresAt: string;
-  defaults: Record<string, string | number>;
-};
+import { useSearch } from './SearchProvider'; // Import the new context hook
 
 type HitAttrs = {
   id: string;
@@ -30,23 +22,6 @@ type HitAttrs = {
 type DocHit = AlgoliaHit<HitAttrs>;
 
 const RECENTS_KEY = 'dfy:search:recent';
-
-// ---------- Hooks ----------
-function useSearchConfig() {
-  const [cfg, setCfg] = useState<SearchCfg | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    fetch('/api/search-config', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-      .then((j) => alive && setCfg(j))
-      .catch((e) => alive && setError(String(e)));
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return { cfg, error };
-}
 
 function kbd(meta: boolean) {
   return meta ? '⌘' : 'Ctrl';
@@ -68,7 +43,7 @@ export default function SearchCommand() {
   const debouncedQuery = useDebounced(query);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const { cfg } = useSearchConfig();
+  const { cfg } = useSearch(); // Consume config from the context
 
   // Build Typesense search client once
   const searchClient = useMemo(() => {
