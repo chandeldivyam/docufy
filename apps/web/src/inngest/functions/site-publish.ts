@@ -43,7 +43,6 @@ type PageIndexEntry = {
   blob: string
   hash: string
   size: number
-  neighbors: string[]
   lastModified: number
   kind?: "page" | "api_spec" | "api"
   api?: {
@@ -51,6 +50,8 @@ type PageIndexEntry = {
     path?: string
     method?: string
   }
+  previous?: { title: string; route: string } | null
+  next?: { title: string; route: string } | null
 }
 
 // --- helpers ---
@@ -490,7 +491,6 @@ export const sitePublish = inngest.createFunction(
         blob: ref.key,
         hash: ref.hash,
         size: ref.size,
-        neighbors: [],
         lastModified: p.updatedAt ? p.updatedAt.getTime() : now,
         kind: p.type === "api" ? "api" : "page",
       }
@@ -502,14 +502,31 @@ export const sitePublish = inngest.createFunction(
         }
       }
     }
-    for (const routes of routesBySpace.values()) {
+    for (const spaceSlug of routesBySpace.keys()) {
+      const routes = routesBySpace.get(spaceSlug) ?? []
       for (let i = 0; i < routes.length; i++) {
-        const here = routes[i]!
-        const entry = pagesIndex[here]
-        if (!entry) continue
-        const n1 = routes[i + 1]
-        const n2 = routes[i + 2]
-        entry.neighbors = [n1, n2].filter(Boolean) as string[]
+        const currentRoute = routes[i]!
+        const prevRoute = routes[i - 1]
+        const nextRoute = routes[i + 1]
+
+        const currentPage = pagesIndex[currentRoute]
+        if (currentPage) {
+          const prevPage = prevRoute ? pagesIndex[prevRoute] : null
+          if (prevPage) {
+            currentPage.previous = {
+              title: prevPage.title,
+              route: prevRoute!,
+            }
+          }
+
+          const nextPage = nextRoute ? pagesIndex[nextRoute] : null
+          if (nextPage) {
+            currentPage.next = {
+              title: nextPage.title,
+              route: nextRoute!,
+            }
+          }
+        }
       }
     }
 

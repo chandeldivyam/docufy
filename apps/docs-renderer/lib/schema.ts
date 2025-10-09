@@ -18,7 +18,6 @@ export const PageIndexEntryZ = z.object({
   blob: z.string(),
   hash: z.string(),
   size: z.number(),
-  neighbors: z.array(z.string()).optional().default([]),
   lastModified: z.number().optional(),
   kind: z.enum(['page', 'api_spec', 'api']).optional().nullable(),
   api: z
@@ -29,6 +28,8 @@ export const PageIndexEntryZ = z.object({
     })
     .optional()
     .nullable(),
+  previous: z.object({ title: z.string(), route: z.string() }).optional().nullable(),
+  next: z.object({ title: z.string(), route: z.string() }).optional().nullable(),
 });
 
 export const ManifestZ = z.object({

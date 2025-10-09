@@ -7,8 +7,22 @@ import TableOfContents from './TableOfContents';
 import DocPageFrame from './DocPageFrame';
 import LinkInterceptor from './islands/LinkInterceptor';
 import TabsClient from './islands/TabsClient';
+import { PrevNextNav } from './PrevNextNav';
 
-export default async function Content({ blobPromise }: { blobPromise: Promise<PageBlob> }) {
+type NavLink = {
+  title: string;
+  route: string;
+};
+
+export default async function Content({
+  blobPromise,
+  previous,
+  next,
+}: {
+  blobPromise: Promise<PageBlob>;
+  previous?: NavLink | null;
+  next?: NavLink | null;
+}) {
   const blob = await blobPromise;
   const toc = (blob.rendered.toc as Array<{ level: number; text: string; id: string }>) ?? [];
 
@@ -25,6 +39,9 @@ export default async function Content({ blobPromise }: { blobPromise: Promise<Pa
         <article className="dfy-article">
           <h1>{blob.title}</h1>
           <div dangerouslySetInnerHTML={{ __html: sanitize(blob.rendered.html) }} />
+
+          <PrevNextNav previous={previous} next={next} />
+
           <CopyButtons />
           <TocSpy />
           <LinkInterceptor />

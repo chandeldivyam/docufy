@@ -25,7 +25,7 @@ export default async function DocPage({
 
   return (
     <Suspense fallback={<></>}>
-      <Content blobPromise={blobPromise} />
+      <Content blobPromise={blobPromise} previous={page.previous} next={page.next} />
     </Suspense>
   );
 }

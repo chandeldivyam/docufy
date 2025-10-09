@@ -14,7 +14,6 @@ export type PageIndexEntry = {
   blob: string; // relative blob key under Blob base URL
   hash: string;
   size: number;
-  neighbors: string[];
   lastModified: number;
   kind: 'page' | 'api';
   api: {
@@ -22,6 +21,8 @@ export type PageIndexEntry = {
     path?: string;
     method?: string;
   } | null;
+  previous?: { title: string; route: string } | null;
+  next?: { title: string; route: string } | null;
 };
 
 export type Manifest = {
