@@ -1244,3 +1244,36 @@ html.dark .shiki span {
   background: var(--primary);
   border-radius: 1px;
 }
+
+.dfy-article p code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
+.dfy-article li code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
+.dfy-article td code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
+.dfy-article th code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']) {
+  background: color-mix(in oklab, var(--muted) 8%, transparent);
+  color: color-mix(in oklch, var(--foreground) 90%, black);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  border: 1px solid color-mix(in oklab, var(--muted) 15%, transparent);
+}
+
+:root.dark .dfy-article p code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
+:root.dark .dfy-article li code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
+:root.dark .dfy-article td code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
+:root.dark .dfy-article th code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']) {
+  background: color-mix(in oklab, var(--muted) 15%, transparent);
+  color: color-mix(in oklch, var(--foreground) 90%, black);
+  border-color: color-mix(in oklab, var(--muted) 25%, transparent);
+}
+
+/* visually hidden helper */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+}
