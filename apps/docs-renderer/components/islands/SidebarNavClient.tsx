@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -241,7 +241,9 @@ function Node({
           >
             {isApiRoute && getMethodBadge(node)}
             {node.iconName && (
-              <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
+              <Suspense fallback={<span aria-hidden className="inline-block h-4 w-4" />}>
+                <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
+              </Suspense>
             )}
             <SmartTitle title={node.title} />
           </Link>
@@ -260,7 +262,9 @@ function Node({
             onClick={() => onToggle(nodeId, !isExpanded)}
           >
             {node.iconName && (
-              <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
+              <Suspense fallback={<span aria-hidden className="inline-block h-4 w-4" />}>
+                <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
+              </Suspense>
             )}
             <SmartTitle title={node.title} />
           </div>

@@ -1,5 +1,6 @@
 import SidebarShell from '@/components/SidebarShell';
-export default async function SpaceLayout({
+export const runtime = 'nodejs';
+export default async function ApiRefSpaceLayout({
   children,
   params,
 }: {
