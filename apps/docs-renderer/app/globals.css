@@ -392,6 +392,11 @@ body {
   color: var(--muted);
 }
 
+.dfy-article blockquote p {
+  margin: 0;
+  padding: 0;
+}
+
 .dfy-article a {
   color: var(--primary);
   text-decoration: none;
