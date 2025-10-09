@@ -56,6 +56,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export const Route = createFileRoute(
   "/_authenticated/$orgSlug/spaces/$spaceId"
@@ -596,37 +602,63 @@ function DocumentsTree({
           Documents
         </h3>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            title="New page"
-            onClick={() => startCreate({ type: "page", parentId: null })}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            title="New API spec"
-            onClick={() =>
-              startCreate({ type: "api_spec", parentId: null, open: true })
-            }
-          >
-            <FileCode2 className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            title="New group"
-            onClick={() =>
-              startCreate({ type: "group", parentId: null, open: false })
-            }
-          >
-            <Folder className="h-3 w-3" />
-          </Button>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => startCreate({ type: "page", parentId: null })}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>New page</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() =>
+                    startCreate({
+                      type: "api_spec",
+                      parentId: null,
+                      open: true,
+                    })
+                  }
+                >
+                  <FileCode2 className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>New API spec</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() =>
+                    startCreate({ type: "group", parentId: null, open: false })
+                  }
+                >
+                  <Folder className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>New group</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
