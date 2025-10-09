@@ -198,6 +198,18 @@ export default function HtmlComponentView(props: NodeViewProps) {
   );
 
   React.useEffect(() => {
+    // Sync state from props when external changes occur (e.g., from Y.js)
+    // This prevents the view from becoming stale.
+    if (attrs.html !== html) {
+      setHtml(attrs.html);
+    }
+    if (attrs.css !== css) {
+      setCss(attrs.css);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attrs.html, attrs.css]);
+
+  React.useEffect(() => {
     if (pending.current) window.clearTimeout(pending.current);
     pending.current = window.setTimeout(() => {
       commitAttrs(html, css);
@@ -205,7 +217,7 @@ export default function HtmlComponentView(props: NodeViewProps) {
     return () => {
       if (pending.current) window.clearTimeout(pending.current);
     };
-  }, [html, css, commitAttrs]);
+  }, [html, css, commitAttrs, attrs.html, attrs.css]);
 
   // Recompute scope id for preview (same logic as persisted)
   const [scopeId, setScopeId] = React.useState<string>(attrs.scopeId ?? '');
