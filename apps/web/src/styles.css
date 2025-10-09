@@ -1017,3 +1017,112 @@ html {
     }
   }
 }
+
+.tiptap .dfy-tabs-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding: 6px;
+  margin: 8px 0 12px 0;
+  color: var(--muted-foreground);
+}
+
+.tiptap .dfy-tab[role="tab"] {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 6px 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  outline: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.tiptap .dfy-tab[role="tab"][aria-selected="true"] {
+  color: var(--foreground);
+}
+
+.tiptap .dfy-tab[role="tab"][aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 1px;
+}
+
+.tiptap .dfy-tabs-content > [role="tabpanel"][hidden] {
+  display: none !important;
+}
+
+/* Make panels look like normal editor blocks */
+.tiptap .dfy-tabs-content > [role="tabpanel"] {
+  min-height: 1rem;
+}
+/* Tab + remove */
+.tiptap .dfy-tab-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.tiptap .dfy-tab {
+  background: none;
+  border: 0;
+  padding: 6px 6px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  position: relative;
+}
+.tiptap .dfy-tab[aria-selected="true"] {
+  color: var(--foreground);
+}
+.tiptap .dfy-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: -7px;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 1px;
+}
+
+/* small × appears on hover/focus */
+.tiptap .dfy-tab-remove {
+  margin-left: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+  color: var(--muted-foreground);
+}
+.tiptap .dfy-tab-wrap:hover .dfy-tab-remove,
+.dfy-tab-remove:focus {
+  opacity: 1;
+}
+
+/* insert separators (“+” between tabs and at ends) */
+.tiptap .dfy-tab-insert {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  width: 26px;
+  height: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted-foreground);
+}
+.tiptap .dfy-tab-insert:hover {
+  border-style: solid;
+}

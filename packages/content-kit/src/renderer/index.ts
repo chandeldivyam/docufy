@@ -7,6 +7,7 @@ import { codeToHtml } from 'shiki';
 import { decode as decodeEntities } from 'html-entities'; // or `he`
 import { processScopedHtmlComponents } from './scoped-html.js';
 export type TocItem = { level: number; text: string; id: string };
+import { processTabsSSR } from './tabs-ssr.js';
 
 function escapeHtml(s: string) {
   // Make idempotent: decode then escape once
@@ -140,6 +141,7 @@ export async function serialize(pmDoc: JSONContent | null) {
   // AOT Shiki (dual-theme; async)
   html = await highlightWithShiki(html);
   html = await processScopedHtmlComponents(html);
+  html = await processTabsSSR(html);
 
   return { html, toc };
 }

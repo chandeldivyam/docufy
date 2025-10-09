@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import type { Hit as AlgoliaHit } from 'instantsearch.js';
 import TypesenseInstantSearchAdapter from 'typesense-instantsearch-adapter';
 import { InstantSearch, Configure, Highlight, Snippet, useHits } from 'react-instantsearch';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 
 // ---------- Types ----------
 type SearchCfg = {
@@ -201,7 +201,7 @@ function SearchResults({
   const { hits } = useHits<DocHit>();
   const [selected, setSelected] = useState(0);
   const listRef = useRef<HTMLDivElement | null>(null);
-  const router = useRouter(); 
+  const router = useRouter();
 
   // Track keyboard mode
   const keyboardModeRef = useRef(false);

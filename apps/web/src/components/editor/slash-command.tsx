@@ -20,6 +20,9 @@ import {
   Text,
   TextQuote,
   Square,
+  Edit,
+  Trash2,
+  Plus,
 } from "lucide-react"
 
 export const suggestionItems: SuggestionItem[] = createSuggestionItems([
@@ -168,6 +171,64 @@ export const suggestionItems: SuggestionItem[] = createSuggestionItems([
         // @ts-expect-error the insertTable exists as per tiptap official documentation
         .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
         .run()
+    },
+  },
+  {
+    title: "Tabs",
+    description: "Create a tabbed content section.",
+    searchTerms: ["tabs", "tabbed", "panels", "sections"],
+    icon: <Square size={18} />,
+    command: ({ editor, range }) => {
+      // @ts-expect-error the setTabs command exists in the Tabs extension
+      editor.chain().focus().deleteRange(range).setTabs().run()
+    },
+  },
+  {
+    title: "Add Tab",
+    description: "Add a new tab to this section.",
+    searchTerms: ["tab", "add", "new", "insert"],
+    icon: <Plus size={18} />,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        // @ts-expect-error the addTab command exists in the Tabs extension
+        .addTab()
+        .run()
+    },
+  },
+  {
+    title: "Remove Tab",
+    description: "Remove the current tab.",
+    searchTerms: ["tab", "delete", "remove"],
+    icon: <Trash2 size={18} />,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        // @ts-expect-error the removeTab command exists in the Tabs extension
+        .removeTab()
+        .run()
+    },
+  },
+  {
+    title: "Rename Tab",
+    description: "Rename the current tab.",
+    searchTerms: ["tab", "rename", "edit", "title"],
+    icon: <Edit size={18} />,
+    command: ({ editor, range }) => {
+      const newTitle = prompt("Enter new tab title:")
+      if (newTitle) {
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          // @ts-expect-error the renameTab command exists in the Tabs extension
+          .renameTab(newTitle)
+          .run()
+      }
     },
   },
   {

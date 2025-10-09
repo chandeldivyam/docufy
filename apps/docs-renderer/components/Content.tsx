@@ -6,6 +6,7 @@ import TocSpy from './islands/TocSpy';
 import TableOfContents from './TableOfContents';
 import DocPageFrame from './DocPageFrame';
 import LinkInterceptor from './islands/LinkInterceptor';
+import TabsClient from './islands/TabsClient';
 
 export default async function Content({ blobPromise }: { blobPromise: Promise<PageBlob> }) {
   const blob = await blobPromise;
@@ -27,6 +28,7 @@ export default async function Content({ blobPromise }: { blobPromise: Promise<Pa
           <CopyButtons />
           <TocSpy />
           <LinkInterceptor />
+          <TabsClient />
         </article>
       </DocPageFrame>
     </div>

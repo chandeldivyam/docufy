@@ -206,7 +206,7 @@ export default function HtmlComponentView(props: NodeViewProps) {
     if (attrs.css !== css) {
       setCss(attrs.css);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attrs.html, attrs.css]);
 
   React.useEffect(() => {
