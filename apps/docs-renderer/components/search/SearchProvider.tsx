@@ -3,12 +3,12 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
-// Define the shape of the search configuration, mirroring what was in SearchCommand.tsx
+// Define the shape of the search configuration
 type SearchCfg = {
   key: string;
   collection: string;
   nodes: Array<{ host: string; port: number; protocol: string }>;
-  expiresAt: string;
+  expiresAt: string; // This is typically an ISO 8601 string
   defaults: Record<string, string | number>;
 };
 
@@ -24,6 +24,9 @@ const SearchContext = createContext<SearchContextType>({
   error: null,
 });
 
+// 5 minutes is a safe buffer.
+const REFRESH_BUFFER_MS = 5 * 60 * 1000;
+
 // Create the provider component
 export function SearchProvider({ children }: { children: ReactNode }) {
   const [value, setValue] = useState<SearchContextType>({
@@ -32,21 +35,50 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    // This effect runs only once on the client when the component mounts
-    let alive = true;
-    fetch('/api/search-config', { cache: 'force-cache' }) // Use browser cache
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.statusText))))
-      .then((json) => {
-        if (alive) setValue({ cfg: json, error: null });
-      })
-      .catch((e: Error) => {
-        if (alive) setValue({ cfg: null, error: e.message });
-      });
+    let timeoutId: NodeJS.Timeout | null = null;
 
-    return () => {
-      alive = false;
+    const fetchAndScheduleRefresh = async () => {
+      try {
+        const response = await fetch('/api/search-config', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch search config: ${response.statusText}`);
+        }
+
+        const json: SearchCfg = await response.json();
+        setValue({ cfg: json, error: null });
+
+        // --- Proactive Refresh Logic ---
+        const expirationTime = new Date(json.expiresAt).getTime();
+        const now = Date.now();
+
+        // Calculate the delay for the next refresh, including the safety buffer
+        const refreshDelay = expirationTime - now - REFRESH_BUFFER_MS;
+
+        // Only schedule a refresh if the key is valid for a reasonable amount of time
+        if (refreshDelay > 0) {
+          timeoutId = setTimeout(fetchAndScheduleRefresh, refreshDelay);
+        } else {
+          // If the key is already expired or about to, log an error.
+          // The user might need to refresh if they were offline for a long time.
+          console.error('Received an expired or nearly-expired search key.');
+        }
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        setValue({ cfg: null, error: errorMessage });
+        console.error('Search config fetch failed:', errorMessage);
+      }
     };
-  }, []); // Empty dependency array ensures this runs only once
+
+    // Perform the initial fetch
+    fetchAndScheduleRefresh();
+
+    // Cleanup function: clear the timeout when the component unmounts
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, []); // Empty dependency array ensures this setup runs only once
 
   return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;
 }
