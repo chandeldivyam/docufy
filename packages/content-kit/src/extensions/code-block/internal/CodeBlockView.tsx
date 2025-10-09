@@ -21,6 +21,21 @@ const SUPPORTED = [
   'sql',
   'yaml',
   'markdown',
+  'csharp',
+  'swift',
+  'kotlin',
+  'scala',
+  'r',
+  'perl',
+  'dart',
+  'dockerfile',
+  'nginx',
+  'powershell',
+  'graphql',
+  'lua',
+  'makefile',
+  'diff',
+  'ini',
 ] as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
