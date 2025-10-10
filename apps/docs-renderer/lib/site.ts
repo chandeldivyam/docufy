@@ -50,3 +50,24 @@ export async function readPointerFromHeader<T = unknown>(): Promise<T | null> {
     return null;
   }
 }
+
+export async function currentProtocol(): Promise<'http' | 'https'> {
+  const h = await headers();
+  const proto = (h.get('x-forwarded-proto') || '').toLowerCase();
+  return proto === 'http' ? 'http' : 'https';
+}
+
+/** Public origin override takes precedence; otherwise infer from proxy headers. */
+export async function currentOrigin(): Promise<string> {
+  const override = process.env.DOCS_PUBLIC_ORIGIN?.trim();
+  if (override) return override.replace(/\/$/, '');
+  const [proto, host] = await Promise.all([currentProtocol(), currentHost()]);
+  return `${proto}://${host}`;
+}
+
+/** Build absolute URL for a given route, honoring any reverse-proxy base path. */
+export async function absoluteUrlForRoute(route: string): Promise<string> {
+  const [origin, base] = await Promise.all([currentOrigin(), currentBasePath()]);
+  const clean = route.startsWith('/') ? route : `/${route}`;
+  return `${origin}${base}${clean}`;
+}

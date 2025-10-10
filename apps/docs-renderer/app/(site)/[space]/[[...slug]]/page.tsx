@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { fetchManifestV3, fetchPageBlob } from '../../../../lib/fetchers';
 import Content from '../../../../components/Content';
 import { getPointer } from '../../../../lib/pointer';
+import { absoluteUrlForRoute } from '../../../../lib/site';
 
 export const runtime = 'edge';
 
@@ -22,10 +23,16 @@ export default async function DocPage({
   }
 
   const blobPromise = fetchPageBlob(page.blob);
+  const pageUrl = await absoluteUrlForRoute(route || '/');
 
   return (
     <Suspense fallback={<></>}>
-      <Content blobPromise={blobPromise} previous={page.previous} next={page.next} />
+      <Content
+        blobPromise={blobPromise}
+        previous={page.previous}
+        next={page.next}
+        pageUrl={pageUrl}
+      />
     </Suspense>
   );
 }

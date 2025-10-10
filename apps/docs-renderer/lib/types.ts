@@ -117,6 +117,7 @@ export type PageBlob = {
   iconName?: string;
   rendered: { html: string; toc: unknown[] };
   plain: string;
+  markdown?: string;
   source: unknown;
   type: 'page' | 'api';
   apiSpecBlobKey?: string;

@@ -1347,3 +1347,140 @@ html.dark .shiki span {
     max-width: 900px;
   }
 }
+
+/* ./apps/docs-renderer/app/globals.css */
+
+/* ... (existing styles) ... */
+
+/* ======= Copy Actions Dropdown ======= */
+.dfy-copy-actions {
+  position: relative;
+  display: inline-block;
+}
+
+.dfy-copy-actions-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+  transition: all 120ms ease;
+}
+
+.dfy-copy-actions-trigger:hover {
+  background: var(--sidebar-hover);
+  border-color: color-mix(in oklab, var(--border) 60%, var(--fg));
+}
+
+.dfy-copy-actions-trigger svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dfy-copy-actions-chevron {
+  transition: transform 150ms ease;
+}
+.dfy-copy-actions-chevron.open {
+  transform: rotate(180deg);
+}
+
+.dfy-copy-actions-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  width: 280px;
+  border-radius: calc(var(--radius) * 1.2);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: 0 8px 24px color-mix(in oklab, black 15%, transparent);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: fadeIn 100ms ease-out;
+}
+
+.dark .dfy-copy-actions-menu {
+  box-shadow: 0 8px 24px color-mix(in oklab, black 35%, transparent);
+}
+
+.dfy-copy-actions-menu a {
+  text-decoration: none !important;
+}
+
+.dfy-copy-actions-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--fg);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  font-size: 14px;
+}
+
+.dfy-copy-actions-item:hover {
+  background: var(--sidebar-hover);
+}
+
+.dfy-copy-actions-item svg {
+  flex-shrink: 0;
+}
+
+.dfy-copy-actions-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dfy-item-title {
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.dfy-item-desc {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dfy-heading-with-actions {
+  /* Mobile-first: stack them by default */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* Adjust spacing as needed */
+  margin-bottom: 2rem;
+}
+
+.dfy-heading-with-actions h1 {
+  margin-bottom: 0; /* Remove default margin from h1 */
+}
+
+/* Desktop styles */
+@media (min-width: 1100px) {
+  .dfy-heading-with-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.openai-icon {
+  color: #000;
+}
+
+/* Dark theme: white (assuming you toggle .dark on <html> or <body>) */
+.dark .openai-icon {
+  color: #fff;
+}

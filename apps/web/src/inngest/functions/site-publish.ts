@@ -27,6 +27,7 @@ import {
   serialize as serializeContent,
   type TocItem,
 } from "@docufy/content-kit/renderer" // ✅ use your renderer
+import { toMarkdown } from "@docufy/content-kit/markdown"
 
 type NavSpace = {
   slug: string
@@ -390,6 +391,7 @@ export const sitePublish = inngest.createFunction(
       apiMethod?: string | null
       rendered?: { html: string; toc: TocItem[] }
       plain?: string
+      markdown?: string
       source?: JSONContent
     }
     const docMetadata = new Map<string, { headings: string[]; plain: string }>()
@@ -425,6 +427,7 @@ export const sitePublish = inngest.createFunction(
         const plain = extractPlain(pmDoc)
         bundleObj.rendered = { html, toc }
         bundleObj.plain = plain
+        bundleObj.markdown = toMarkdown(pmDoc)
         bundleObj.source = pmDoc ?? {}
         docMetadata.set(p.id, { headings: toc.map((t) => t.text), plain })
       }
