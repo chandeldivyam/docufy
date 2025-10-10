@@ -24,6 +24,7 @@ export default async function DocPage({
 
   const blobPromise = fetchPageBlob(page.blob);
   const pageUrl = await absoluteUrlForRoute(route || '/');
+  const showMobileTopbar = manifest.site.layout !== 'tabs';
 
   return (
     <Suspense fallback={<></>}>
@@ -32,6 +33,7 @@ export default async function DocPage({
         previous={page.previous}
         next={page.next}
         pageUrl={pageUrl}
+        showMobileTopbar={showMobileTopbar}
       />
     </Suspense>
   );

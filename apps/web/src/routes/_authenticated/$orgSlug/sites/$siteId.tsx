@@ -561,7 +561,8 @@ function SiteDetailPage() {
                     onValueChange={(value) =>
                       sitesCol?.update(
                         site.id,
-                        (d) => void (d.layout = value as "sidebar-dropdown" | "tabs")
+                        (d) =>
+                          void (d.layout = value as "sidebar-dropdown" | "tabs")
                       )
                     }
                   >

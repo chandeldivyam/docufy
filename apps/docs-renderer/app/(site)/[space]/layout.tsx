@@ -1,4 +1,4 @@
-import SidebarShell from '@/components/SidebarShell';
+import LayoutSwitcher from '@/components/layouts/LayoutSwitcher';
 export default async function SpaceLayout({
   children,
   params,
@@ -7,5 +7,5 @@ export default async function SpaceLayout({
   params: Promise<{ space: string }>;
 }) {
   const { space } = await params;
-  return <SidebarShell space={space}>{children}</SidebarShell>;
+  return <LayoutSwitcher space={space}>{children}</LayoutSwitcher>;
 }

@@ -4,7 +4,8 @@ import { ThemeProvider } from '../components/theme-provider';
 import { fetchTheme } from '../lib/fetchers';
 import { getPointer } from '../lib/pointer';
 import type { ThemeJson } from '../lib/types';
-import { SearchProvider } from '../components/search/SearchProvider'; // Import the new provider
+import { SearchProvider } from '../components/search/SearchProvider';
+import SearchCommand from '../components/search/SearchCommand';
 
 export const runtime = 'edge';
 export const preferredRegion = 'auto';
@@ -44,6 +45,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SearchProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             {children}
+            {/* Global search overlay mount */}
+            <SearchCommand />
           </ThemeProvider>
         </SearchProvider>
       </body>

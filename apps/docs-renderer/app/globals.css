@@ -36,6 +36,10 @@
     --sb-thumb: oklch(0.82 0 0 / 0.35);
     --sb-thumb-hover: oklch(0.72 0 0 / 0.5);
     --sb-thumb-active: oklch(0.62 0 0 / 0.65);
+
+    /* chrome sizes for layout math */
+    --topbar-h: 56px;
+    --tabs-h: 42px;
   }
 
   :root.dark {
@@ -122,7 +126,7 @@ body {
 }
 
 .dfy-content {
-  height: 100vh;
+  height: calc(100vh - var(--dfy-top-offset, 0px));
   padding: var(--dfy-content-pad);
   padding-top: 0;
   content-visibility: auto;
@@ -164,8 +168,9 @@ body {
 html,
 body {
   max-width: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
   box-sizing: border-box;
+  height: 100%;
 }
 
 /* ========== Mobile Top Bar (hamburger + last two crumbs) ========== */
@@ -185,6 +190,7 @@ body {
   z-index: 50;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   padding: 10px 0 12px;
   background: color-mix(in oklab, var(--bg) 96%, transparent);
@@ -224,6 +230,130 @@ body {
   background: var(--sidebar-hover);
 }
 
+/* ========= Top bar (tabs layout) ========= */
+.dfy-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in oklab, var(--bg) 96%, transparent);
+  backdrop-filter: saturate(1.1) blur(4px);
+  min-height: var(--topbar-h);
+  margin-bottom: 0; /* ← Add this to remove gap */
+}
+.dfy-topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 1rem;
+  gap: 1rem;
+}
+.dfy-topbar-left,
+.dfy-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dfy-topbar-center {
+  flex: 1;
+  max-width: 28rem;
+  margin: 0 1rem;
+}
+.dfy-topbar-right > .dfy-topbar-button {
+  display: none;
+}
+@media (min-width: 1100px) {
+  .dfy-topbar .dfy-hamburger {
+    display: none;
+  }
+}
+@media (min-width: 768px) {
+  .dfy-topbar-right > .dfy-topbar-button {
+    display: inline-flex;
+  }
+  .dfy-mobile-buttons-trigger {
+    display: none;
+  }
+}
+
+.dfy-mobile-buttons-menu {
+  position: absolute;
+  right: 1rem;
+  top: 64px;
+  width: 12rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 1.2);
+  box-shadow: 0 8px 24px color-mix(in oklab, black 15%, transparent);
+  overflow: hidden;
+  z-index: 60;
+  animation: slideDown 150ms ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dfy-mobile-buttons-menu a {
+  display: block;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  color: var(--fg);
+  font-size: 0.875rem;
+  transition: background-color 120ms ease;
+}
+
+.dfy-mobile-buttons-menu a:hover {
+  background: var(--sidebar-hover);
+}
+
+/* ========= Spaces tabs row (tabs layout) ========= */
+.dfy-spaces-tabs {
+  position: sticky;
+  top: var(--topbar-h); /* ← Keep this, but it now works within scroll container */
+  z-index: 45;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 1rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--bg) 98%, transparent);
+  min-height: var(--tabs-h);
+  margin-bottom: 0;
+  scrollbar-width: none;
+}
+
+.dfy-spaces-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.dfy-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.dfy-tab:hover {
+  background: color-mix(in oklab, var(--sidebar-fg) 3%, var(--bg));
+  color: var(--fg);
+}
+.dfy-tab[aria-current='page'] {
+  color: var(--primary);
+  font-weight: 600;
+  background: color-mix(in oklab, var(--primary) 8%, transparent);
+}
+
 /* Mintlify-like last-two-level breadcrumb */
 .dfy-breadcrumb ol {
   display: flex;
@@ -259,9 +389,10 @@ body {
   body [aria-label='Documentation sidebar'] {
     position: fixed !important;
     inset: 0 auto 0 0; /* left side */
+    top: 0 !important; /* override inline top offset from tabs layout */
+    height: 100svh !important; /* ensure full overlay height on mobile */
     width: min(86vw, 320px);
     max-width: 86vw;
-    height: 100svh;
     transform: translateX(-100%);
     transition: transform 200ms ease;
     z-index: 70;
@@ -745,18 +876,20 @@ html.dark .shiki span {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--sb-thumb);
+  background: transparent; /* Hidden by default */
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
-  transition:
-    background-color 180ms ease,
-    width 180ms ease;
+  transition: background-color 250ms ease;
 }
 
-*::-webkit-scrollbar-thumb:hover {
+/* Show scrollbar on hover over scrollable container */
+*:hover::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb);
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
   background: var(--sb-thumb-hover);
-  width: var(--sb-size-hover);
 }
 
 *::-webkit-scrollbar-thumb:active {
@@ -766,6 +899,17 @@ html.dark .shiki span {
 /* Corner where horizontal and vertical scrollbars meet */
 *::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Firefox auto-hide scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent var(--sb-track);
+  transition: scrollbar-color 250ms ease;
+}
+
+*:hover {
+  scrollbar-color: var(--sb-thumb) var(--sb-track);
 }
 
 /* ======= Search overlay ======= */
@@ -1483,4 +1627,17 @@ html.dark .shiki span {
 /* Dark theme: white (assuming you toggle .dark on <html> or <body>) */
 .dark .openai-icon {
   color: #fff;
+}
+/* Helper class to define the combined top offset when using tabs layout */
+.dfy-tabs-chrome {
+  --dfy-top-offset: calc(var(--topbar-h) + var(--tabs-h));
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.dfy-tabs-chrome .dfy-root {
+  flex: 1;
+  height: auto; /* ← Override the fixed height */
+  min-height: 0;
 }
