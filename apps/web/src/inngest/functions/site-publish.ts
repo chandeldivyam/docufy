@@ -45,7 +45,7 @@ type PageIndexEntry = {
   hash: string
   size: number
   lastModified: number
-  kind?: "page" | "api_spec" | "api"
+  kind?: "page" | "api_spec" | "api" | "api_tag"
   api?: {
     document?: string
     path?: string
@@ -322,7 +322,7 @@ export const sitePublish = inngest.createFunction(
       spaceSlug: string
       iconName?: string | null
       updatedAt?: Date | null
-      type: "page" | "group" | "api" | "api_spec"
+      type: "page" | "group" | "api" | "api_spec" | "api_tag"
       apiSpecBlobKey?: string | null
       apiPath?: string | null
       apiMethod?: string | null
@@ -385,7 +385,7 @@ export const sitePublish = inngest.createFunction(
       trail: string[]
       iconName?: string | null
       updatedAt?: Date | null
-      type: "page" | "api" | "api_spec" | "group"
+      type: "page" | "api" | "api_spec" | "group" | "api_tag"
       apiSpecBlobKey?: string | null
       apiPath?: string | null
       apiMethod?: string | null
@@ -407,7 +407,7 @@ export const sitePublish = inngest.createFunction(
         type: p.type,
       }
       // --- REAL CONTENT LOADING STARTS HERE ---
-      if (p.type === "api" || p.type === "api_spec") {
+      if (p.type === "api" || p.type === "api_spec" || p.type === "api_tag") {
         bundleObj.apiPath = p.apiPath
         bundleObj.apiMethod = p.apiMethod
         bundleObj.apiSpecBlobKey = p.apiSpecBlobKey
@@ -535,7 +535,7 @@ export const sitePublish = inngest.createFunction(
 
     // Build UI-friendly tree (spaces -> items with routes)
     type UiTreeItem = {
-      kind: "group" | "page" | "api" | "api_spec"
+      kind: "group" | "page" | "api" | "api_spec" | "api_tag"
       title: string
       iconName?: string | null
       slug: string
@@ -565,6 +565,8 @@ export const sitePublish = inngest.createFunction(
           kind = "api"
         } else if (d.type === "api_spec") {
           kind = "api_spec"
+        } else if (d.type === "api_tag") {
+          kind = "api_tag"
         } else {
           kind = d.type === "group" ? "group" : "page"
         }
