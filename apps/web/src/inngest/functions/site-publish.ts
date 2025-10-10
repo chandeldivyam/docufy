@@ -474,10 +474,11 @@ export const sitePublish = inngest.createFunction(
 
     // 6) Build manifest and tree (with UI tree like the old worker)
     const now = Date.now()
+    const siteLayout = site.layout === "tabs" ? "tabs" : "sidebar-dropdown"
     const navSpaces: NavSpace[] = spaces.map((s, i) => ({
       slug: s.slug,
       name: s.name,
-      style: "dropdown",
+      style: siteLayout === "tabs" ? "tab" : "dropdown",
       order: i + 1,
       iconName: s.iconName ?? null,
       entry: (routesBySpace.get(s.slug) ?? [])[0],
@@ -610,7 +611,7 @@ export const sitePublish = inngest.createFunction(
         name: null,
         // Back-compat: keep logoUrl, prefer light logo
         logoUrl: site.logoUrlLight ?? null,
-        layout: "sidebar-dropdown",
+        layout: siteLayout,
         baseUrl: site.baseUrl,
         branding: {
           logo: {

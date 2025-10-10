@@ -39,7 +39,7 @@ export const ManifestZ = z.object({
   publishedAt: z.number(),
   site: z.object({
     projectId: z.string().optional(),
-    layout: z.enum(['sidebar-dropdown', 'sidebar-tabs']),
+    layout: z.enum(['sidebar-dropdown', 'tabs']),
     baseUrl: z.string().url(),
     name: z.string().nullable().optional(),
     logoUrl: z.string().nullable().optional(),
