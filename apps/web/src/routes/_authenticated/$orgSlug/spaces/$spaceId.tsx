@@ -338,6 +338,11 @@ function DocumentsTree({
   const [query, setQuery] = useState("")
 
   const [isTouch, setIsTouch] = useState(false)
+
+  const isSpecRoot = (doc: DocumentRow) => doc.type === "api_spec"
+  const isManaged = (doc: DocumentRow) => !!doc.managed_by_spec
+  const isSpecOrManaged = (doc: DocumentRow) =>
+    isSpecRoot(doc) || isManaged(doc)
   useEffect(() => {
     if (typeof window === "undefined") return
 
@@ -710,17 +715,26 @@ function DocumentsTree({
                 if (isTouch) return true
                 if (!draggingId) return true
                 if (targetId === draggingId) return true
+
+                const dragging = docs.find((d) => d.id === draggingId)
+                const target = docs.find((d) => d.id === targetId)
+                if (!dragging || !target) return true
+
+                // Block dragging managed items or dropping into managed/spec nodes
+                if (isManaged(dragging) || isSpecOrManaged(target)) return true
+
+                // Block moving into your own descendant (existing)
                 const effectiveParentId =
                   mode === "inside"
-                    ? targetId
-                    : (parentById.get(targetId) ?? null)
+                    ? target.id
+                    : (parentById.get(target.id) ?? null)
                 if (effectiveParentId === draggingId) return true
                 if (
                   effectiveParentId &&
                   isAncestor(draggingId, effectiveParentId)
-                ) {
+                )
                   return true
-                }
+
                 return false
               }}
               onPerformDrop={async (target, mode) => {
@@ -814,13 +828,14 @@ function TreeNode(props: {
 
   const children = childrenByParent.get(node.id) ?? []
   const hasChildren = children.length > 0
-  const isGroup = node.type === "group"
+  const isGroup = node.type === "group" || node.type === "api_tag"
   const isEditing = editingId === node.id
   const isDragOverHere = dragOver?.id === node.id
   const dragMode = dragOver?.mode
   const showInsideHighlight =
     isDragOverHere && dragMode === "inside" && !isInvalidDrop(node.id, "inside")
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const isManaged = (doc: DocumentRow) => !!doc.managed_by_spec
 
   const inputRef = useRef<HTMLInputElement | null>(null)
   useEffect(() => {
@@ -845,7 +860,7 @@ function TreeNode(props: {
           showInsideHighlight && "bg-primary/5 ring-1 ring-primary/40"
         )}
         style={{ paddingLeft: 8 + depth * 12 }}
-        draggable={canDrag}
+        draggable={canDrag && !isManaged(node)}
         onDragStart={(event) => {
           if (!canDrag) return
           event.dataTransfer.effectAllowed = "move"
@@ -928,7 +943,7 @@ function TreeNode(props: {
           <span className="h-5 w-5" />
         )}
 
-        {node.type !== "api" && (
+        {!isManaged(node) && (
           <IconPickerButton
             current={node.icon_name}
             fallback={isGroup ? "folder" : "file-text"}
@@ -970,66 +985,76 @@ function TreeNode(props: {
         )}
 
         <div className="ml-auto flex items-center gap-1">
-          {node.type !== "api" && node.type !== "api_spec" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="invisible h-6 w-6 group-hover:visible"
-              title="Add child page"
-              onClick={(event) => {
-                event.stopPropagation()
-                onStartCreate({ type: "page", parentId: node.id })
-              }}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          {node.type !== "api" &&
+            node.type !== "api_spec" &&
+            node.type !== "api_tag" && (
               <Button
                 variant="ghost"
                 size="icon"
                 className="invisible h-6 w-6 group-hover:visible"
+                title="Add child page"
                 onClick={(event) => {
-                  event.preventDefault()
                   event.stopPropagation()
+                  onStartCreate({ type: "page", parentId: node.id })
                 }}
               >
-                <MoreHorizontal className="h-4 w-4" />
+                <Plus className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem
-                onClick={() => {
-                  onStartRename(node.id, node.title)
-                }}
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Rename
-              </DropdownMenuItem>
-              {node.type !== "api" && node.type !== "api_spec" && (
-                <DropdownMenuItem
+            )}
+          {!isManaged(node) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="invisible h-6 w-6 group-hover:visible"
                   onClick={(event) => {
                     event.preventDefault()
-                    onStartCreate({ type: "page", parentId: node.id })
+                    event.stopPropagation()
                   }}
                 >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add child page
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem
-                onClick={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  setDeleteOpen(true)
-                }}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {!isManaged(node) && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      onStartRename(node.id, node.title)
+                    }}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Rename
+                  </DropdownMenuItem>
+                )}
+                {node.type !== "api" &&
+                  node.type !== "api_spec" &&
+                  node.type !== "api_tag" && (
+                    <DropdownMenuItem
+                      onClick={(event) => {
+                        event.preventDefault()
+                        onStartCreate({ type: "page", parentId: node.id })
+                      }}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add child page
+                    </DropdownMenuItem>
+                  )}
+                {!isManaged(node) && (
+                  <DropdownMenuItem
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      setDeleteOpen(true)
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
