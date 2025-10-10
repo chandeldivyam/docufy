@@ -19,7 +19,7 @@ export const PageIndexEntryZ = z.object({
   hash: z.string(),
   size: z.number(),
   lastModified: z.number().optional(),
-  kind: z.enum(['page', 'api_spec', 'api']).optional().nullable(),
+  kind: z.enum(['page', 'api_spec', 'api', 'api_tag']).optional().nullable(),
   api: z
     .object({
       document: z.string().optional(),

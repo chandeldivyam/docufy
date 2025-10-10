@@ -48,7 +48,7 @@ export type Manifest = {
 };
 
 export type UiTreeItem = {
-  kind: 'group' | 'page' | 'api_spec' | 'api';
+  kind: 'group' | 'page' | 'api_spec' | 'api' | 'api_tag';
   title: string;
   iconName?: string;
   slug: string;

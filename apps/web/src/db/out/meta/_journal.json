@@ -92,6 +92,13 @@
       "when": 1759767465942,
       "tag": "0012_numerous_mister_fear",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1760103313156,
+      "tag": "0013_hard_master_chief",
+      "breakpoints": true
     }
   ]
 }

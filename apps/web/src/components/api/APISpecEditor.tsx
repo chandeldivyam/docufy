@@ -5,12 +5,7 @@ import { Button } from "@/components/ui/button"
 import { uploadFileToBlob } from "@/lib/blob-uploader"
 import { getSpaceDocumentsCollection } from "@/lib/collections"
 import { toast } from "sonner"
-
-// Spec utils
-import * as YAML from "yaml" // YAML.parse(...)  (browser-friendly)
-// Docs: https://eemeli.org/yaml/
-import { dereference } from "@scalar/openapi-parser"
-// Deref docs: https://github.com/scalar/openapi-parser
+import { trpc } from "@/lib/trpc-client"
 
 type Props = {
   orgSlug: string
@@ -18,18 +13,6 @@ type Props = {
   parentDocId: string // the api_spec document whose children we'll create
   apiSpecBlobKey: string | null | undefined
 }
-
-const METHODS = [
-  "get",
-  "post",
-  "put",
-  "patch",
-  "delete",
-  "options",
-  "head",
-  "trace",
-] as const
-// OpenAPI paths/operations reference: https://swagger.io/docs/specification/v3_0/paths-and-operations/
 
 export function ApiSpecEditor({
   orgSlug,
@@ -51,27 +34,6 @@ export function ApiSpecEditor({
       setBlobUrl(apiSpecBlobKey)
     }
   }, [apiSpecBlobKey, blobUrl])
-
-  // Helper: sniff format and parse string into JS object
-  function parseLooseOpenAPI(input: string) {
-    const trimmed = input.trim()
-    if (!trimmed) return null
-    try {
-      // quick JSON check
-      if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-        return JSON.parse(trimmed)
-      }
-    } catch {
-      /* fall back to YAML */
-    }
-    try {
-      return YAML.parse(input)
-    } catch (err) {
-      console.error(err)
-      toast.error("Failed to parse spec as JSON or YAML")
-      return null
-    }
-  }
 
   // Load existing spec content for editing
   async function loadExistingSpec() {
@@ -131,69 +93,15 @@ export function ApiSpecEditor({
     }
     setProcessing(true)
     try {
-      // 1) Parse and dereference for a self-contained doc (faster client-side)
-      const root = parseLooseOpenAPI(specText)
-      const { schema, errors } = await dereference(root)
-      if (errors?.length) {
-        console.warn("OpenAPI dereference warnings/errors:", errors)
-      }
-      if (!schema || !schema.paths) {
-        toast.error("No paths found in OpenAPI schema")
-        return
-      }
-
-      // 2) Create child API docs (optimistic inserts + tRPC via onInsert)
-      const now = new Date()
-      const toCreate: Array<{
-        title: string
-        apiPath: string
-        apiMethod: string
-      }> = []
-
-      for (const [apiPath, pathItem] of Object.entries(schema.paths)) {
-        for (const m of METHODS) {
-          const op = pathItem?.[m]
-          if (!op) continue
-          const title =
-            (typeof op.summary === "string" && op.summary.trim()) ||
-            (typeof op.operationId === "string" && op.operationId.trim()) ||
-            `${m.toUpperCase()} ${apiPath}`
-          toCreate.push({ title, apiPath, apiMethod: m.toUpperCase() })
-        }
-      }
-
-      if (!toCreate.length) {
-        toast.error("No operations to import")
-        setProcessing(false)
-        return
-      }
-
-      // Insert sequentially to keep UI stable; could be batched
-      for (const item of toCreate) {
-        const id =
-          typeof crypto !== "undefined" && crypto.randomUUID
-            ? crypto.randomUUID()
-            : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-        await docsCol.insert({
-          id,
-          organization_id: "", // Electric will backfill from shape; not required if shape returns orgId on select
-          space_id: spaceId,
-          parent_id: parentDocId,
-          slug: "pending",
-          title: item.title,
-          icon_name: null,
-          rank: "pending",
-          type: "api",
-          api_spec_blob_key: blobUrl ?? null,
-          api_path: item.apiPath,
-          api_method: item.apiMethod,
-          archived_at: null,
-          created_at: now,
-          updated_at: now,
-        })
-      }
-
-      toast.success(`Created ${toCreate.length} endpoints`)
+      const res = await trpc.documents.importOpenApi.mutate({
+        parentId: parentDocId,
+        spaceId,
+        specText, // send the pasted text; server parses & dereferences
+        // blobUrl: currentBlobUrl (optional future use)
+      })
+      toast.success(
+        `Imported ${res.endpoints} endpoints across ${res.tags} tags`
+      )
     } catch (err) {
       console.error(err)
       toast.error("Processing failed")

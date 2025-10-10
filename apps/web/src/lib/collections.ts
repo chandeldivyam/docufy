@@ -278,10 +278,12 @@ const documentsRawSchema = z.object({
   title: z.string(),
   icon_name: z.string().nullable(),
   rank: z.string(),
-  type: z.enum(["page", "group", "api", "api_spec"]),
+  type: z.enum(["page", "group", "api", "api_spec", "api_tag"]),
   api_spec_blob_key: z.string().nullable().optional(),
   api_path: z.string().nullable().optional(),
   api_method: z.string().nullable().optional(),
+  api_tag: z.string().nullable().optional(),
+  managed_by_spec: z.boolean().default(false).optional(),
   archived_at: z.coerce.date().nullable(),
   created_at: z.coerce.date(),
   updated_at: z.coerce.date(),
@@ -310,6 +312,8 @@ function createDocumentsCollectionFor(spaceId: string) {
           apiSpecBlobKey: row.api_spec_blob_key ?? undefined,
           apiPath: row.api_path ?? undefined,
           apiMethod: row.api_method ?? undefined,
+          managedBySpec: row.managed_by_spec ?? false,
+          apiTag: row.api_tag ?? undefined,
         })
         return { txid: result.txid }
       },

@@ -252,7 +252,7 @@ function Node({
     );
   }
 
-  if (node.kind === 'api_spec' && hasChildren) {
+  if ((node.kind === 'api_spec' || node.kind === 'api_tag') && hasChildren) {
     return (
       <li role="treeitem" aria-expanded={isExpanded}>
         <div className="flex items-center gap-2" style={{ marginLeft: depth * INDENT }}>

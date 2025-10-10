@@ -74,7 +74,7 @@ export const documentsTable = pgTable(
     rank: text("rank").notNull(),
     // Give 'type' a precise TS type and default
     type: text("type")
-      .$type<"page" | "group" | "api" | "api_spec">()
+      .$type<"page" | "group" | "api" | "api_spec" | "api_tag">()
       .default("page")
       .notNull(),
     apiSpecBlobKey: text("api_spec_blob_key"),
@@ -82,6 +82,8 @@ export const documentsTable = pgTable(
     apiMethod: text("api_method"),
     archivedAt: timestamp("archived_at"),
     specSourceId: text("spec_source_id"),
+    apiTag: text("api_tag"),
+    managedBySpec: boolean("managed_by_spec").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -105,6 +107,9 @@ export const documentsTable = pgTable(
       .where(
         sql`${t.apiPath} IS NOT NULL AND ${t.apiMethod} IS NOT NULL AND ${t.specSourceId} IS NOT NULL`
       ),
+    apiTagUniqueIdx: uniqueIndex("documents_api_tag_source_unique") // NEW
+      .on(t.apiTag, t.specSourceId)
+      .where(sql`${t.apiTag} IS NOT NULL AND ${t.specSourceId} IS NOT NULL`),
   })
 )
 
@@ -139,6 +144,8 @@ export const createDocumentSchema = createInsertSchema(documentsTable)
     iconName: z.string().nullable().optional(),
     title: z.string().min(1),
     type: z.enum(["page", "group", "api", "api_spec"]).optional(),
+    apiTag: z.string().optional(),
+    managedBySpec: z.boolean().optional(),
     apiSpecBlobKey: z.string().optional(),
     apiPath: z.string().optional(),
     apiMethod: z.string().optional(),
