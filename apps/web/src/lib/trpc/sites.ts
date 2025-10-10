@@ -61,6 +61,7 @@ function newBuildId() {
 }
 
 const ThemeTokensZ = z.record(z.string())
+const LayoutZ = z.enum(["sidebar-dropdown", "tabs"]) // site layout options
 const ButtonPositionZ = z.enum([
   "sidebar_top",
   "sidebar_bottom",
@@ -86,6 +87,7 @@ export const sitesRouter = router({
         organizationId: z.string(),
         name: z.string().min(1),
         slug: z.string().min(1).optional(),
+        layout: LayoutZ.optional(),
         buttons: z.array(ButtonZ).optional(),
       })
     )
@@ -129,6 +131,7 @@ export const sitesRouter = router({
           storeId: storeId,
           baseUrl: baseUrl,
           primaryHost: allocatePrimaryHost(slug),
+          layout: input.layout ?? undefined,
           buttons: input.buttons ?? [],
         })
         const txid = await generateTxId(tx)
@@ -149,6 +152,7 @@ export const sitesRouter = router({
         logoUrlLight: z.string().url().nullable().optional(),
         logoUrlDark: z.string().url().nullable().optional(),
         faviconUrl: z.string().url().nullable().optional(),
+        layout: LayoutZ.optional(),
         buttons: z.array(ButtonZ).optional(),
       })
     )
@@ -182,6 +186,7 @@ export const sitesRouter = router({
         patch.logoUrlLight = input.logoUrlLight
       if (input.logoUrlDark !== undefined) patch.logoUrlDark = input.logoUrlDark
       if (input.faviconUrl !== undefined) patch.faviconUrl = input.faviconUrl
+      if (input.layout !== undefined) patch.layout = input.layout
       if (input.buttons !== undefined) patch.buttons = input.buttons
 
       if (input.slug !== undefined) {

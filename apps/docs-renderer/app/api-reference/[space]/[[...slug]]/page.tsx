@@ -28,8 +28,9 @@ export default async function ApiHandler({
     throw new Error('API page data is incomplete.');
   }
 
+  const showMobileTopbar = manifest.site.layout !== 'tabs';
   return (
-    <DocPageFrame>
+    <DocPageFrame showMobileTopbar={showMobileTopbar}>
       <div className="fd-scope pt-5">
         <APIPage
           {...openapi.getAPIPageProps({

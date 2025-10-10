@@ -20,11 +20,13 @@ export default async function Content({
   previous,
   next,
   pageUrl,
+  showMobileTopbar,
 }: {
   blobPromise: Promise<PageBlob>;
   previous?: NavLink | null;
   next?: NavLink | null;
   pageUrl?: string;
+  showMobileTopbar?: boolean;
 }) {
   const blob = await blobPromise;
   const toc = (blob.rendered.toc as Array<{ level: number; text: string; id: string }>) ?? [];
@@ -38,7 +40,7 @@ export default async function Content({
 
   return (
     <div className="dfy-page">
-      <DocPageFrame tocSlot={tocSlot}>
+      <DocPageFrame tocSlot={tocSlot} showMobileTopbar={showMobileTopbar}>
         <article className="dfy-article">
           <div className="dfy-heading-with-actions">
             <h1>{blob.title}</h1>

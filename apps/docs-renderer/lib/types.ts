@@ -32,7 +32,7 @@ export type Manifest = {
   publishedAt: number;
   site: {
     projectId: string;
-    layout: 'sidebar-dropdown' | 'sidebar-tabs';
+    layout: 'sidebar-dropdown' | 'tabs';
     baseUrl: string;
     name?: string | null;
     logoUrl?: string | null;

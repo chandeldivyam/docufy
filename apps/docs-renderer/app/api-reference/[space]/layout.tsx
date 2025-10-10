@@ -1,4 +1,4 @@
-import SidebarShell from '@/components/SidebarShell';
+import LayoutSwitcher from '@/components/layouts/LayoutSwitcher';
 export const runtime = 'nodejs';
 export default async function ApiRefSpaceLayout({
   children,
@@ -8,5 +8,5 @@ export default async function ApiRefSpaceLayout({
   params: Promise<{ space: string }>;
 }) {
   const { space } = await params;
-  return <SidebarShell space={space}>{children}</SidebarShell>;
+  return <LayoutSwitcher space={space}>{children}</LayoutSwitcher>;
 }

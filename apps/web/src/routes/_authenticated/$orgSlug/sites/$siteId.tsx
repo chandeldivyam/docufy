@@ -56,6 +56,13 @@ import {
 import { toast } from "sonner"
 import { uploadSiteAssetToBlob } from "@/lib/blob-uploader"
 import { ThemeStudio } from "@/components/ThemeStudio"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug/sites/$siteId")({
   ssr: false,
@@ -545,6 +552,36 @@ function SiteDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Layout selection */}
+              <div className="space-y-2">
+                <Label htmlFor="site-layout">Layout</Label>
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={site.layout as string}
+                    onValueChange={(value) =>
+                      sitesCol?.update(
+                        site.id,
+                        (d) =>
+                          void (d.layout = value as "sidebar-dropdown" | "tabs")
+                      )
+                    }
+                  >
+                    <SelectTrigger id="site-layout" className="w-[240px]">
+                      <SelectValue placeholder="Choose layout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sidebar-dropdown">
+                        Sidebar + Dropdown
+                      </SelectItem>
+                      <SelectItem value="tabs">Tabs</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Choose how spaces are presented in navigation.
+                  </p>
+                </div>
+                <div className="h-px bg-border" />
+              </div>
               <ThemeStudio siteId={siteId} orgId={activeOrgId!} />
             </CardContent>
           </Card>

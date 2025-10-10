@@ -4,7 +4,7 @@ import SidebarSpaceSwitcher from './islands/SidebarSpaceSwitcher';
 import ThemeToggle from './islands/ThemeToggle';
 import { Button } from './ui/button';
 import SearchTrigger from './search/SearchTrigger';
-import SearchCommand from './search/SearchCommand';
+import Link from 'next/link';
 
 function sortSpaces(manifest: Manifest) {
   return manifest.nav.spaces.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -33,15 +33,15 @@ function NavLinkButton({
       className="sidebar-link h-9 w-full justify-start text-[15px] font-medium"
       asChild
     >
-      <a
+      <Link
+        prefetch={!isExternal}
         href={href}
         target={btn.target ?? (isExternal ? '_blank' : undefined)}
         rel={btn.target === '_blank' || isExternal ? 'noopener noreferrer' : undefined}
       >
-        {/* swap this for your actual icon component if you have one */}
         {btn.iconName ? <i className={`mr-2 icon-${btn.iconName}`} /> : null}
         {btn.label}
-      </a>
+      </Link>
     </Button>
   );
 }
@@ -105,7 +105,6 @@ export default function SidebarNav({
         <ThemeToggle />
       </div>
       <SearchTrigger />
-      <SearchCommand />
       <SidebarSpaceSwitcher
         spaces={spaceOptions}
         currentSpace={currentSpace}

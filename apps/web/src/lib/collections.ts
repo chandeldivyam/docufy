@@ -400,6 +400,8 @@ const sitesRawSchema = z.object({
   logo_url_light: z.string().nullable().optional(),
   logo_url_dark: z.string().nullable().optional(),
   favicon_url: z.string().nullable().optional(),
+  // NEW: include layout for Electric reads
+  layout: z.enum(["sidebar-dropdown", "tabs"]).default("sidebar-dropdown"),
   buttons: z
     .array(
       z.object({
@@ -437,6 +439,7 @@ function createSitesCollectionFor(url: string) {
           organizationId: s.organization_id,
           name: s.name,
           slug: s.slug,
+          layout: s.layout, // pass through if present
           buttons: s.buttons ?? [],
         })
         return { txid: result.txid }
@@ -454,6 +457,7 @@ function createSitesCollectionFor(url: string) {
           logoUrlLight?: string | null
           logoUrlDark?: string | null
           faviconUrl?: string | null
+          layout?: "sidebar-dropdown" | "tabs"
           buttons?: typeof next.buttons
         } = { id: prev.id }
         if (next.name !== prev.name) payload.name = next.name
@@ -468,6 +472,7 @@ function createSitesCollectionFor(url: string) {
           payload.logoUrlDark = next.logo_url_dark ?? null
         if (next.favicon_url !== prev.favicon_url)
           payload.faviconUrl = next.favicon_url ?? null
+        if (next.layout !== prev.layout) payload.layout = next.layout
         if (
           JSON.stringify(next.buttons ?? []) !==
           JSON.stringify(prev.buttons ?? [])

@@ -174,6 +174,7 @@ export const sitesTable = pgTable(
     logoUrlLight: text("logo_url_light"),
     logoUrlDark: text("logo_url_dark"),
     faviconUrl: text("favicon_url"),
+    layout: text("layout").default("sidebar-dropdown").notNull(),
     // a jsonb column to store the array of button (with slug, href "could be external link or internal route", icon name, label, rank, type (sidebar_buttom, sidebar_top, topbar_left, topbar_right))
     buttons: jsonb("buttons")
       .$type<
@@ -327,6 +328,7 @@ export const createSiteSchema = createInsertSchema(sitesTable)
   .extend({
     id: z.string().uuid().optional(),
     slug: z.string().min(1).optional(),
+    layout: z.enum(["sidebar-dropdown", "tabs"]).optional(),
     buttons: z
       .array(
         z.object({
