@@ -93,8 +93,6 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
     StaticCodeBlock.configure({ lowlight, enableLowlightHighlight: false }),
     StaticImage,
     StaticHtmlComponent,
-    Tabs.configure({ persistActive: true }),
-    Tab,
     ...extra,
   ];
 }

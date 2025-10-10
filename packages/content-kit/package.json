@@ -22,6 +22,10 @@
       "types": "./dist/renderer/index.d.ts",
       "import": "./dist/renderer/index.js"
     },
+    "./markdown": {
+      "types": "./dist/markdown/index.d.ts",
+      "import": "./dist/markdown/index.js"
+    },
     "./extensions/code-block": {
       "types": "./dist/extensions/code-block/index.d.ts",
       "import": "./dist/extensions/code-block/index.js"
