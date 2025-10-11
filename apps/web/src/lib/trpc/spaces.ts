@@ -126,31 +126,62 @@ export const spacesRouter = router({
         "member",
       ])
 
-      const patch: Partial<typeof spacesTable.$inferInsert> = {}
-      if (input.name !== undefined) patch.name = input.name
-      if (input.slug !== undefined) patch.slug = slugify(input.slug)
+      // Prepare non-slug fields first
+      const basePatch: Partial<typeof spacesTable.$inferInsert> = {}
+      if (input.name !== undefined) basePatch.name = input.name
       if (input.description !== undefined)
-        patch.description = input.description ?? null
-      if (input.iconName !== undefined) patch.iconName = input.iconName ?? null
+        basePatch.description = input.description ?? null
+      if (input.iconName !== undefined)
+        basePatch.iconName = input.iconName ?? null
 
       return await ctx.db.transaction(async (tx) => {
-        if (patch.slug) {
-          const conflict = await tx
-            .select({ id: spacesTable.id })
-            .from(spacesTable)
-            .where(
-              and(
-                eq(spacesTable.organizationId, row.organizationId),
-                eq(spacesTable.slug, patch.slug)
+        const patch = { ...basePatch } as Partial<
+          typeof spacesTable.$inferInsert
+        >
+
+        if (input.slug !== undefined) {
+          // Explicit slug: slugify and enforce org-scoped uniqueness; conflict => error
+          const s = slugify(input.slug)
+          if (s) {
+            const conflict = await tx
+              .select({ id: spacesTable.id })
+              .from(spacesTable)
+              .where(
+                and(
+                  eq(spacesTable.organizationId, row.organizationId),
+                  eq(spacesTable.slug, s)
+                )
               )
-            )
-            .limit(1)
-          if (conflict.length && conflict[0] && conflict[0].id !== input.id) {
-            throw new TRPCError({
-              code: "CONFLICT",
-              message: "Slug already exists in this organization",
-            })
+              .limit(1)
+            if (conflict.length && conflict[0] && conflict[0].id !== input.id) {
+              throw new TRPCError({
+                code: "CONFLICT",
+                message: "Slug already exists in this organization",
+              })
+            }
+            patch.slug = s
           }
+        } else if (input.name !== undefined) {
+          // No explicit slug provided but name changed: auto-sync slug to name with suffixing
+          const base = slugify(input.name) || "space"
+          let candidate = base
+          let attempt = 0
+          while (true) {
+            const conflict = await tx
+              .select({ id: spacesTable.id })
+              .from(spacesTable)
+              .where(
+                and(
+                  eq(spacesTable.organizationId, row.organizationId),
+                  eq(spacesTable.slug, candidate)
+                )
+              )
+              .limit(1)
+            if (!conflict.length || conflict[0]!.id === input.id) break
+            attempt++
+            candidate = `${base}-${attempt.toString(36)}`
+          }
+          patch.slug = candidate
         }
 
         await tx

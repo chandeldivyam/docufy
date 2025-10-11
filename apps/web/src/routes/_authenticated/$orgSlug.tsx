@@ -62,6 +62,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { CommandPalette } from "@/components/command-palette"
+import { toast } from "sonner"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug")({
   ssr: false,
@@ -398,13 +399,22 @@ function SpacesSection({ currentSlug }: { currentSlug: string }) {
 
   async function saveEdit() {
     if (!editId) return
-    await spacesCollection.update(editId, (draft) => {
-      draft.name = editName.trim() || draft.name
-      draft.description = editDescription ? editDescription : null
-      draft.icon_name = editIcon || null
-      draft.updated_at = new Date()
-    })
-    setEditOpen(false)
+    try {
+      await spacesCollection.update(editId, (draft) => {
+        const nextName = editName.trim()
+        if (nextName) {
+          draft.name = nextName
+          // Keep slug in sync with name for now (no separate slug editor)
+          draft.slug = slugifySpace(nextName)
+        }
+        draft.description = editDescription ? editDescription : null
+        draft.icon_name = editIcon || null
+        draft.updated_at = new Date()
+      })
+      setEditOpen(false)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update space")
+    }
   }
 
   function openDelete(s: SpaceRow) {
