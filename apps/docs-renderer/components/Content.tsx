@@ -9,6 +9,7 @@ import LinkInterceptor from './islands/LinkInterceptor';
 import TabsClient from './islands/TabsClient';
 import { PrevNextNav } from './PrevNextNav';
 import CopyActions from './islands/CopyActions'; // Import the new component
+import ImagePreviewer from './islands/ImagePreviewer';
 
 type NavLink = {
   title: string;
@@ -52,6 +53,7 @@ export default async function Content({
 
           <PrevNextNav previous={previous} next={next} />
 
+          <ImagePreviewer />
           <CopyButtons />
           <TocSpy />
           <LinkInterceptor />

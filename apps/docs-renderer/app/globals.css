@@ -97,6 +97,76 @@ body {
   min-height: 0;
 }
 
+/* ======= Image lightbox overlay ======= */
+.dfy-article img[data-previewable] {
+  cursor: zoom-in;
+}
+
+.dfy-img-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: color-mix(in oklab, black 80%, transparent);
+  backdrop-filter: blur(2px) saturate(1.1);
+  display: none; /* set to grid on open */
+  place-items: center;
+  padding: 3vh 16px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  animation: fadeIn 120ms ease-out;
+}
+
+.dfy-img-zoom {
+  position: relative;
+  margin: 0;
+  max-width: min(95vw, 1400px);
+  max-height: 90vh; /* fallback */
+  max-height: calc(100svh - 6vh); /* modern viewport unit; leave space for safe areas */
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 10px;
+}
+
+.dfy-img-zoom > img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 20px 60px color-mix(in oklab, black 45%, transparent),
+    0 10px 30px color-mix(in oklab, black 25%, transparent);
+}
+
+.dfy-img-caption {
+  color: var(--sidebar-fg-muted);
+  font-size: 0.92rem;
+  text-align: center;
+}
+
+.dfy-img-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--bg) 70%, transparent);
+  color: var(--fg);
+}
+
+/* Lock underlying page scroll while overlay is present */
+body:has(.dfy-img-overlay[aria-hidden='false']) {
+  overflow: hidden;
+}
+
 @media (min-width: 1100px) {
   .dfy-root {
     grid-template-columns: 300px 1fr;
