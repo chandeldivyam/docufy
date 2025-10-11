@@ -36,6 +36,7 @@ export default $config({
     const GoogleClientSecret = new sst.Secret('GoogleClientSecret');
     const GithubClientId = new sst.Secret('GithubClientId');
     const GithubClientSecret = new sst.Secret('GithubClientSecret');
+    const VercelRendererProject = new sst.Secret('VercelRendererProject');
 
     const web = new sst.aws.Service('Web', {
       cluster,
@@ -71,6 +72,7 @@ export default $config({
         BLOB_READ_WRITE_TOKEN: BlobReadWriteToken.value,
         VITE_PUBLIC_VERCEL_BLOB_STORE_ID: VercelBlobStoreId.value,
         VITE_PUBLIC_VERCEL_BLOB_BASE_URL: VercelBlobBaseUrl.value,
+        VERCEL_RENDERER_PROJECT: VercelRendererProject.value,
 
         DOCS_TS_ADMIN_KEY: TypesenseApiKey.value,
         DOCS_TS_HOST: 'search.trydocufy.com',
