@@ -240,6 +240,9 @@ function SpacePage() {
       updated_at: now,
     })
 
+    // Notify success once the page is added
+    toast.success("Page created")
+
     navigate({
       to: "/$orgSlug/spaces/$spaceId/document/$docId",
       params: { orgSlug, spaceId, docId: id },
@@ -552,6 +555,11 @@ function DocumentsTree({
       created_at: now,
       updated_at: now,
     })
+
+    if (type === "page") {
+      // Show a toast only for actual page creations
+      toast.success("Page created")
+    }
 
     if (parentId) {
       setExpanded((prev) => ({ ...prev, [parentId]: true }))
