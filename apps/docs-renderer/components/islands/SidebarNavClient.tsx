@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -40,25 +40,7 @@ function collectAncestors(nodes: UiTreeItem[], route: string, acc: string[] = []
 }
 
 function SmartTitle({ title, className = '' }: { title: string; className?: string }) {
-  const [isOverflowing, setIsOverflowing] = useState(false);
-  const textRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const element = textRef.current;
-    if (element) {
-      setIsOverflowing(element.scrollWidth > element.clientWidth);
-    }
-  }, [title]);
-
-  return (
-    <span
-      ref={textRef}
-      className={`flex-1 truncate ${className}`}
-      title={isOverflowing ? title : undefined}
-    >
-      {title}
-    </span>
-  );
+  return <span className={`min-w-0 flex-1 ${className}`}>{title}</span>;
 }
 
 function useExpanded(initial: string[], storageKey?: string) {
@@ -232,22 +214,28 @@ function Node({
   if (!hasChildren) {
     return (
       <li role="treeitem" aria-expanded={false} aria-current={isActive ? 'page' : undefined}>
-        <div className="flex items-center gap-2" style={{ marginLeft: depth * INDENT }}>
-          <Link
-            prefetch
-            href={`${hrefPrefix}${node.route}`}
-            className={cn('sidebar-link flex flex-1 items-center gap-2')}
-            aria-current={isActive ? 'page' : undefined}
-          >
-            {isApiRoute && getMethodBadge(node)}
+        <Link
+          prefetch
+          href={`${hrefPrefix}${node.route}`}
+          className={cn('sidebar-link')}
+          aria-current={isActive ? 'page' : undefined}
+          style={{ marginLeft: depth * INDENT }}
+        >
+          <div className="flex w-full min-w-0 items-center gap-2">
+            {isApiRoute && <div className="flex-shrink-0">{getMethodBadge(node)}</div>}
             {node.iconName && (
-              <Suspense fallback={<span aria-hidden className="inline-block h-4 w-4" />}>
-                <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
+              <Suspense
+                fallback={<span aria-hidden className="inline-block h-4 w-4 flex-shrink-0" />}
+              >
+                <DynamicIcon
+                  name={node.iconName as unknown as IconName}
+                  className="h-4 w-4 flex-shrink-0"
+                />
               </Suspense>
             )}
-            <SmartTitle title={node.title} />
-          </Link>
-        </div>
+            <SmartTitle title={node.title} className="break-words" />
+          </div>
+        </Link>
       </li>
     );
   }
