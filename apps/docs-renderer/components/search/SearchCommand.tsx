@@ -113,7 +113,7 @@ export default function SearchCommand() {
               onClick={() => setOpen(false)}
             >
               <div className="dfy-search-panel" onClick={(e) => e.stopPropagation()}>
-                <div className="dfy-search-header">
+                <div className="dfy-search-header" role="search">
                   <input
                     ref={inputRef}
                     className="dfy-search-input"
@@ -122,26 +122,59 @@ export default function SearchCommand() {
                     onChange={(e) => setQuery(e.target.value)}
                     aria-label="Search input"
                     autoComplete="off"
-                    spellCheck={false}
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    enterKeyHint="search"
+                    inputMode="search"
+                    type="search"
                     // ARIA combobox wiring
                     role="combobox"
                     aria-expanded="true"
                     aria-controls="dfy-search-listbox"
                   />
                   <div className="dfy-search-kbd">{kbd(navigator.platform.includes('Mac'))}K</div>
+                  <button
+                    type="button"
+                    className="dfy-search-cancel"
+                    onClick={() => setOpen(false)}
+                    aria-label="Cancel search"
+                  >
+                    Cancel
+                  </button>
                 </div>
 
-                <InstantSearch searchClient={searchClient} indexName={cfg.collection}>
-                  <Configure query={debouncedQuery} hitsPerPage={10} />
-                  <SearchResults
-                    query={query}
-                    onAccept={() => {
-                      addRecent(query);
-                      setOpen(false);
-                    }}
-                    inputRef={inputRef}
-                  />
-                </InstantSearch>
+                {/* Content area: recents when empty, results when searching */}
+                {query.trim().length === 0 ? (
+                  <div className="dfy-search-content" id="dfy-search-empty-content">
+                    <RecentSearches
+                      onSelect={(q) => {
+                        setQuery(q);
+                        // keep focus in input so keyboard stays open on mobile
+                        setTimeout(() => inputRef.current?.focus(), 0);
+                      }}
+                    />
+                    <div className="dfy-search-empty">
+                      <p className="dfy-search-hint">
+                        Tip: Use <em>/</em> to open search quickly, and{' '}
+                        <em>{kbd(navigator.platform.includes('Mac'))}K</em> anywhere.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <InstantSearch searchClient={searchClient} indexName={cfg.collection}>
+                    <Configure query={debouncedQuery} hitsPerPage={10} />
+                    <div className="dfy-search-content">
+                      <SearchResults
+                        query={query}
+                        onAccept={() => {
+                          addRecent(query);
+                          setOpen(false);
+                        }}
+                        inputRef={inputRef}
+                      />
+                    </div>
+                  </InstantSearch>
+                )}
               </div>
             </div>,
             document.body,
@@ -334,4 +367,33 @@ function scrollToIndex(container: HTMLDivElement | null, index: number) {
   const items = container.querySelectorAll<HTMLElement>('.dfy-hit');
   const el = items[index];
   if (el) el.scrollIntoView({ block: 'nearest' });
+}
+
+// ---------- Recent searches (chips) ----------
+function RecentSearches({ onSelect }: { onSelect: (q: string) => void }) {
+  const [recents, setRecents] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const list: string[] = JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]');
+      setRecents(list);
+    } catch {
+      setRecents([]);
+    }
+  }, []);
+
+  if (recents.length === 0) return null;
+
+  return (
+    <div>
+      <div className="dfy-search-section-title">Recent</div>
+      <div className="dfy-search-recent">
+        {recents.map((r) => (
+          <button key={r} className="dfy-recent-chip" onClick={() => onSelect(r)}>
+            {r}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }

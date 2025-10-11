@@ -964,7 +964,7 @@ html.dark .shiki span {
 
 .dfy-search-header {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto; /* input | kbd | cancel */
   align-items: center;
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
@@ -1000,10 +1000,38 @@ html.dark .shiki span {
   box-shadow: 0 1px 2px color-mix(in oklab, black 8%, transparent);
 }
 
+/* Cancel button (shown on mobile) */
+.dfy-search-cancel {
+  display: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+/* Shared content area that scrolls */
+.dfy-search-panel > .ais-InstantSearch {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.dfy-search-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ======= Search Results Container ======= */
 #dfy-search-listbox {
   overflow-y: auto;
-  max-height: calc(80vh - 70px);
   overscroll-behavior: contain;
 }
 
@@ -1340,14 +1368,36 @@ html.dark .shiki span {
 
 /* ======= Responsive Adjustments ======= */
 @media (max-width: 640px) {
-  .dfy-search-panel {
-    max-height: 85vh;
-    border-radius: calc(var(--radius) * 1.5) calc(var(--radius) * 1.5) 0 0;
+  .dfy-search-overlay {
+    padding: 0;
+    place-items: stretch;
   }
 
-  .dfy-search-overlay {
-    padding: 15vh 8px 0;
-    place-items: end center;
+  .dfy-search-panel {
+    width: 100%;
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: none;
+    border-radius: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .dfy-search-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg);
+    padding-top: calc(12px + env(safe-area-inset-top));
+    padding-bottom: 12px;
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .dfy-search-kbd {
+    display: none;
+  }
+
+  .dfy-search-cancel {
+    display: inline-block;
   }
 
   .dfy-hit {
