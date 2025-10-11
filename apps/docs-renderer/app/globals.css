@@ -33,9 +33,9 @@
 
     /* Light theme scrollbar colors */
     --sb-track: transparent;
-    --sb-thumb: oklch(0.82 0 0 / 0.35);
-    --sb-thumb-hover: oklch(0.72 0 0 / 0.5);
-    --sb-thumb-active: oklch(0.62 0 0 / 0.65);
+    --sb-thumb: oklch(0.82 0 0 / 0.25);
+    --sb-thumb-hover: oklch(0.72 0 0 / 0.45);
+    --sb-thumb-active: oklch(0.62 0 0 / 0.6);
 
     /* chrome sizes for layout math */
     --topbar-h: 56px;
@@ -871,14 +871,14 @@ html.dark .shiki span {
 }
 
 *::-webkit-scrollbar-track {
-  background: var(--sb-track);
+  background: transparent;
   border-radius: 999px;
 }
 
 *::-webkit-scrollbar-thumb {
   background: transparent; /* Hidden by default */
   border-radius: 999px;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
   background-clip: padding-box;
   transition: background-color 250ms ease;
 }
@@ -904,12 +904,12 @@ html.dark .shiki span {
 /* Firefox auto-hide scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: transparent var(--sb-track);
+  scrollbar-color: transparent transparent;
   transition: scrollbar-color 250ms ease;
 }
 
 *:hover {
-  scrollbar-color: var(--sb-thumb) var(--sb-track);
+  scrollbar-color: var(--sb-thumb) transparent;
 }
 
 /* ======= Search overlay ======= */
@@ -1684,6 +1684,8 @@ html.dark .shiki span {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .dfy-tabs-chrome .dfy-root {
