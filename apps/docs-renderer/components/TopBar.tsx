@@ -68,15 +68,17 @@ export default function TopBar({
         </div>
 
         <div className="dfy-topbar-center">
-          <div className="md:hidden">
-            <SearchIconButton />
-          </div>
+          {/* Desktop: keep search centered */}
           <div className="hidden md:block">
             <SearchTrigger />
           </div>
         </div>
 
         <div className="dfy-topbar-right">
+          {/* Mobile: show search icon on the right */}
+          <div className="md:hidden">
+            <SearchIconButton />
+          </div>
           {tree.buttons?.topbar_right?.map((b) => (
             <NavLinkButton key={b.id} btn={b} hrefPrefix={hrefPrefix} />
           ))}
