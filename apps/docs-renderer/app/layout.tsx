@@ -44,6 +44,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <SearchProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {/* Global mobile nav toggle + backdrop (moved from DocPageFrame) */}
+            <input
+              id="dfy-mobile-nav-toggle"
+              type="checkbox"
+              className="dfy-mobile-nav-toggle"
+              aria-hidden="true"
+            />
+            <label
+              htmlFor="dfy-mobile-nav-toggle"
+              className="dfy-sidebar-backdrop"
+              aria-hidden="true"
+            />
             {children}
             {/* Global search overlay mount */}
             <SearchCommand />

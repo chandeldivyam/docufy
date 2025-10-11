@@ -22,15 +22,6 @@ export default async function DocPageFrame({
 
   return (
     <>
-      {/* Mobile-only nav toggle + backdrop. Shared between doc + API pages. */}
-      <input
-        id="dfy-mobile-nav-toggle"
-        type="checkbox"
-        className="dfy-mobile-nav-toggle"
-        aria-hidden="true"
-      />
-      <label htmlFor="dfy-mobile-nav-toggle" className="dfy-sidebar-backdrop" aria-hidden="true" />
-
       <div className="dfy-article-wrap">
         {showMobileTopbar ? (
           <div className="dfy-mobile-topbar" aria-label="Navigation">
