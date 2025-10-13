@@ -8,6 +8,7 @@ const SUPPORTED = [
   'javascript',
   'json',
   'bash',
+  'curl',
   'html',
   'css',
   'python',
@@ -36,6 +37,7 @@ const SUPPORTED = [
   'makefile',
   'diff',
   'ini',
+  'groovy',
 ] as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

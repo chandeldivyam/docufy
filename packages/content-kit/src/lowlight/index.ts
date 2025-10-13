@@ -34,6 +34,8 @@ import lua from 'highlight.js/lib/languages/lua';
 import makefile from 'highlight.js/lib/languages/makefile';
 import diff from 'highlight.js/lib/languages/diff';
 import ini from 'highlight.js/lib/languages/ini';
+import groovy from 'highlight.js/lib/languages/groovy';
+import curl from 'highlight.js/lib/languages/curl';
 
 export const lowlight = (() => {
   const l = createLowlight();
@@ -63,6 +65,7 @@ export const lowlight = (() => {
   l.register('powershell', powershell);
   l.register('ps', powershell);
   l.register('ps1', powershell);
+  l.register('curl', curl);
 
   // Styling
   l.register('css', css);
@@ -100,6 +103,7 @@ export const lowlight = (() => {
   // Mobile/Modern
   l.register('swift', swift);
   l.register('dart', dart);
+  l.register('groovy', groovy);
 
   // Database
   l.register('sql', sql);
