@@ -1763,3 +1763,53 @@ html.dark .shiki span {
   height: auto; /* ← Override the fixed height */
   min-height: 0;
 }
+
+/* ======= Emoji Styling ======= */
+.dfy-article img[alt*='emoji'] {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  cursor: default; /* Override zoom cursor for emojis */
+}
+
+/* Size emojis relative to their parent's font-size */
+.dfy-article h1 img[alt*='emoji'] {
+  height: 1.2em;
+  width: auto;
+  vertical-align: -0.15em; /* Fine-tune alignment for larger text */
+}
+
+.dfy-article h2 img[alt*='emoji'] {
+  height: 1.2em;
+  width: auto;
+  vertical-align: -0.15em;
+}
+
+.dfy-article h3 img[alt*='emoji'] {
+  height: 1.2em;
+  width: auto;
+  vertical-align: -0.15em;
+}
+
+.dfy-article p img[alt*='emoji'],
+.dfy-article li img[alt*='emoji'],
+.dfy-article td img[alt*='emoji'] {
+  height: 1.15em;
+  width: auto;
+  vertical-align: -0.12em; /* Slight adjustment for better baseline alignment */
+}
+
+/* Prevent emoji images from being treated as previewable */
+.dfy-article img[alt*='emoji'][data-previewable] {
+  cursor: default;
+}
+
+/* Optional: Add a subtle hint that these aren't clickable */
+.dfy-article img[alt*='emoji']:hover {
+  transform: none;
+  box-shadow: none;
+}

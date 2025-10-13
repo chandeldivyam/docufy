@@ -8,7 +8,6 @@ const SUPPORTED = [
   'javascript',
   'json',
   'bash',
-  'curl',
   'html',
   'css',
   'python',
