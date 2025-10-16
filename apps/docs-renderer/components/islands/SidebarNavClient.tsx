@@ -297,9 +297,16 @@ function Node({
           className={cn('sidebar-link flex flex-1 items-center gap-2')}
         >
           {isApiRoute && getMethodBadge(node)}
-          {/* {node.iconName && (
-            <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
-          )} */}
+          {node.iconName && (
+            <Suspense
+              fallback={<span aria-hidden className="inline-block h-4 w-4 flex-shrink-0" />}
+            >
+              <DynamicIcon
+                name={node.iconName as unknown as IconName}
+                className="h-4 w-4 flex-shrink-0"
+              />
+            </Suspense>
+          )}
           <SmartTitle title={node.title} />
         </Link>
         <button

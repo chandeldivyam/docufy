@@ -20,7 +20,6 @@ const METHODS = [
   "head",
   "trace",
 ] as const
-const METHOD_ORDER = new Map(METHODS.map((m, i) => [m, i]))
 
 function slugify(input: string) {
   return input
@@ -551,9 +550,13 @@ export const documentsRouter = router({
         ? schema.tags.map((t) => t?.name).filter(Boolean)
         : []
       const tagIndex = new Map(tagOrder.map((t, i) => [t, i]))
-      const UNTAGGED = "Untagged"
 
-      type Op = { path: string; method: string; title: string; tag: string }
+      type Op = {
+        path: string
+        method: string
+        title: string
+        tag?: string | null
+      }
       const ops: Op[] = []
       for (const [apiPath, pathItem] of Object.entries(schema.paths)) {
         for (const m of METHODS) {
@@ -564,17 +567,22 @@ export const documentsRouter = router({
             (typeof op.operationId === "string" && op.operationId.trim()) ||
             `${m.toUpperCase()} ${apiPath}`
           const tag =
-            Array.isArray(op.tags) && op.tags[0] ? String(op.tags[0]) : UNTAGGED
+            Array.isArray(op.tags) && op.tags[0] ? String(op.tags[0]) : null
           ops.push({ path: apiPath, method: m.toUpperCase(), title, tag })
         }
       }
 
-      // group ops by tag
+      // group ops by explicit tag; collect untagged separately
       const byTag = new Map<string, Op[]>()
+      const untaggedOps: Op[] = []
       for (const op of ops) {
-        const list = byTag.get(op.tag) ?? []
-        list.push(op)
-        byTag.set(op.tag, list)
+        if (op.tag) {
+          const list = byTag.get(op.tag) ?? []
+          list.push(op)
+          byTag.set(op.tag, list)
+        } else {
+          untaggedOps.push(op)
+        }
       }
 
       // sort tag keys by spec tag order (then alpha)
@@ -583,23 +591,6 @@ export const documentsRouter = router({
         const bi = tagIndex.has(b) ? tagIndex.get(b)! : Number.MAX_SAFE_INTEGER
         return ai === bi ? a.localeCompare(b) : ai - bi
       })
-
-      // Sort ops in each tag by (path ASC, method order)
-      for (const arr of byTag.values()) {
-        arr.sort((a, b) => {
-          if (a.path === b.path) {
-            return (
-              (METHOD_ORDER.get(
-                a.method.toLowerCase() as (typeof METHODS)[number]
-              ) ?? 99) -
-              (METHOD_ORDER.get(
-                b.method.toLowerCase() as (typeof METHODS)[number]
-              ) ?? 99)
-            )
-          }
-          return a.path.localeCompare(b.path)
-        })
-      }
 
       return await ctx.db.transaction(async (tx) => {
         // 1) Load existing managed rows for this spec
@@ -728,6 +719,73 @@ export const documentsRouter = router({
                 })
                 .where(eq(documentsTable.id, existingOp.id))
             }
+          }
+        }
+
+        // 3b) Handle untagged endpoints directly under the spec root
+        for (const op of untaggedOps) {
+          const key = `${op.path}::${op.method}`
+          keepEndpointKeys.add(key)
+
+          const existingOp = existing.find(
+            (d) =>
+              d.type === "api" &&
+              d.apiPath === op.path &&
+              d.apiMethod === op.method
+          )
+
+          const baseSlug = slugify(op.title)
+          let finalSlug = baseSlug
+          let attempt = 0
+          while (true) {
+            const existingSlug = await tx
+              .select({ id: documentsTable.id })
+              .from(documentsTable)
+              .where(
+                and(
+                  eq(documentsTable.parentId, parent.id),
+                  eq(documentsTable.slug, finalSlug)
+                )
+              )
+              .limit(1)
+
+            if (existingSlug.length === 0) break
+            attempt++
+            finalSlug = `${baseSlug}-${attempt.toString(36)}`
+          }
+
+          if (!existingOp) {
+            // New untagged endpoint: create under spec root with top-level rank
+            await tx.insert(documentsTable).values({
+              id: crypto.randomUUID(),
+              organizationId: parent.orgId,
+              spaceId: parent.spaceId,
+              parentId: parent.id,
+              slug: finalSlug,
+              title: op.title,
+              type: "api",
+              apiPath: op.path,
+              apiMethod: op.method,
+              managedBySpec: true,
+              rank: nextRank(),
+              specSourceId: parent.id,
+              apiSpecBlobKey: parent.apiSpecBlobKey ?? null,
+            })
+          } else {
+            // Existing endpoint: ensure it lives under spec root; if parent changes, give top-level rank
+            const needsMoveToRoot = existingOp.parentId !== parent.id
+            await tx
+              .update(documentsTable)
+              .set({
+                parentId: parent.id,
+                title: op.title,
+                slug: finalSlug,
+                managedBySpec: true,
+                apiSpecBlobKey: parent.apiSpecBlobKey ?? null,
+                updatedAt: new Date(),
+                ...(needsMoveToRoot ? { rank: nextRank() } : {}),
+              })
+              .where(eq(documentsTable.id, existingOp.id))
           }
         }
 
