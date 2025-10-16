@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState, Suspense } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
 import type { UiTreeItem } from '../../lib/types';
 
 const INDENT = 12;
@@ -223,15 +222,11 @@ function Node({
         >
           <div className="flex w-full min-w-0 items-center gap-2">
             {isApiRoute && <div className="flex-shrink-0">{getMethodBadge(node)}</div>}
-            {node.iconName && (
-              <Suspense
-                fallback={<span aria-hidden className="inline-block h-4 w-4 flex-shrink-0" />}
-              >
-                <DynamicIcon
-                  name={node.iconName as unknown as IconName}
-                  className="h-4 w-4 flex-shrink-0"
-                />
-              </Suspense>
+            {node.iconSvg && (
+              <span
+                className="inline-block h-4 w-4 flex-shrink-0"
+                dangerouslySetInnerHTML={{ __html: node.iconSvg }}
+              />
             )}
             <SmartTitle title={node.title} className="break-words" />
           </div>
@@ -249,10 +244,11 @@ function Node({
             aria-current={isActive ? 'page' : undefined}
             onClick={() => onToggle(nodeId, !isExpanded)}
           >
-            {node.iconName && (
-              <Suspense fallback={<span aria-hidden className="inline-block h-4 w-4" />}>
-                <DynamicIcon name={node.iconName as unknown as IconName} className="h-4 w-4" />
-              </Suspense>
+            {node.iconSvg && (
+              <span
+                className="inline-block h-4 w-4"
+                dangerouslySetInnerHTML={{ __html: node.iconSvg }}
+              />
             )}
             <SmartTitle title={node.title} />
           </div>
@@ -297,15 +293,11 @@ function Node({
           className={cn('sidebar-link flex flex-1 items-center gap-2')}
         >
           {isApiRoute && getMethodBadge(node)}
-          {node.iconName && (
-            <Suspense
-              fallback={<span aria-hidden className="inline-block h-4 w-4 flex-shrink-0" />}
-            >
-              <DynamicIcon
-                name={node.iconName as unknown as IconName}
-                className="h-4 w-4 flex-shrink-0"
-              />
-            </Suspense>
+          {node.iconSvg && (
+            <span
+              className="inline-block h-4 w-4 flex-shrink-0"
+              dangerouslySetInnerHTML={{ __html: node.iconSvg }}
+            />
           )}
           <SmartTitle title={node.title} />
         </Link>

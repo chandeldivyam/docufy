@@ -18,7 +18,7 @@ function NavLinkButton({
     id: string;
     label: string;
     href: string;
-    iconName?: string | null;
+    iconSvg?: string | null;
     target?: '_self' | '_blank';
   };
   hrefPrefix: string;
@@ -39,7 +39,12 @@ function NavLinkButton({
         target={btn.target ?? (isExternal ? '_blank' : undefined)}
         rel={btn.target === '_blank' || isExternal ? 'noopener noreferrer' : undefined}
       >
-        {btn.iconName ? <i className={`mr-2 icon-${btn.iconName}`} /> : null}
+        {btn.iconSvg ? (
+          <span
+            className="mr-2 inline-block h-4 w-4"
+            dangerouslySetInnerHTML={{ __html: btn.iconSvg }}
+          />
+        ) : null}
         {btn.label}
       </Link>
     </Button>

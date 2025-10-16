@@ -1,16 +1,17 @@
+// apps/docs-renderer/lib/types.ts
 export type NavSpace = {
   slug: string;
   name: string;
   style: 'dropdown' | 'tab';
   order: number;
-  iconName?: string;
+  iconSvg?: string | null;
   entry?: string;
 };
 
 export type PageIndexEntry = {
   title: string;
   space: string;
-  iconName?: string;
+  iconSvg?: string | null;
   blob: string; // relative blob key under Blob base URL
   hash: string;
   size: number;
@@ -50,7 +51,7 @@ export type Manifest = {
 export type UiTreeItem = {
   kind: 'group' | 'page' | 'api_spec' | 'api' | 'api_tag';
   title: string;
-  iconName?: string;
+  iconSvg?: string | null;
   slug: string;
   route: string;
   children?: UiTreeItem[];
@@ -62,7 +63,7 @@ export type UiTreeItem = {
 };
 
 export type UiTreeSpace = {
-  space: { slug: string; name: string; iconName?: string };
+  space: { slug: string; name: string; iconSvg?: string | null };
   items: UiTreeItem[];
 };
 
@@ -71,14 +72,14 @@ export type Tree = {
   projectId: string;
   buildId: string;
   publishedAt: number;
-  nav: { spaces: Array<{ slug: string; name: string; order?: number; iconName?: string }> };
+  nav: { spaces: Array<{ slug: string; name: string; order?: number; iconSvg?: string | null }> };
   spaces: UiTreeSpace[];
   buttons: {
     sidebar_top: Array<{
       id: string;
       label: string;
       href: string;
-      iconName?: string | null;
+      iconSvg?: string | null;
       target?: '_self' | '_blank';
       slug?: string | null;
     }>;
@@ -86,7 +87,7 @@ export type Tree = {
       id: string;
       label: string;
       href: string;
-      iconName?: string | null;
+      iconSvg?: string | null;
       target?: '_self' | '_blank';
       slug?: string | null;
     }>;
@@ -94,7 +95,7 @@ export type Tree = {
       id: string;
       label: string;
       href: string;
-      iconName?: string | null;
+      iconSvg?: string | null;
       target?: '_self' | '_blank';
       slug?: string | null;
     }>;
@@ -102,7 +103,7 @@ export type Tree = {
       id: string;
       label: string;
       href: string;
-      iconName?: string | null;
+      iconSvg?: string | null;
       target?: '_self' | '_blank';
       slug?: string | null;
     }>;
@@ -114,7 +115,7 @@ export type PageBlob = {
   slug: string;
   title: string;
   path: string[];
-  iconName?: string;
+  iconSvg?: string | null;
   rendered: { html: string; toc: unknown[] };
   plain: string;
   markdown?: string;
