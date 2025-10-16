@@ -1,62 +1,69 @@
 #!/bin/bash
-set -e
+set -euxo pipefail
 
-# Update package index
-sudo apt update
+# --- Inputs ---
+: "${TYPESENSE_VOL_ID:?Set TYPESENSE_VOL_ID to the EBS volume id (eg vol0a8d4d1d2085973bb)}"
+: "${TYPESENSE_API_KEY:=$(openssl rand -hex 32)}"
 
-# Install required packages
-sudo apt install -y ca-certificates curl gnupg lsb-release
+# --- Install deps (Docker, nvme-cli) ---
+apt-get update
+apt-get install -y ca-certificates curl gnupg lsb-release nvme-cli
 
-# Add Docker's official GPG key
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+  > /etc/apt/sources.list.d/docker.list
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Set up the Docker repository
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+# --- Find the NVMe device that matches the EBS volume id ---
+# Nitro exposes EBS as NVMe; the device SERIAL equals the EBS volume id (no dash).
+DEV="$(lsblk -dn -o NAME,SERIAL | awk -v v="$TYPESENSE_VOL_ID" '$2==v{print "/dev/"$1}')"
+if [ -z "${DEV}" ]; then
+  # Fallback: inspect with nvme id-ctrl
+  for d in /dev/nvme*n1; do
+    if nvme id-ctrl -v "$d" 2>/dev/null | grep -q "$TYPESENSE_VOL_ID"; then DEV="$d"; break; fi
+  done
+fi
+[ -n "${DEV}" ] || { echo "Could not find NVMe device for $TYPESENSE_VOL_ID"; exit 1; }
 
-# Install Docker Engine
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-# Add your user to docker group (to run docker without sudo)
-sudo usermod -aG docker $USER
-
-# Apply the group change (or logout and login again)
-newgrp docker
-
-# Verify installation
-docker --version
-docker compose version
-
-# Create project directory
-mkdir -p ~/typesense
-cd ~/typesense
-
-# Create data directory for Typesense persistence
-mkdir -p ./typesense-data
-
-# Create Caddy data directories for SSL certificates
-mkdir -p ./caddy-data
-mkdir -p ./caddy-config
-
-# Use existing TYPESENSE_API_KEY if set, otherwise generate a new one
-if [ -z "$TYPESENSE_API_KEY" ]; then
-  echo "No TYPESENSE_API_KEY found, generating a new one..."
-  export TYPESENSE_API_KEY=$(openssl rand -hex 32)
-  echo "Generated new API key. Please save it securely!"
-else
-  echo "Using existing TYPESENSE_API_KEY from environment"
+# --- Format (first time) and mount at /mnt/typesense, persist via UUID in /etc/fstab ---
+if ! blkid "${DEV}" >/dev/null 2>&1; then
+  mkfs.ext4 -F "${DEV}"
 fi
 
-# Save it to a file for later reference
-echo "TYPESENSE_API_KEY=$TYPESENSE_API_KEY" > .env
+mkdir -p /mnt/typesense
+UUID="$(blkid -s UUID -o value "${DEV}")"
+grep -q "${UUID}" /etc/fstab || echo "UUID=${UUID} /mnt/typesense ext4 defaults,nofail 0 2" >> /etc/fstab
+mount -a
 
-cat > docker-compose.yml <<'EOF'
+# --- Compose files ---
+mkdir -p /var/lib/caddy-data /var/lib/caddy-config
+
+cat >/root/Caddyfile <<'CADDY'
+search.trydocufy.com {
+  reverse_proxy typesense:8108 {
+    health_uri /health
+    health_interval 30s
+    health_timeout 10s
+  }
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    X-XSS-Protection "1; mode=block"
+  }
+  encode gzip
+  log {
+    output file /var/log/caddy/access.log
+    format json
+  }
+}
+CADDY
+
+cat >/root/docker-compose.yml <<'EOF'
 version: '3.8'
-
 services:
   typesense:
     image: typesense/typesense:29.0
@@ -65,14 +72,12 @@ services:
     ports:
       - "8108:8108"
     volumes:
-      - ./typesense-data:/data
+      - /mnt/typesense:/data
     environment:
       - TYPESENSE_DATA_DIR=/data
       - TYPESENSE_API_KEY=${TYPESENSE_API_KEY}
       - TYPESENSE_ENABLE_CORS=true
     command: '--data-dir /data --api-key=${TYPESENSE_API_KEY} --enable-cors'
-    networks:
-      - typesense-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8108/health"]
       interval: 30s
@@ -88,69 +93,20 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./caddy-data:/data
-      - ./caddy-config:/config
-    networks:
-      - typesense-network
+      - /root/Caddyfile:/etc/caddy/Caddyfile
+      - /var/lib/caddy-data:/data
+      - /var/lib/caddy-config:/config
     depends_on:
       - typesense
-
-networks:
-  typesense-network:
-    driver: bridge
 EOF
 
-cat > Caddyfile <<'EOF'
-search.trydocufy.com {
-    reverse_proxy typesense:8108 {
-        # Add health check
-        health_uri /health
-        health_interval 30s
-        health_timeout 10s
-    }
+# --- Run stack ---
+docker compose -f /root/docker-compose.yml up -d
+docker compose -f /root/docker-compose.yml ps
 
-    # Add security headers
-    header {
-        # Enable HSTS
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        # Prevent MIME type sniffing
-        X-Content-Type-Options "nosniff"
-        # Prevent clickjacking
-        X-Frame-Options "SAMEORIGIN"
-        # XSS Protection
-        X-XSS-Protection "1; mode=block"
-    }
-
-    # Enable gzip compression
-    encode gzip
-
-    # Access logging
-    log {
-        output file /var/log/caddy/access.log
-        format json
-    }
-}
-EOF
-
-# Start the services
-docker compose up -d
-
-# Check if containers are running
-docker compose ps
-
-# Wait a moment for services to start
+# --- Health checks ---
 sleep 5
+curl -fsS http://localhost:8108/health
+curl -fsS -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" http://localhost:8108/collections || true
 
-# Check health endpoint (from inside the EC2)
-echo "Checking health endpoint..."
-curl http://localhost:8108/health
-
-# Check with API key
-echo "Checking collections endpoint with API key..."
-curl -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" \
-  http://localhost:8108/collections
-
-echo ""
-echo "Setup complete! Once DNS is configured, test from outside:"
-echo "curl https://search.trydocufy.com/health"
+echo "Done. Data dir is persisted at /mnt/typesense (UUID=${UUID})."
