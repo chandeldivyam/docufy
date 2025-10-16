@@ -201,7 +201,7 @@ export TYPESENSE_API_KEY="${TypesenseApiKey.value}"
     });
     
     new aws.ec2.VolumeAttachment("TypesenseDataAttach", {
-      deviceName: "/dev/sdf",
+      deviceName: "/dev/sdg",
       volumeId: typesenseDataVolume.id,
       instanceId: typesenseInstance.id,
     });
