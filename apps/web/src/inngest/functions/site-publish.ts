@@ -34,13 +34,13 @@ type NavSpace = {
   name: string
   style: "dropdown" | "tab"
   order: number
-  iconName?: string | null
+  iconSvg?: string | null
   entry?: string
 }
 type PageIndexEntry = {
   title: string
   space: string
-  iconName?: string | null
+  iconSvg?: string | null
   blob: string
   hash: string
   size: number
@@ -56,6 +56,26 @@ type PageIndexEntry = {
 }
 
 // --- helpers ---
+
+// New helper to fetch and process an SVG icon
+async function fetchIconSvg(iconName: string): Promise<string | null> {
+  if (!iconName) return null
+  try {
+    const res = await fetch(
+      `https://unpkg.com/lucide-static@latest/icons/${iconName}.svg`
+    )
+    if (!res.ok) return null
+    const svgText = await res.text()
+    // Remove fixed dimensions to allow CSS control and remove license comments
+    return svgText
+      .replace(/<!--.*?-->\s*/g, "")
+      .replace(/ width="\d+"/, "")
+      .replace(/ height="\d+"/, "")
+  } catch (e) {
+    console.error(`Failed to fetch icon: ${iconName}`, e)
+    return null
+  }
+}
 
 function normalizeUuidList(val: unknown): string[] {
   if (Array.isArray(val)) return val as string[]
@@ -290,6 +310,22 @@ export const sitePublish = inngest.createFunction(
           .orderBy(asc(documentsTable.rank))
       : []
 
+    // ---- Start Icon Fetching ----
+    const iconNames = new Set<string>()
+    docs.forEach((d) => d.iconName && iconNames.add(d.iconName))
+    spaces.forEach((s) => s.iconName && iconNames.add(s.iconName))
+    ;(site.buttons ?? []).forEach(
+      (b) => b.iconName && iconNames.add(b.iconName)
+    )
+
+    const iconSvgCache = new Map<string, string | null>()
+    const iconPromises = Array.from(iconNames).map(async (name) => {
+      const svg = await fetchIconSvg(name)
+      if (svg) iconSvgCache.set(name, svg)
+    })
+    await Promise.all(iconPromises)
+    // ---- End Icon Fetching ----
+
     // Index by space and parent; sort by (parentId, rank, slug)
     const bySpace = new Map<string, typeof docs>()
     for (const s of spaces) bySpace.set(s.id, [])
@@ -320,7 +356,7 @@ export const sitePublish = inngest.createFunction(
       trail: string[]
       spaceId: string
       spaceSlug: string
-      iconName?: string | null
+      iconSvg?: string | null
       updatedAt?: Date | null
       type: "page" | "group" | "api" | "api_spec" | "api_tag"
       apiSpecBlobKey?: string | null
@@ -345,7 +381,9 @@ export const sitePublish = inngest.createFunction(
             trail: nextTrail,
             spaceId: s.id,
             spaceSlug,
-            iconName: doc.iconName ?? null,
+            iconSvg: doc.iconName
+              ? (iconSvgCache.get(doc.iconName) ?? null)
+              : null,
             updatedAt: doc.updatedAt,
             type: doc.type,
             apiSpecBlobKey: doc.apiSpecBlobKey ?? null,
@@ -383,7 +421,7 @@ export const sitePublish = inngest.createFunction(
       title: string
       slug: string
       trail: string[]
-      iconName?: string | null
+      iconSvg?: string | null
       updatedAt?: Date | null
       type: "page" | "api" | "api_spec" | "group" | "api_tag"
       apiSpecBlobKey?: string | null
@@ -402,7 +440,7 @@ export const sitePublish = inngest.createFunction(
         title: p.title,
         slug: p.slug,
         trail: p.trail,
-        iconName: p.iconName,
+        iconSvg: p.iconSvg,
         updatedAt: p.updatedAt,
         type: p.type,
       }
@@ -480,7 +518,7 @@ export const sitePublish = inngest.createFunction(
       name: s.name,
       style: siteLayout === "tabs" ? "tab" : "dropdown",
       order: i + 1,
-      iconName: s.iconName ?? null,
+      iconSvg: s.iconName ? (iconSvgCache.get(s.iconName) ?? null) : null,
       entry: (routesBySpace.get(s.slug) ?? [])[0],
     }))
 
@@ -491,7 +529,7 @@ export const sitePublish = inngest.createFunction(
       pagesIndex[r] = {
         title: p.title,
         space: p.spaceSlug,
-        iconName: p.iconName ?? null,
+        iconSvg: p.iconSvg,
         blob: ref.key,
         hash: ref.hash,
         size: ref.size,
@@ -538,7 +576,7 @@ export const sitePublish = inngest.createFunction(
     type UiTreeItem = {
       kind: "group" | "page" | "api" | "api_spec" | "api_tag"
       title: string
-      iconName?: string | null
+      iconSvg?: string | null
       slug: string
       route: string
       api?: {
@@ -549,7 +587,7 @@ export const sitePublish = inngest.createFunction(
       children?: UiTreeItem[]
     }
     type UiTreeSpace = {
-      space: { slug: string; name: string; iconName?: string | null }
+      space: { slug: string; name: string; iconSvg?: string | null }
       items: UiTreeItem[]
     }
     const uiTreeSpaces: UiTreeSpace[] = spaces.map((s) => {
@@ -574,7 +612,7 @@ export const sitePublish = inngest.createFunction(
         const base: UiTreeItem = {
           kind,
           title: d.title,
-          iconName: d.iconName ?? null,
+          iconSvg: d.iconName ? (iconSvgCache.get(d.iconName) ?? null) : null,
           slug: d.slug,
           route,
         }
@@ -597,7 +635,11 @@ export const sitePublish = inngest.createFunction(
         return asUi(id, [], childDoc.type === "api")
       })
       return {
-        space: { slug: s.slug, name: s.name, iconName: s.iconName ?? null },
+        space: {
+          slug: s.slug,
+          name: s.name,
+          iconSvg: s.iconName ? (iconSvgCache.get(s.iconName) ?? null) : null,
+        },
         items: roots,
       }
     })
@@ -653,7 +695,7 @@ export const sitePublish = inngest.createFunction(
             id: string
             label: string
             href: string
-            iconName?: string | null
+            iconSvg?: string | null
             target?: "_self" | "_blank"
             slug?: string | null
           }>
@@ -676,7 +718,7 @@ export const sitePublish = inngest.createFunction(
             id: b.id,
             label: b.label,
             href: b.href,
-            iconName: b.iconName ?? null,
+            iconSvg: b.iconName ? (iconSvgCache.get(b.iconName) ?? null) : null,
             target: b.target ?? "_self",
             slug: b.slug ?? null,
           })

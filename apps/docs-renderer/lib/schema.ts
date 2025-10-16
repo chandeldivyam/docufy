@@ -6,15 +6,14 @@ export const NavSpaceZ = z.object({
   name: z.string(),
   style: z.enum(['dropdown', 'tab']),
   order: z.number().optional(),
-  iconName: z.string().optional(),
+  iconSvg: z.string().nullable().optional(),
   entry: z.string().optional(),
 });
 
 export const PageIndexEntryZ = z.object({
   title: z.string(),
   space: z.string(),
-  // icon name could be undefined so be careful
-  iconName: z.string().optional().nullable(),
+  iconSvg: z.string().nullable().optional(),
   blob: z.string(),
   hash: z.string(),
   size: z.number(),
@@ -71,14 +70,18 @@ export const TreeZ = z.object({
         slug: z.string(),
         name: z.string(),
         order: z.number().optional(),
-        iconName: z.string().optional(),
+        iconSvg: z.string().nullable().optional(),
       }),
     ),
   }),
   spaces: z.array(
     z.object({
-      space: z.object({ slug: z.string(), name: z.string(), iconName: z.string().optional() }),
-      items: z.any(),
+      space: z.object({
+        slug: z.string(),
+        name: z.string(),
+        iconSvg: z.string().nullable().optional(),
+      }),
+      items: z.array(z.any()),
     }),
   ),
 });

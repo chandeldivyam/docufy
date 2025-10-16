@@ -194,14 +194,18 @@ export TYPESENSE_API_KEY="${TypesenseApiKey.value}"
       },
     });
 
-    const typesenseDataVolume = new aws.ebs.Volume("TypesenseData", {
+    const typesenseDataVolume = new aws.ebs.Volume('TypesenseData', {
       availabilityZone: typesenseInstance.availabilityZone,
-      size: 50, type: "gp3", iops: 3000, throughput: 125, encrypted: true,
+      size: 50,
+      type: 'gp3',
+      iops: 3000,
+      throughput: 125,
+      encrypted: true,
       tags: { Name: `${$app.name}-${$app.stage}-typesense-data` },
     });
-    
-    new aws.ec2.VolumeAttachment("TypesenseDataAttach", {
-      deviceName: "/dev/sdg",
+
+    new aws.ec2.VolumeAttachment('TypesenseDataAttach', {
+      deviceName: '/dev/sdg',
       volumeId: typesenseDataVolume.id,
       instanceId: typesenseInstance.id,
     });
