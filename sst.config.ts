@@ -181,28 +181,29 @@ export TYPESENSE_API_KEY="${TypesenseApiKey.value}"
 `;
 
     const typesenseInstance = new aws.ec2.Instance('typesense-ec2', {
-      ami: ubuntu.then((ubuntu) => ubuntu.id),
+      ami: 'ami-0f14ad9f1d341c53d',
       instanceType: aws.ec2.InstanceType.T4g_Small,
       associatePublicIpAddress: true,
       vpcSecurityGroupIds: [typesenseSg.id],
       subnetId: vpc.publicSubnets.apply((subnets) => subnets[0]),
       keyName: 'divyam-local',
       userData: userData,
-      ebsBlockDevices: [
-        {
-          deviceName: '/dev/sdf',
-          volumeSize: 50,
-          volumeType: 'gp3',
-          iops: 3000,
-          throughput: 125,
-          encrypted: true,
-          deleteOnTermination: true,
-        },
-      ],
       tags: {
         Name: `${$app.name}-${$app.stage}-typesense-ec2`,
         Environment: $app.stage,
       },
+    });
+
+    const typesenseDataVolume = new aws.ebs.Volume("TypesenseData", {
+      availabilityZone: typesenseInstance.availabilityZone,
+      size: 50, type: "gp3", iops: 3000, throughput: 125, encrypted: true,
+      tags: { Name: `${$app.name}-${$app.stage}-typesense-data` },
+    });
+    
+    new aws.ec2.VolumeAttachment("TypesenseDataAttach", {
+      deviceName: "/dev/sdf",
+      volumeId: typesenseDataVolume.id,
+      instanceId: typesenseInstance.id,
     });
 
     return {
