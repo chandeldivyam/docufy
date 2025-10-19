@@ -52,6 +52,14 @@
     "./extensions/slash-command": {
       "types": "./dist/extensions/slash-command/index.d.ts",
       "import": "./dist/extensions/slash-command/index.js"
+    },
+    "./extensions/video": {
+      "types": "./dist/extensions/video/index.d.ts",
+      "import": "./dist/extensions/video/index.js"
+    },
+    "./plugins/upload-videos": {
+      "types": "./dist/plugins/upload-videos.d.ts",
+      "import": "./dist/plugins/upload-videos.js"
     }
   },
   "peerDependencies": {

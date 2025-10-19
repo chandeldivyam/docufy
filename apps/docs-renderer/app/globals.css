@@ -1813,3 +1813,23 @@ html.dark .shiki span {
   transform: none;
   box-shadow: none;
 }
+
+.dfy-video {
+  position: relative;
+  margin: 1.25rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow:
+    0 1px 2px color-mix(in oklab, black 8%, transparent),
+    0 8px 24px color-mix(in oklab, black 6%, transparent);
+  overflow: hidden;
+}
+.dfy-video > video {
+  display: block;
+  width: 100%;
+  height: auto;
+  outline: none;
+  background: #000; /* nicer during load */
+  aspect-ratio: attr(width number) / attr(height number); /* UA may ignore; width/height still help layout */
+}

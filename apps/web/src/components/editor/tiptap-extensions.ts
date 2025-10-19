@@ -6,6 +6,7 @@ import * as Y from "yjs"
 import { getExtensions } from "@docufy/content-kit/preset"
 import { uploadImageToBlob } from "@/lib/blob-uploader"
 import { slashCommand } from "./slash-command" // <-- add
+import { uploadVideoToBlob } from "@/lib/blob-uploader"
 
 export function createTiptapExtensions(
   doc: Y.Doc,
@@ -19,7 +20,10 @@ export function createTiptapExtensions(
       editable: true,
       upload: {
         uploader: uploadImageToBlob,
+        videoUploader: uploadVideoToBlob,
         context: { orgSlug: ctx?.orgSlug, documentId: ctx?.documentId },
+        validateVideoFile: (file) =>
+          file.type.startsWith("video/") && file.size <= 40 * 1024 * 1024,
       },
       extra: [slashCommand],
     }),

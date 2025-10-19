@@ -119,3 +119,49 @@ export async function uploadSiteAssetToBlob(
   const dimensions = await measureImage(file)
   return { url: result.url, ...dimensions }
 }
+
+async function measureVideo(
+  file: File
+): Promise<{ width?: number; height?: number }> {
+  if (!file.type.startsWith("video/")) return {}
+  const objectUrl = URL.createObjectURL(file)
+  try {
+    const video = document.createElement("video")
+    video.preload = "metadata"
+    video.src = objectUrl
+    await new Promise<void>((resolve, reject) => {
+      const onLoaded = () => resolve()
+      const onError = () =>
+        reject(new Error("Failed to load video for measurement"))
+      video.addEventListener("loadedmetadata", onLoaded, { once: true })
+      video.addEventListener("error", onError, { once: true })
+    })
+    return {
+      width: video.videoWidth || undefined,
+      height: video.videoHeight || undefined,
+    }
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+export async function uploadVideoToBlob(
+  file: File,
+  ctx: BlobUploadContext
+): Promise<BlobUploadResult> {
+  // server route should still enforce size limits; this is UX only
+  const uuid = crypto.randomUUID()
+  const safeName = sanitizeName(file.name || "video")
+  const orgSegment = ctx.orgSlug ? ctx.orgSlug : ORG_PLACEHOLDER
+  const pathname = `assets/${orgSegment}/${ctx.documentId}/videos/${uuid}-${safeName}`
+
+  const result = await upload(pathname, file, {
+    access: "public",
+    handleUploadUrl: "/api/blob/upload",
+    clientPayload: JSON.stringify({
+      documentId: ctx.documentId,
+      orgSlug: ctx.orgSlug,
+    }),
+  })
+  const dims = await measureVideo(file)
+  return { url: result.url, ...dims }
+}

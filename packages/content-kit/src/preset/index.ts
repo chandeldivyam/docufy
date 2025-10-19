@@ -16,6 +16,8 @@ import suggestion from '../extensions/emoji/suggestion.js';
 import { TableKit } from '@tiptap/extension-table';
 import { HtmlComponent, StaticHtmlComponent } from '../extensions/html-component/index.js';
 import { Tabs, Tab } from '../extensions/tabs/index.js';
+import { Video, StaticVideo } from '../extensions/video/index.js';
+import { UploadVideosExtension } from '../plugins/upload-videos.js';
 
 type Mode = 'editor' | 'static';
 
@@ -28,8 +30,13 @@ export type PresetOptions = {
       file: File,
       ctx: { orgSlug?: string; documentId: string },
     ) => Promise<{ url: string; width?: number; height?: number }>;
+    videoUploader?: (
+      file: File,
+      ctx: { orgSlug?: string; documentId: string },
+    ) => Promise<{ url: string; width?: number; height?: number; poster?: string }>;
     context?: { orgSlug?: string; documentId?: string };
     validateFile?: (file: File) => boolean;
+    validateVideoFile?: (file: File) => boolean;
   };
 };
 
@@ -76,10 +83,16 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
       ...base,
       createCodeBlock({ lowlight, header: true, enableTabIndentation: true }),
       ResizableImage,
+      Video,
       UploadImagesExtension.configure({
         uploader: opts.upload?.uploader,
         context: opts.upload?.context,
         validateFile: opts.upload?.validateFile,
+      }),
+      UploadVideosExtension.configure({
+        uploader: opts.upload?.videoUploader,
+        context: opts.upload?.context,
+        validateFile: opts.upload?.validateVideoFile,
       }),
       CustomKeymap,
       GlobalDragHandle,
@@ -92,6 +105,7 @@ export function getExtensions(mode: Mode, opts: PresetOptions = {}) {
     ...base,
     StaticCodeBlock.configure({ lowlight, enableLowlightHighlight: false }),
     StaticImage,
+    StaticVideo,
     StaticHtmlComponent,
     ...extra,
   ];

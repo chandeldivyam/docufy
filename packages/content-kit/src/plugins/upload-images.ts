@@ -244,7 +244,7 @@ export const UploadImagesExtension = Extension.create<UploadImagesExtensionOptio
                 replaceSelection: true,
               });
               if (handled) event.preventDefault();
-              return handled;
+              return false;
             },
             drop: (view: EditorView, event: DragEvent) => {
               if (!event.dataTransfer?.files.length) return false;
@@ -260,7 +260,7 @@ export const UploadImagesExtension = Extension.create<UploadImagesExtensionOptio
                 replaceSelection: false,
               });
               if (handled) event.preventDefault();
-              return handled;
+              return false;
             },
           },
         },

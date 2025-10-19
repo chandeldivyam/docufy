@@ -146,6 +146,20 @@ export function toMarkdown(pmDoc: JSONContent | null, opts: MarkdownOptions = {}
         const toB64 = (s: string) => Buffer.from(s, 'utf8').toString('base64');
         return `<div class="dfy-htmlc dfy-htmlc--${display}" data-raw-html="${toB64(html)}" data-raw-css="${toB64(css)}" data-cscope="${scopeId}"></div>`;
       },
+
+      video: ({ node }) => {
+        const src = String(node.attrs?.src ?? '');
+        if (!src) return '';
+        const poster = node.attrs?.poster
+          ? ` poster="${String(node.attrs.poster).replace(/"/g, '\\"')}"`
+          : '';
+        const wh = [
+          node.attrs?.width ? ` width="${Number(node.attrs.width)}"` : '',
+          node.attrs?.height ? ` height="${Number(node.attrs.height)}"` : '',
+        ].join('');
+        // Always show controls (simple & portable)
+        return `<video src="${src}" controls preload="metadata" playsinline${poster}${wh}></video>`;
+      },
       /* ------------------------ Fallbacks to avoid lost content --------------------- */
     };
 
