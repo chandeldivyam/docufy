@@ -1635,6 +1635,7 @@ html.dark .shiki span {
   user-select: none;
   font-weight: 500;
   transition: all 120ms ease;
+  min-width: 160px;
 }
 
 .dfy-copy-actions-trigger:hover {
