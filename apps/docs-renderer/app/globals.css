@@ -1834,3 +1834,27 @@ html.dark .shiki span {
   background: #000; /* nicer during load */
   aspect-ratio: attr(width number) / attr(height number); /* UA may ignore; width/height still help layout */
 }
+
+.dfy-last-modified {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2rem;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--sidebar-bg) 50%, transparent);
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  width: fit-content;
+  transition: all 120ms ease;
+}
+
+.dfy-last-modified svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.dfy-last-modified span {
+  white-space: nowrap;
+}

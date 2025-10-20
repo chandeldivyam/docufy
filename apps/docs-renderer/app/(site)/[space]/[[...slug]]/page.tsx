@@ -34,6 +34,7 @@ export default async function DocPage({
         next={page.next}
         pageUrl={pageUrl}
         showMobileTopbar={showMobileTopbar}
+        lastModified={page.lastModified}
       />
     </Suspense>
   );
