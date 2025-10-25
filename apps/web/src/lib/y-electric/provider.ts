@@ -10,9 +10,9 @@ import { ObservableV2 } from "lib0/observable"
 import { IndexeddbPersistence } from "y-indexeddb"
 
 // NEW: tune these to taste
-const UPDATE_FLUSH_MS = 500 // how often to send document updates
+const UPDATE_FLUSH_MS = 50 // how often to send document updates
 const UPDATE_MAX_BYTES = 32 * 1024 // flush immediately if buffer exceeds this
-const AWARENESS_FLUSH_MS = 150 // presence throttle
+const AWARENESS_FLUSH_MS = 25 // presence throttle
 const HAS_BEACON = typeof navigator !== "undefined" && "sendBeacon" in navigator
 
 type UpdateMessage = { update: Uint8Array }
