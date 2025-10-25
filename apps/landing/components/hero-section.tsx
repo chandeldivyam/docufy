@@ -9,7 +9,7 @@ export function HeroSection() {
     <section className="relative mx-auto w-full max-w-6xl px-4 py-12 sm:py-16 md:py-20">
       {/* Heading & copy */}
       <div className="mx-auto max-w-3xl text-center">
-        <h1 className="text-balance text-4xl font-extrabold tracking-tight sm:text-5xl">
+        <h1 className="text-balance text-4xl tracking-tight sm:text-5xl">
           Build a{' '}
           <span className="from-primary to-primary/80 bg-gradient-to-r bg-clip-text text-transparent">
             blazing‑fast
@@ -36,9 +36,7 @@ export function HeroSection() {
         <div className="mx-auto w-full max-w-6xl">
           {/* Responsive height without aspect plugin */}
           <div className="mx-auto w-full [--panel-h:clamp(320px,55vh,620px)]">
-            <div className="h-[var(--panel-h)]">
-              <CollaborativeEditorDemo />
-            </div>
+            <CollaborativeEditorDemo />
           </div>
         </div>
       </div>

@@ -13,68 +13,149 @@ type Doc = {
   agentLine: string;
 };
 
-// CRM-style sample docs
+// Docufy-focused sample docs (marketing-friendly copy)
 const DOCS: Doc[] = [
   {
     slug: 'getting-started',
     title: 'Getting started',
-    summary: 'Create a site, invite teammates, and publish fast.',
+    summary: 'Create your site, invite your team, publish in one click.',
     sections: [
       {
         heading: 'Create your site',
-        body: ['Sign in, click New site, pick a theme.', 'Private by default. Share when ready.'],
+        body: [
+          'Sign in and click New site.',
+          'Pick a theme; private by default. Share when ready.',
+        ],
       },
       {
-        heading: 'Connect your product',
-        body: ['Install the snippet for in-app links.', 'Turn on search with a scoped key.'],
+        heading: 'Write your first page',
+        body: [
+          'Use / to add headings, callouts, code, and media.',
+          'Collaborate in real time — it feels local, even offline.',
+        ],
+      },
+      {
+        heading: 'Publish instantly',
+        body: [
+          'Press Publish to ship an atomic build.',
+          'Connect docs.yourco.com when you’re ready.',
+        ],
       },
     ],
-    agentLine: 'Tip: Add a Start here collection for new customers.',
+    agentLine: 'Tip: Add a “Quickstart” and link it from your homepage.',
   },
   {
-    slug: 'managing-contacts',
-    title: 'Managing contacts',
-    summary: 'Import, deduplicate, and keep data clean.',
+    slug: 'editor',
+    title: 'Collaborative editor',
+    summary: 'Fast, familiar, and designed for teams.',
     sections: [
       {
-        heading: 'Bulk import',
-        body: ['Drag and drop CSV or connect Sheets.', 'Use mapping presets for columns.'],
+        heading: 'Real‑time, local‑first',
+        body: [
+          'See cursors, selections, and changes as they happen.',
+          'No spinners — edits apply instantly and sync in the background.',
+        ],
       },
       {
-        heading: 'Deduplication',
-        body: ['Enable fuzzy match on name and email.', 'Review suggestions before merge.'],
+        heading: 'AI‑assisted writing',
+        body: [
+          'Select text and ask to rewrite, shorten, or outline.',
+          'Keep your voice; accept, tweak, or undo in one click.',
+        ],
+      },
+      {
+        heading: 'Rich content',
+        body: [
+          'Code blocks with syntax highlight. Drag‑drop images.',
+          'Embed callouts, tabs, and MDX‑powered components.',
+        ],
       },
     ],
-    agentLine: 'Automation: Tag imports with missing lifecycle stage.',
+    agentLine: 'Try: Ask AI to tighten this intro into two crisp sentences.',
   },
   {
-    slug: 'pipelines',
-    title: 'Pipelines and stages',
-    summary: 'Define stages, SLAs, and automations.',
+    slug: 'publishing',
+    title: 'Publishing & domains',
+    summary: 'Atomic, fast, and zero‑downtime by design.',
     sections: [
       {
-        heading: 'Customize your pipeline',
-        body: ['Add stages and owners. Changes go live instantly.', 'Notify reps on stale deals.'],
+        heading: 'One‑click publish',
+        body: [
+          'Each publish creates an immutable build.',
+          'We swap an alias instantly — readers never see half‑built pages.',
+        ],
+      },
+      {
+        heading: 'Custom domains',
+        body: ['Use docs.yourco.com or a subpath.', 'Verification is guided and quick.'],
+      },
+      {
+        heading: 'Themes & brand',
+        body: [
+          'Start with a theme and tune colors, logo, and typography.',
+          'Everything renders fast on the edge.',
+        ],
       },
     ],
-    agentLine: 'Insight: Deals stuck in Qualified over 21 days underperform.',
+    agentLine: 'Insight: Publish swaps are atomic — every link stays stable.',
   },
   {
-    slug: 'integrations',
-    title: 'Integrations',
-    summary: 'Connect Gmail, Slack, and your warehouse.',
+    slug: 'search',
+    title: 'Search & structure',
+    summary: 'Give answers, not results.',
     sections: [
       {
-        heading: 'Email and calendar',
-        body: ['Connect Google or Microsoft.', 'Scoped tokens keep data safe.'],
+        heading: 'Instant search',
+        body: [
+          'Blazing‑fast results with typo tolerance.',
+          'Short‑lived, scoped keys keep it safe.',
+        ],
+      },
+      {
+        heading: 'Information architecture',
+        body: [
+          'Organize with spaces, collections, and tags.',
+          'Hide draft pages from publish; choose friendly slugs.',
+        ],
+      },
+      {
+        heading: 'Tune relevance',
+        body: [
+          'Add synonyms (billing, payments, invoices).',
+          'Pin important pages and boost fresh releases.',
+        ],
       },
     ],
-    agentLine: 'Setup: Send Critical ticket alerts to #support-live.',
+    agentLine: 'Setup: Add synonyms for “billing” → “payments”, “invoice”.',
+  },
+  {
+    slug: 'api-docs',
+    title: 'API docs',
+    summary: 'Turn OpenAPI into beautiful, usable docs.',
+    sections: [
+      {
+        heading: 'Ingest your spec',
+        body: [
+          'Point to an OpenAPI URL or upload a file.',
+          'Docufy renders endpoints, parameters, and examples automatically.',
+        ],
+      },
+      {
+        heading: 'Stay in sync',
+        body: ['Re‑publish when your spec changes.', 'Versioning and rollback keep history tidy.'],
+      },
+      {
+        heading: 'DX details',
+        body: ['Copyable code blocks in multiple languages.', 'Deep links that never break.'],
+      },
+    ],
+    agentLine: 'Tip: Link “API Quickstart” beside your SDK install guide.',
   },
 ];
 
 export function WebRealtimePanel() {
   const [slug, setSlug] = React.useState(DOCS[0]?.slug ?? 'getting-started');
+  const [userSelected, setUserSelected] = React.useState(false);
 
   // Respect reduced motion
   const [reduced, setReduced] = React.useState(false);
@@ -85,6 +166,33 @@ export function WebRealtimePanel() {
     mq.addEventListener?.('change', set);
     return () => mq.removeEventListener?.('change', set);
   }, []);
+
+  // Pick up initial doc from the URL (?doc=slug) for shareability
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    const param = url.searchParams.get('doc');
+    if (param && DOCS.some((d) => d.slug === param)) {
+      setSlug(param);
+      setUserSelected(true); // respect deep-linked choice; disable rotation
+    }
+  }, []);
+
+  // Auto-rotate between docs until the user interacts (or reduced motion)
+  React.useEffect(() => {
+    if (userSelected || reduced) return;
+    const id = setInterval(() => {
+      setSlug((prev) => {
+        const i = Math.max(
+          0,
+          DOCS.findIndex((d) => d.slug === prev),
+        );
+        const next = DOCS[(i + 1) % DOCS.length]?.slug ?? 'getting-started';
+        return next;
+      });
+    }, 4800);
+    return () => clearInterval(id);
+  }, [userSelected, reduced]);
 
   // Simulate an AI line streaming into the doc
   const doc = (DOCS.find((d) => d.slug === slug) ?? DOCS[0])!;
@@ -156,7 +264,7 @@ export function WebRealtimePanel() {
           <span className="size-2.5 rounded-full bg-emerald-400/80" />
         </div>
         <div className="bg-border/70 mx-3 hidden h-4 w-px sm:block" />
-        <div className="text-muted-foreground truncate text-xs">docs/crm/{slug}.mdx</div>
+        <div className="text-muted-foreground truncate text-xs">docs/{slug}.mdx</div>
 
         <div className="ml-auto hidden items-center gap-2 sm:flex">
           <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px]">
@@ -172,7 +280,22 @@ export function WebRealtimePanel() {
       <div className="grid h-full w-full gap-0 md:grid-cols-[220px_1fr]">
         {/* Desktop nav */}
         <nav className="border-border/70 hidden border-r p-3 text-sm md:block">
-          <DocNav slug={slug} onSelect={(next) => setSlug(next)} className="" />
+          <DocNav
+            slug={slug}
+            onSelect={(next) => {
+              setSlug(next);
+              setUserSelected(true);
+              // Update URL param to reflect user choice
+              try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('doc', next);
+                window.history.replaceState({}, '', url);
+              } catch {
+                console.error('Failed to update URL param');
+              }
+            }}
+            className=""
+          />
         </nav>
 
         {/* Read-only content area */}
@@ -180,7 +303,7 @@ export function WebRealtimePanel() {
           <div className="p-4 sm:p-6">
             <div className="text-muted-foreground mb-4 text-sm">
               <span className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5">
-                /docs/crm
+                /docs
               </span>
               <span className="text-border mx-2">•</span>
               {doc.slug}.mdx
@@ -243,6 +366,14 @@ export function WebRealtimePanel() {
               slug={slug}
               onSelect={(next) => {
                 setSlug(next);
+                setUserSelected(true);
+                try {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('doc', next);
+                  window.history.replaceState({}, '', url);
+                } catch {
+                  console.error('Failed to update URL param');
+                }
                 setDrawerOpen(false);
               }}
               className="flex-1 overflow-y-auto"
