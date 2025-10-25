@@ -60,17 +60,15 @@ export function SiteHeader() {
 
   return (
     <header
-      className="sticky z-50 mx-auto w-full max-w-7xl"
+      className="sticky z-50 mx-auto w-full max-w-7xl px-4 sm:px-6" // Add horizontal padding
       style={{ top: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)' }}
     >
       <div
         role="navigation"
         aria-label="Primary"
         className={[
-          // Lighter, glassy header so it does not look like a black bar
           'flex h-12 items-center justify-between rounded-2xl border pr-4 ring-1 backdrop-blur transition-shadow sm:h-14',
           scrolled ? 'shadow-2xl' : 'shadow-xl',
-          // Use background instead of card to avoid near-black in dark theme
           'bg-background/40 border-border/50 ring-border/50',
         ].join(' ')}
       >
@@ -147,7 +145,7 @@ export function SiteHeader() {
         aria-labelledby="mobile-nav-title"
         aria-hidden={!open}
         className={[
-          'fixed inset-0 z-[60] transition-opacity sm:hidden',
+          'fixed inset-0 z-[60] overflow-hidden transition-opacity sm:hidden', // Add overflow-hidden
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
           reduced ? 'duration-0' : 'duration-300',
         ].join(' ')}
@@ -164,7 +162,7 @@ export function SiteHeader() {
         {/* sheet */}
         <aside
           className={[
-            'border-border/70 bg-card absolute inset-y-0 right-0 flex w-[min(88vw,320px)] max-w-[92vw] flex-col rounded-l-2xl border-l p-3 shadow-2xl',
+            'border-border/70 bg-card absolute inset-y-0 right-0 flex w-[min(85vw,320px)] flex-col rounded-l-2xl border-l p-3 shadow-2xl', // Simplified width, removed max-w
             'transition-transform',
             reduced ? 'duration-0' : 'duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
             open ? 'translate-x-0' : 'translate-x-full',
