@@ -51,7 +51,7 @@ export default $config({
           VITE_PUBLIC_POSTHOG_HOST: PosthogHost.value,
           VITE_PUBLIC_VERCEL_BLOB_STORE_ID: VercelBlobStoreId.value,
           VITE_PUBLIC_VERCEL_BLOB_BASE_URL: VercelBlobBaseUrl.value,
-        }
+        },
       },
       // modest defaults; tune as you learn traffic patterns
       cpu: '0.25 vCPU',

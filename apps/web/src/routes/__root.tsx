@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { setCollectionErrorHandler } from "@/lib/collection-errors"
 import { toast } from "sonner"
 import { useEffect } from "react"
+import { PostHogProvider } from "posthog-js/react"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -45,11 +46,13 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
   component: () => (
     <ThemeProvider defaultTheme="system" enableSystem>
-      <>
-        <Outlet />
-        <TanStackRouterDevtools />
-        <Toaster />
-      </>
+      <PostHogProvider apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY!}>
+        <>
+          <Outlet />
+          <TanStackRouterDevtools />
+          <Toaster />
+        </>
+      </PostHogProvider>
     </ThemeProvider>
   ),
   notFoundComponent: () => <div>Not found</div>,
