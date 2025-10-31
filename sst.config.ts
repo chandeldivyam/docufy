@@ -38,12 +38,20 @@ export default $config({
     const GithubClientSecret = new sst.Secret('GithubClientSecret');
     const VercelRendererProject = new sst.Secret('VercelRendererProject');
     const VercelToken = new sst.Secret('VercelToken');
+    const PosthogKey = new sst.Secret('PosthogKey');
+    const PosthogHost = new sst.Secret('PosthogHost');
 
     const web = new sst.aws.Service('Web', {
       cluster,
       image: {
         context: '.',
         dockerfile: 'apps/web/Dockerfile',
+        args: {
+          VITE_PUBLIC_POSTHOG_KEY: PosthogKey.value,
+          VITE_PUBLIC_POSTHOG_HOST: PosthogHost.value,
+          VITE_PUBLIC_VERCEL_BLOB_STORE_ID: VercelBlobStoreId.value,
+          VITE_PUBLIC_VERCEL_BLOB_BASE_URL: VercelBlobBaseUrl.value,
+        },
       },
       // modest defaults; tune as you learn traffic patterns
       cpu: '0.25 vCPU',
@@ -87,6 +95,10 @@ export default $config({
         GOOGLE_CLIENT_SECRET: GoogleClientSecret.value,
         GITHUB_CLIENT_ID: GithubClientId.value,
         GITHUB_CLIENT_SECRET: GithubClientSecret.value,
+
+        // Posthog
+        VITE_PUBLIC_POSTHOG_KEY: PosthogKey.value,
+        VITE_PUBLIC_POSTHOG_HOST: PosthogHost.value,
       },
       // Health: keep it simple; ALB will hit / (200). If you added /api/healthz, you can set health.path.
       health: {
