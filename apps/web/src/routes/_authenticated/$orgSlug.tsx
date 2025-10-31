@@ -63,6 +63,8 @@ import {
 } from "@/components/ui/sheet"
 import { CommandPalette } from "@/components/command-palette"
 import { toast } from "sonner"
+import { usePostHogIdentify } from "@/lib/use-posthog-identify"
+import { usePostHog } from "posthog-js/react"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug")({
   ssr: false,
@@ -79,6 +81,8 @@ function OrgSlugLayout() {
   const { data: activeOrg } = authClient.useActiveOrganization()
   const routerState = useRouterState()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  usePostHogIdentify()
 
   // All orgs for validation + switcher
   const { data: myOrgs } = useLiveQuery((q) =>
@@ -161,6 +165,15 @@ function OrgSlugLayout() {
 
 function MainNavContent({ orgSlug }: { orgSlug: string }) {
   const routerState = useRouterState()
+  const posthog = usePostHog()
+
+  const handleLogout = () => {
+    // Reset PostHog before signing out
+    if (posthog) {
+      posthog.reset()
+    }
+    authClient.signOut()
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -208,7 +221,7 @@ function MainNavContent({ orgSlug }: { orgSlug: string }) {
             variant="ghost"
             size="sm"
             className="gap-2"
-            onClick={() => authClient.signOut()}
+            onClick={handleLogout}
           >
             <LogOut className="h-4 w-4" />
             Logout
