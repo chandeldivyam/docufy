@@ -74,7 +74,7 @@ export function SiteHeader() {
       >
         {/* brand */}
         <Link href="/" className="flex min-w-0 items-center gap-2 pl-2.5 sm:pl-3" aria-label="Home">
-          <Image src="/logo.svg" alt="Docufy" width={24} height={24} priority />
+          <Image src="/logo.svg" alt="Docufy Logo" width={24} height={24} priority />
           <span className="sr-only font-semibold tracking-tight sm:not-sr-only sm:text-sm">
             Docufy
           </span>

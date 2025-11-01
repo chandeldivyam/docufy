@@ -487,7 +487,11 @@ function JourneySteps({
         >
           <div className="space-y-3">
             <div className="relative">
+              <label htmlFor="domain-input" className="sr-only">
+                Domain name
+              </label>
               <input
+                id="domain-input"
                 type="text"
                 value={typedDomain || 'docs.yourco.com'}
                 readOnly
