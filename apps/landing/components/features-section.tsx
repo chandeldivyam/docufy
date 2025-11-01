@@ -21,7 +21,7 @@ export function FeaturesSection() {
         </h2>
         <div className="bg-muted/40 grid gap-10 rounded-2xl p-6 md:grid-cols-2 md:items-center">
           <div>
-            <h2 id="feature-web-title" className="text-balance text-2xl tracking-tight sm:text-3xl">
+            <h2 id="feature-web-performance" className="text-balance text-2xl tracking-tight sm:text-3xl">
               Blazing fast web - zero spinners
             </h2>
             <p className="text-muted-foreground mt-4">
