@@ -1,15 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  CheckCircle2,
-  Globe,
-  Loader2,
-  MousePointerClick,
-  Palette,
-  Rocket,
-  Sparkles,
-} from 'lucide-react';
+import { CheckCircle2, Globe, Loader2, Palette, Rocket, Sparkles } from 'lucide-react';
 
 type ThemeSwatch = {
   id: string;
@@ -48,9 +40,7 @@ export function PublishJourneyPanel() {
   // Mobile: show preview after publish
   const [showMobilePreview, setShowMobilePreview] = useState(false);
 
-  // Cursor
-  const [cursor, setCursor] = useState({ top: 20, left: 20 });
-  const [clicking, setClicking] = useState(false);
+  // (Pointer removed)
 
   const containerRef = useRef<HTMLDivElement>(null);
   const leftRef = useRef<HTMLDivElement>(null);
@@ -67,18 +57,7 @@ export function PublishJourneyPanel() {
     return () => mq.removeEventListener?.('change', apply);
   }, []);
 
-  const toPct = useCallback((el: HTMLElement | null) => {
-    const host = leftRef.current;
-    if (!host || !el) return { top: 20, left: 20 };
-    const a = host.getBoundingClientRect();
-    const b = el.getBoundingClientRect();
-    const cx = b.left + b.width / 2;
-    const cy = b.top + b.height / 2;
-    return {
-      top: Math.min(100, Math.max(0, ((cy - a.top) / a.height) * 100)),
-      left: Math.min(100, Math.max(0, ((cx - a.left) / a.width) * 100)),
-    };
-  }, []);
+  // (Pointer positioning removed)
 
   // Auto-scroll helper - FIXED VERSION
   const scrollToStep = useCallback(
@@ -137,12 +116,9 @@ export function PublishJourneyPanel() {
     let raf = 0;
     const sleep = (ms: number) => new Promise<void>((r) => timers.push(window.setTimeout(r, ms)));
 
-    const click = async (el: HTMLElement | null, pause = 200) => {
-      setCursor(toPct(el));
+    const click = async (_el: HTMLElement | null, pause = 200) => {
       await sleep(300);
-      setClicking(true);
       await sleep(pause);
-      setClicking(false);
       await sleep(150);
     };
 
@@ -176,7 +152,6 @@ export function PublishJourneyPanel() {
         await sleep(200);
         scrollToStep(step1Ref);
         await sleep(400);
-        setCursor(toPct(step1Ref.current));
         await sleep(700);
 
         // Click through themes
@@ -196,7 +171,6 @@ export function PublishJourneyPanel() {
         console.log('=== Step 2: Domain ===');
         scrollToStep(step2Ref);
         await sleep(600);
-        setCursor(toPct(step2Ref.current));
         await sleep(500);
 
         // Type domain
@@ -226,7 +200,6 @@ export function PublishJourneyPanel() {
         console.log('=== Step 3: Publish ===');
         scrollToStep(step3Ref);
         await sleep(700);
-        setCursor(toPct(step3Ref.current));
         await sleep(500);
         await click(step3Ref.current, 250);
 
@@ -263,7 +236,7 @@ export function PublishJourneyPanel() {
       timers.forEach(clearTimeout);
       cancelAnimationFrame(raf);
     };
-  }, [mounted, reduced, toPct, scrollToStep]);
+  }, [mounted, reduced, scrollToStep]);
 
   const theme = THEMES[themeIdx] || {
     id: 'indigo',
@@ -302,9 +275,6 @@ export function PublishJourneyPanel() {
                 publishing={publishing}
                 published={published}
                 progress={progress}
-                cursor={cursor}
-                clicking={clicking}
-                reduced={reduced}
               />
             </section>
           ) : (
@@ -337,9 +307,6 @@ export function PublishJourneyPanel() {
                 publishing={publishing}
                 published={published}
                 progress={progress}
-                cursor={cursor}
-                clicking={clicking}
-                reduced={reduced}
               />
             </section>
           ) : (
@@ -357,15 +324,6 @@ export function PublishJourneyPanel() {
       </div>
 
       <style jsx>{`
-        .cursor {
-          transition:
-            top 550ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            left 550ms cubic-bezier(0.25, 0.8, 0.25, 1),
-            transform 180ms ease;
-        }
-        .cursor.clicking {
-          transform: translate(-50%, -50%) scale(0.88);
-        }
         @keyframes celebrate {
           0%,
           100% {
@@ -396,9 +354,6 @@ function JourneySteps({
   publishing,
   published,
   progress,
-  cursor,
-  clicking,
-  reduced,
 }: {
   step1Ref: React.RefObject<HTMLDivElement | null>;
   step2Ref: React.RefObject<HTMLDivElement | null>;
@@ -412,9 +367,6 @@ function JourneySteps({
   publishing: boolean;
   published: boolean;
   progress: number;
-  cursor: { top: number; left: number };
-  clicking: boolean;
-  reduced: boolean;
 }) {
   return (
     <>
@@ -581,8 +533,7 @@ function JourneySteps({
         </StepCard>
       </div>
 
-      {/* Cursor - only on desktop */}
-      {!reduced && <Cursor top={cursor.top} left={cursor.left} clicking={clicking} />}
+      {/* Pointer removed */}
     </>
   );
 }
@@ -670,22 +621,7 @@ const StepCard = React.forwardRef<
   );
 });
 
-function Cursor({ top, left, clicking }: { top: number; left: number; clicking: boolean }) {
-  return (
-    <div
-      className={`cursor pointer-events-none absolute z-50 hidden md:block ${clicking ? 'clicking' : ''}`}
-      style={{
-        top: `${top}%`,
-        left: `${left}%`,
-        transform: 'translate(-50%, -50%)',
-      }}
-    >
-      <div className="bg-background/90 ring-primary/30 rounded-full p-1.5 shadow-lg ring-2">
-        <MousePointerClick className="text-primary size-4" />
-      </div>
-    </div>
-  );
-}
+// (Cursor component removed)
 
 function SitePreview({
   theme,
