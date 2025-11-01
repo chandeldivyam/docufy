@@ -33,7 +33,7 @@ export function FeaturesSection() {
                 rel="noreferrer"
                 target="_blank"
               >
-                here
+                in the dashboard
               </a>
               .
             </p>
