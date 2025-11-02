@@ -15,6 +15,17 @@ export type SpaceOption = {
   entry?: string;
 };
 
+/**
+ * Closes the mobile sidebar by unchecking the mobile nav toggle checkbox.
+ */
+function closeMobileSidebar() {
+  if (typeof document === 'undefined') return;
+  const toggle = document.getElementById('dfy-mobile-nav-toggle') as HTMLInputElement | null;
+  if (toggle) {
+    toggle.checked = false;
+  }
+}
+
 export default function SidebarSpaceSwitcher({
   spaces,
   currentSpace,
@@ -33,6 +44,7 @@ export default function SidebarSpaceSwitcher({
     if (!target) return;
     const entry = target.entry ?? `/${slug}`;
     router.push(`${hrefPrefix}${entry}`);
+    closeMobileSidebar();
   };
 
   return (

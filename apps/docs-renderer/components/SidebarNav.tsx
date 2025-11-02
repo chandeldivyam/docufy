@@ -1,54 +1,12 @@
 import type { Manifest, Tree } from '../lib/types';
 import SidebarNavClient from './islands/SidebarNavClient';
 import SidebarSpaceSwitcher from './islands/SidebarSpaceSwitcher';
+import SidebarNavLinkButton from './islands/SidebarNavLinkButton';
 import ThemeToggle from './islands/ThemeToggle';
-import { Button } from './ui/button';
 import SearchTrigger from './search/SearchTrigger';
-import Link from 'next/link';
 
 function sortSpaces(manifest: Manifest) {
   return manifest.nav.spaces.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-}
-
-function NavLinkButton({
-  btn,
-  hrefPrefix,
-}: {
-  btn: {
-    id: string;
-    label: string;
-    href: string;
-    iconSvg?: string | null;
-    target?: '_self' | '_blank';
-  };
-  hrefPrefix: string;
-}) {
-  const isExternal = /^(https?:)?\/\//i.test(btn.href);
-  const href = isExternal ? btn.href : `${hrefPrefix}${btn.href}`;
-
-  return (
-    <Button
-      key={btn.id}
-      variant="ghost"
-      className="sidebar-link h-9 w-full justify-start text-[15px] font-medium"
-      asChild
-    >
-      <Link
-        prefetch={!isExternal}
-        href={href}
-        target={btn.target ?? (isExternal ? '_blank' : undefined)}
-        rel={btn.target === '_blank' || isExternal ? 'noopener noreferrer' : undefined}
-      >
-        {btn.iconSvg ? (
-          <span
-            className="mr-2 inline-block h-4 w-4"
-            dangerouslySetInnerHTML={{ __html: btn.iconSvg }}
-          />
-        ) : null}
-        {btn.label}
-      </Link>
-    </Button>
-  );
 }
 
 export default function SidebarNav({
@@ -119,7 +77,7 @@ export default function SidebarNav({
         {sidebar_top?.length ? (
           <div className="mb-4 space-y-1">
             {sidebar_top.map((btn) => (
-              <NavLinkButton key={btn.id} btn={btn} hrefPrefix={hrefPrefix} />
+              <SidebarNavLinkButton key={btn.id} btn={btn} hrefPrefix={hrefPrefix} />
             ))}
           </div>
         ) : null}
@@ -133,7 +91,7 @@ export default function SidebarNav({
           aria-label="Sidebar footer actions"
         >
           {sidebar_bottom.map((btn) => (
-            <NavLinkButton key={btn.id} btn={btn} hrefPrefix={hrefPrefix} />
+            <SidebarNavLinkButton key={btn.id} btn={btn} hrefPrefix={hrefPrefix} />
           ))}
         </div>
       ) : null}
