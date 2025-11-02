@@ -1622,6 +1622,76 @@ html.dark .shiki span {
   display: inline-block;
 }
 
+.dfy-copy-actions-group {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--sidebar-bg);
+  overflow: hidden;
+}
+
+.dfy-copy-actions-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 0;
+  border-top-left-radius: var(--radius);
+  border-bottom-left-radius: var(--radius);
+  background: transparent;
+  color: var(--sidebar-fg);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+  transition: all 120ms ease;
+  font-size: inherit;
+}
+
+.dfy-copy-actions-copy-btn:hover {
+  background: var(--sidebar-hover);
+}
+
+.dfy-copy-actions-copy-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dfy-copy-actions-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.dfy-copy-actions-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 0;
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  background: transparent;
+  color: var(--sidebar-fg);
+  cursor: pointer;
+  user-select: none;
+  transition: all 120ms ease;
+  min-width: 36px;
+}
+
+.dfy-copy-actions-dropdown-btn:hover {
+  background: var(--sidebar-hover);
+}
+
+.dfy-copy-actions-dropdown-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Legacy trigger styles for backward compatibility */
 .dfy-copy-actions-trigger {
   display: inline-flex;
   align-items: center;

@@ -95,7 +95,7 @@ export default function CopyActions({ markdown, pageUrl }: { markdown: string; p
     ta.remove();
   };
 
-  const handleCopyMarkdown = async () => {
+  const handleCopyMarkdown = async (closeDropdown = false) => {
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(markdown);
@@ -103,9 +103,13 @@ export default function CopyActions({ markdown, pageUrl }: { markdown: string; p
         fallbackCopy(markdown);
       }
       setCopyText('Copied!');
+      // Close dropdown immediately if requested (when copying from dropdown menu)
+      if (closeDropdown) {
+        setIsOpen(false);
+      }
+      // Reset button text after showing feedback
       setTimeout(() => {
         setCopyText('Copy page');
-        setIsOpen(false);
       }, 1200);
     } catch (err) {
       console.log('Failed to copy markdown to clipboard', err);
@@ -133,30 +137,39 @@ export default function CopyActions({ markdown, pageUrl }: { markdown: string; p
 
   return (
     <div ref={dropdownRef} className="dfy-copy-actions">
-      <button onClick={() => setIsOpen(!isOpen)} className="dfy-copy-actions-trigger">
-        <CopyIcon />
-        <span>Copy page</span>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className={`dfy-copy-actions-chevron ${isOpen ? 'open' : ''}`}
+      <div className="dfy-copy-actions-group">
+        <button onClick={() => handleCopyMarkdown(false)} className="dfy-copy-actions-copy-btn">
+          <CopyIcon />
+          <span>{copyText}</span>
+        </button>
+        <div className="dfy-copy-actions-divider"></div>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="dfy-copy-actions-dropdown-btn"
+          aria-label="Toggle dropdown menu"
         >
-          <path
-            d="M4 6L8 10L12 6"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className={`dfy-copy-actions-chevron ${isOpen ? 'open' : ''}`}
+          >
+            <path
+              d="M4 6L8 10L12 6"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
 
       {isOpen && (
         <div className="dfy-copy-actions-menu">
-          <button onClick={handleCopyMarkdown} className="dfy-copy-actions-item">
+          <button onClick={() => handleCopyMarkdown(true)} className="dfy-copy-actions-item">
             <CopyIcon />
             <div>
               <span className="dfy-item-title">{copyText}</span>
