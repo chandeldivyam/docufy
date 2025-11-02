@@ -10,6 +10,18 @@ import type { UiTreeItem } from '../../lib/types';
 
 const INDENT = 12;
 
+/**
+ * Closes the mobile sidebar by unchecking the mobile nav toggle checkbox.
+ * This function is safe to call on both mobile and desktop (only affects mobile).
+ */
+function closeMobileSidebar() {
+  if (typeof document === 'undefined') return;
+  const toggle = document.getElementById('dfy-mobile-nav-toggle') as HTMLInputElement | null;
+  if (toggle) {
+    toggle.checked = false;
+  }
+}
+
 function getNodeId(node: UiTreeItem) {
   return node.route || `group:${node.slug}`;
 }
@@ -107,6 +119,11 @@ export default function SidebarNavClient({
     });
   }, [currentRoute, nodes, setExpanded]);
 
+  // Close mobile sidebar when pathname changes (navigation occurred)
+  useEffect(() => {
+    closeMobileSidebar();
+  }, [pathname]);
+
   return (
     <nav aria-label="Section navigation" role="tree">
       <ul className="m-0 list-none p-0">
@@ -124,6 +141,7 @@ export default function SidebarNavClient({
             }
             currentRoute={currentRoute}
             hrefPrefix={hrefPrefix}
+            onNavigate={closeMobileSidebar}
           />
         ))}
       </ul>
@@ -138,6 +156,7 @@ function Node({
   onToggle,
   currentRoute,
   hrefPrefix,
+  onNavigate,
 }: {
   node: UiTreeItem;
   depth: number;
@@ -145,6 +164,7 @@ function Node({
   onToggle: (id: string, open: boolean) => void;
   currentRoute: string;
   hrefPrefix: string;
+  onNavigate?: () => void;
 }) {
   const hasChildren = (node.children?.length ?? 0) > 0;
   const nodeId = getNodeId(node);
@@ -202,6 +222,7 @@ function Node({
                 onToggle={onToggle}
                 currentRoute={currentRoute}
                 hrefPrefix={hrefPrefix}
+                onNavigate={onNavigate}
               />
             ))}
           </ul>
@@ -219,6 +240,7 @@ function Node({
           className={cn('sidebar-link')}
           aria-current={isActive ? 'page' : undefined}
           style={{ marginLeft: depth * INDENT }}
+          onClick={onNavigate}
         >
           <div className="flex w-full min-w-0 items-center gap-2">
             {isApiRoute && <div className="flex-shrink-0">{getMethodBadge(node)}</div>}
@@ -275,6 +297,7 @@ function Node({
                 onToggle={onToggle}
                 currentRoute={currentRoute}
                 hrefPrefix={hrefPrefix}
+                onNavigate={onNavigate}
               />
             ))}
           </ul>
@@ -291,6 +314,7 @@ function Node({
           href={`${hrefPrefix}${node.route}`}
           aria-current={isActive ? 'page' : undefined}
           className={cn('sidebar-link flex flex-1 items-center gap-2')}
+          onClick={onNavigate}
         >
           {isApiRoute && getMethodBadge(node)}
           {node.iconSvg && (
@@ -322,6 +346,7 @@ function Node({
               onToggle={onToggle}
               currentRoute={currentRoute}
               hrefPrefix={hrefPrefix}
+              onNavigate={onNavigate}
             />
           ))}
         </ul>
