@@ -582,16 +582,17 @@ body {
   line-height: 1.75;
   font-size: 16px; /* Or your preferred base size */
   margin-bottom: 1.25rem;
-  padding-left: 0.5rem;
   color: var(--sidebar-fg-muted);
 }
 
 .dfy-article ol {
   list-style-type: decimal; /* For ordered lists */
+  padding-left: 1.75rem; /* Adequate space for list markers */
 }
 
 .dfy-article ul {
   list-style-type: disc; /* Use standard bullets for unordered lists */
+  padding-left: 1.75rem; /* Adequate space for list markers */
 }
 
 .dfy-article li {
@@ -603,13 +604,23 @@ body {
   margin-bottom: 0;
 }
 
-.dfy-article ul ul {
+.dfy-article ul ul,
+.dfy-article ol ol {
   margin-top: 0.75rem; /* Adds space above the nested list */
   margin-left: 1.25rem; /* Increases the indentation of the nested list */
 }
 
 .dfy-article ul ul li {
   list-style-type: circle; /* Changes the bullet style for sub-items */
+}
+
+/* Ensure block-level elements inside list items are properly indented */
+.dfy-article li > pre,
+.dfy-article li > div,
+.dfy-article li > .tt-codeblock-group,
+.dfy-article li > blockquote {
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .dfy-article a {
