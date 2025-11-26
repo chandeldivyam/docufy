@@ -78,18 +78,58 @@ const ButtonZ = z.object({
   rank: z.number().int(),
   target: z.enum(["_self", "_blank"]).optional(),
 })
+const ContentSourceZ = z.enum(["studio", "github"])
 
 export const sitesRouter = router({
   create: authedProcedure
     .input(
-      z.object({
-        id: z.string().uuid().optional(),
-        organizationId: z.string(),
-        name: z.string().min(1),
-        slug: z.string().min(1).optional(),
-        layout: LayoutZ.optional(),
-        buttons: z.array(ButtonZ).optional(),
-      })
+      z
+        .object({
+          id: z.string().uuid().optional(),
+          organizationId: z.string(),
+          name: z.string().min(1),
+          slug: z.string().min(1).optional(),
+          layout: LayoutZ.optional(),
+          buttons: z.array(ButtonZ).optional(),
+          contentSource: ContentSourceZ.optional(),
+          githubInstallationId: z.string().optional(),
+          githubRepoFullName: z.string().optional(),
+          githubBranch: z.string().optional(),
+          githubConfigPath: z.string().optional(),
+        })
+        .superRefine((val, ctx) => {
+          const source = val.contentSource ?? "studio"
+          if (source === "github") {
+            if (!val.githubInstallationId) {
+              ctx.addIssue({
+                path: ["githubInstallationId"],
+                code: "custom",
+                message: "GitHub installation is required",
+              })
+            }
+            if (!val.githubRepoFullName) {
+              ctx.addIssue({
+                path: ["githubRepoFullName"],
+                code: "custom",
+                message: "Select a repository",
+              })
+            }
+            if (!val.githubBranch) {
+              ctx.addIssue({
+                path: ["githubBranch"],
+                code: "custom",
+                message: "Branch is required",
+              })
+            }
+            if (!val.githubConfigPath) {
+              ctx.addIssue({
+                path: ["githubConfigPath"],
+                code: "custom",
+                message: "Config path is required",
+              })
+            }
+          }
+        })
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id
@@ -101,6 +141,7 @@ export const sitesRouter = router({
 
       const id = input.id ?? crypto.randomUUID()
       const slug = input.slug ? slugify(input.slug) : slugify(input.name)
+      const contentSource = input.contentSource ?? "studio"
 
       // org-slug uniqueness
       const exists = await ctx.db
@@ -133,6 +174,21 @@ export const sitesRouter = router({
           primaryHost: allocatePrimaryHost(slug),
           layout: input.layout ?? undefined,
           buttons: input.buttons ?? [],
+          contentSource,
+          githubInstallationId:
+            contentSource === "github"
+              ? (input.githubInstallationId ?? null)
+              : null,
+          githubRepoFullName:
+            contentSource === "github"
+              ? (input.githubRepoFullName ?? null)
+              : null,
+          githubBranch:
+            contentSource === "github" ? (input.githubBranch ?? null) : null,
+          githubConfigPath:
+            contentSource === "github"
+              ? (input.githubConfigPath ?? null)
+              : null,
         })
         const txid = await generateTxId(tx)
         return { txid }
@@ -154,6 +210,11 @@ export const sitesRouter = router({
         faviconUrl: z.string().url().nullable().optional(),
         layout: LayoutZ.optional(),
         buttons: z.array(ButtonZ).optional(),
+        contentSource: ContentSourceZ.optional(),
+        githubInstallationId: z.string().nullable().optional(),
+        githubRepoFullName: z.string().nullable().optional(),
+        githubBranch: z.string().nullable().optional(),
+        githubConfigPath: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -188,6 +249,23 @@ export const sitesRouter = router({
       if (input.faviconUrl !== undefined) patch.faviconUrl = input.faviconUrl
       if (input.layout !== undefined) patch.layout = input.layout
       if (input.buttons !== undefined) patch.buttons = input.buttons
+      if (input.contentSource !== undefined)
+        patch.contentSource = input.contentSource
+      if (input.githubInstallationId !== undefined)
+        patch.githubInstallationId = input.githubInstallationId
+      if (input.githubRepoFullName !== undefined)
+        patch.githubRepoFullName = input.githubRepoFullName
+      if (input.githubBranch !== undefined)
+        patch.githubBranch = input.githubBranch
+      if (input.githubConfigPath !== undefined)
+        patch.githubConfigPath = input.githubConfigPath
+
+      if (input.contentSource === "studio") {
+        patch.githubInstallationId = null
+        patch.githubRepoFullName = null
+        patch.githubBranch = null
+        patch.githubConfigPath = null
+      }
 
       if (input.slug !== undefined) {
         const next = slugify(input.slug)

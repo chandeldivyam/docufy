@@ -238,6 +238,60 @@ export const emptyGithubInstallationsCollection = createCollection(
   })
 )
 
+const githubRepositoryRowSchema = z.object({
+  id: z.coerce.number(),
+  installation_id: z.string(),
+  full_name: z.string(),
+  default_branch: z.string(),
+  private: z.boolean(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+})
+export type GithubRepositoryRow = z.infer<typeof githubRepositoryRowSchema>
+
+function createGithubRepositoriesCollectionFor(url: string) {
+  return createCollection(
+    electricCollectionOptions({
+      id: `github-repositories:${url}`,
+      shapeOptions: {
+        url,
+        parser: electricParsers,
+      },
+      schema: githubRepositoryRowSchema,
+      getKey: (item) => String(item.id),
+    })
+  )
+}
+
+type GithubRepositoriesCollection = ReturnType<
+  typeof createGithubRepositoriesCollectionFor
+>
+const githubReposByInstallation = new Map<
+  string,
+  GithubRepositoriesCollection
+>()
+
+export function getGithubRepositoriesCollection(
+  installationId: string
+): GithubRepositoriesCollection {
+  let col = githubReposByInstallation.get(installationId)
+  if (!col) {
+    col = createGithubRepositoriesCollectionFor(
+      getApiUrl(`/api/github-repositories?installationId=${installationId}`)
+    )
+    githubReposByInstallation.set(installationId, col)
+  }
+  return col
+}
+
+export const emptyGithubRepositoriesCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-github-repositories",
+    schema: githubRepositoryRowSchema,
+    getKey: (item) => String(item.id),
+  })
+)
+
 const spacesRawSchema = z.object({
   id: z.string(),
   organization_id: z.string(),
@@ -502,6 +556,11 @@ function createSitesCollectionFor(url: string) {
           slug: s.slug,
           layout: s.layout, // pass through if present
           buttons: s.buttons ?? [],
+          contentSource: s.content_source,
+          githubInstallationId: s.github_installation_id ?? undefined,
+          githubRepoFullName: s.github_repo_full_name ?? undefined,
+          githubBranch: s.github_branch ?? undefined,
+          githubConfigPath: s.github_config_path ?? undefined,
         })
         return { txid: result.txid }
       },
@@ -520,6 +579,11 @@ function createSitesCollectionFor(url: string) {
           faviconUrl?: string | null
           layout?: "sidebar-dropdown" | "tabs"
           buttons?: typeof next.buttons
+          contentSource?: "studio" | "github"
+          githubInstallationId?: string | null
+          githubRepoFullName?: string | null
+          githubBranch?: string | null
+          githubConfigPath?: string | null
         } = { id: prev.id }
         if (next.name !== prev.name) payload.name = next.name
         if (next.slug !== prev.slug) payload.slug = next.slug
@@ -539,6 +603,21 @@ function createSitesCollectionFor(url: string) {
           JSON.stringify(prev.buttons ?? [])
         ) {
           payload.buttons = next.buttons ?? []
+        }
+        if (next.content_source !== prev.content_source) {
+          payload.contentSource = next.content_source
+        }
+        if (next.github_installation_id !== prev.github_installation_id) {
+          payload.githubInstallationId = next.github_installation_id ?? null
+        }
+        if (next.github_repo_full_name !== prev.github_repo_full_name) {
+          payload.githubRepoFullName = next.github_repo_full_name ?? null
+        }
+        if (next.github_branch !== prev.github_branch) {
+          payload.githubBranch = next.github_branch ?? null
+        }
+        if (next.github_config_path !== prev.github_config_path) {
+          payload.githubConfigPath = next.github_config_path ?? null
         }
         const result = await trpc.sites.update.mutate(payload)
         return { txid: result.txid }

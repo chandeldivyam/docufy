@@ -151,6 +151,34 @@ function SiteDetailPage() {
     )
   }
 
+  if (site.content_source === "github") {
+    // TODO - run the task pipeline for building the site from repo
+    return (
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>{site.name}</CardTitle>
+            <CardDescription>
+              GitHub-sourced site setup is coming soon.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Site ID:{" "}
+              <span className="font-mono text-foreground">{site.id}</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Repository: {site.github_repo_full_name ?? "Not set"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Branch: {site.github_branch ?? "Not set"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   function BrandingCard() {
     const orgSlug = activeOrg?.slug
     type BrandingKind = "logo-light" | "logo-dark" | "favicon"
