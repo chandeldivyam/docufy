@@ -65,7 +65,9 @@ export const Route = createFileRoute("/api/github/callback")({
 
           const account = inst.data.account
           const accountLogin =
-            account && "login" in account ? account.login : account?.slug ?? ""
+            account && "login" in account
+              ? account.login
+              : (account?.slug ?? "")
           const accountType =
             account && "type" in account
               ? account.type

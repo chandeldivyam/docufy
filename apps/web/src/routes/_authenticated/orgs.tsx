@@ -15,6 +15,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -52,6 +53,11 @@ function OrgsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [slugTouched, setSlugTouched] = useState(false)
+
+  const pendingInvitations =
+    invitations?.filter((inv) => inv.status === "pending") ?? []
+  const orgCount = orgs?.length ?? 0
+  const invitationCount = pendingInvitations.length
 
   function slugify(input: string) {
     return input
@@ -147,8 +153,22 @@ function OrgsPage() {
 
       <Tabs defaultValue="mine" className="mt-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="mine">My organizations</TabsTrigger>
-          <TabsTrigger value="invites">Invitations</TabsTrigger>
+          <TabsTrigger value="mine">
+            My organizations
+            {orgCount > 0 ? (
+              <Badge variant="secondary" className="rounded-full px-2.5">
+                {orgCount}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="invites">
+            Invitations
+            {invitationCount > 0 ? (
+              <Badge variant="secondary" className="rounded-full px-2.5">
+                {invitationCount}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
           <TabsTrigger value="create">Create</TabsTrigger>
         </TabsList>
 
@@ -159,7 +179,7 @@ function OrgsPage() {
               <CardDescription>Pick one to continue</CardDescription>
             </CardHeader>
             <CardContent>
-              {!orgs?.length ? (
+              {!orgCount ? (
                 <div className="text-muted-foreground">
                   You dont belong to any organizations yet.
                 </div>
@@ -202,43 +222,39 @@ function OrgsPage() {
               <CardDescription>Accept or reject</CardDescription>
             </CardHeader>
             <CardContent>
-              {!invitations?.length ? (
+              {!invitationCount ? (
                 <div className="text-muted-foreground">
                   No invitations found.
                 </div>
               ) : (
                 <ul className="grid gap-3">
-                  {invitations
-                    .filter((inv) => inv.status === "pending")
-                    .map((inv) => (
-                      <li
-                        key={inv.id}
-                        className="flex items-center justify-between rounded border p-3"
-                      >
-                        <div>
-                          <div className="font-medium">
-                            {inv.organizationId}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {inv.email} • role: {inv.role}
-                          </div>
+                  {pendingInvitations.map((inv) => (
+                    <li
+                      key={inv.id}
+                      className="flex items-center justify-between rounded border p-3"
+                    >
+                      <div>
+                        <div className="font-medium">{inv.organizationId}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {inv.email} • role: {inv.role}
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="default"
-                            onClick={() => acceptInvitation(inv.id)}
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            onClick={() => rejectInvitation(inv.id)}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="default"
+                          onClick={() => acceptInvitation(inv.id)}
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          onClick={() => rejectInvitation(inv.id)}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
                 </ul>
               )}
             </CardContent>
