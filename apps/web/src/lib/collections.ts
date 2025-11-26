@@ -182,6 +182,62 @@ export const myOrganizationsCollection = createCollection(
   })
 )
 
+const githubInstallationRowSchema = z.object({
+  id: z.string(),
+  organization_id: z.string(),
+  account_login: z.string(),
+  account_type: z.string(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+})
+
+export const githubInstallationsCollection = createCollection(
+  electricCollectionOptions({
+    id: "github-installations",
+    shapeOptions: {
+      url: getApiUrl("/api/github-installations"),
+      parser: electricParsers,
+    },
+    schema: githubInstallationRowSchema,
+    getKey: (item) => item.id,
+  })
+)
+
+type GithubInstallationsCollection = typeof githubInstallationsCollection
+const githubInstallationsByOrg = new Map<
+  string,
+  GithubInstallationsCollection
+>()
+
+export function getOrgGithubInstallationsCollection(
+  orgId: string
+): GithubInstallationsCollection {
+  let col = githubInstallationsByOrg.get(orgId)
+  if (!col) {
+    col = createCollection(
+      electricCollectionOptions({
+        id: `github-installations-${orgId}`,
+        shapeOptions: {
+          url: getApiUrl(`/api/github-installations?orgId=${orgId}`),
+          parser: electricParsers,
+        },
+        schema: githubInstallationRowSchema,
+        getKey: (item) => item.id,
+      })
+    ) as GithubInstallationsCollection
+    githubInstallationsByOrg.set(orgId, col)
+  }
+  return col
+}
+
+export const emptyGithubInstallationsCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-github-installations",
+    schema: githubInstallationRowSchema,
+    getKey: (item) => item.id,
+  })
+)
+
 const spacesRawSchema = z.object({
   id: z.string(),
   organization_id: z.string(),
@@ -421,6 +477,11 @@ const sitesRawSchema = z.object({
       })
     )
     .default([]),
+  content_source: z.enum(["studio", "github"]).default("studio"),
+  github_installation_id: z.string().nullable().optional(),
+  github_repo_full_name: z.string().nullable().optional(),
+  github_branch: z.string().nullable().optional(),
+  github_config_path: z.string().nullable().optional(),
 })
 export type SiteRow = z.infer<typeof sitesRawSchema>
 
@@ -667,6 +728,7 @@ const siteBuildsRawSchema = z.object({
   bytes_written: z.coerce.number(),
   started_at: z.coerce.date(),
   finished_at: z.coerce.date().nullable(),
+  source_commit_sha: z.string().nullable().optional(),
 })
 export type SiteBuildRow = z.infer<typeof siteBuildsRawSchema>
 

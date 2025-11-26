@@ -113,6 +113,35 @@ export const documentsTable = pgTable(
   })
 )
 
+export const githubInstallations = pgTable("github_installations", {
+  id: text("id").primaryKey(), // GitHub installation_id
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  accountLogin: text("account_login").notNull(),
+  accountType: text("account_type").notNull(), // "User" | "Organization"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+})
+
+export const githubRepositories = pgTable("github_repositories", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  installationId: text("installation_id")
+    .notNull()
+    .references(() => githubInstallations.id, { onDelete: "cascade" }),
+  fullName: text("full_name").notNull(), // owner/name
+  defaultBranch: text("default_branch").notNull(),
+  private: boolean("private").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+})
+
 export const selectUsersSchema = createSelectSchema(users)
 export const selectOrganizationsSchema = createSelectSchema(organizations)
 export const selectMembersSchema = createSelectSchema(members)
@@ -195,6 +224,17 @@ export const sitesTable = pgTable(
       >()
       .notNull()
       .default(sql`'[]'::jsonb`),
+    contentSource: text("content_source")
+      .$type<"studio" | "github">()
+      .default("studio")
+      .notNull(),
+    githubInstallationId: text("github_installation_id").references(
+      () => githubInstallations.id,
+      { onDelete: "set null" }
+    ),
+    githubRepoFullName: text("github_repo_full_name"),
+    githubBranch: text("github_branch"),
+    githubConfigPath: text("github_config_path"),
   },
   (t) => ({
     orgSlugUnique: uniqueIndex("sites_org_slug_unique").on(
@@ -279,6 +319,7 @@ export const siteBuildsTable = pgTable(
     bytesWritten: text("bytes_written").$type<number>().default(0).notNull(),
     startedAt: timestamp("started_at").defaultNow().notNull(),
     finishedAt: timestamp("finished_at"),
+    sourceCommitSha: text("source_commit_sha"),
   },
   (t) => ({
     buildUnique: uniqueIndex("site_builds_build_unique").on(t.buildId),

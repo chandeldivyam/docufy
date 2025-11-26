@@ -25,6 +25,7 @@ import { Route as ApiInvitationsRouteImport } from './routes/api/invitations'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
 import { Route as ApiHelloRouteImport } from './routes/api/hello'
 import { Route as ApiHealthzRouteImport } from './routes/api/healthz'
+import { Route as ApiGithubInstallationsRouteImport } from './routes/api/github-installations'
 import { Route as ApiDocumentsRouteImport } from './routes/api/documents'
 import { Route as ApiDocumentUpdatesRouteImport } from './routes/api/document-updates'
 import { Route as ApiAwarenessUpdatesRouteImport } from './routes/api/awareness-updates'
@@ -35,6 +36,7 @@ import { Route as AuthenticatedActiveOrgIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedOrgSlugIndexRouteImport } from './routes/_authenticated/$orgSlug/index'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
 import { Route as ApiShapeSplatRouteImport } from './routes/api/shape/$'
+import { Route as ApiGithubCallbackRouteImport } from './routes/api/github/callback'
 import { Route as ApiBlobUploadRouteImport } from './routes/api/blob/upload'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedActiveOrgSettingsRouteImport } from './routes/_authenticated/_active-org/settings'
@@ -124,6 +126,11 @@ const ApiHealthzRoute = ApiHealthzRouteImport.update({
   path: '/api/healthz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGithubInstallationsRoute = ApiGithubInstallationsRouteImport.update({
+  id: '/api/github-installations',
+  path: '/api/github-installations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDocumentsRoute = ApiDocumentsRouteImport.update({
   id: '/api/documents',
   path: '/api/documents',
@@ -173,6 +180,11 @@ const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
 const ApiShapeSplatRoute = ApiShapeSplatRouteImport.update({
   id: '/api/shape/$',
   path: '/api/shape/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubCallbackRoute = ApiGithubCallbackRouteImport.update({
+  id: '/api/github/callback',
+  path: '/api/github/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBlobUploadRoute = ApiBlobUploadRouteImport.update({
@@ -235,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/api/awareness-updates': typeof ApiAwarenessUpdatesRoute
   '/api/document-updates': typeof ApiDocumentUpdatesRoute
   '/api/documents': typeof ApiDocumentsRoute
+  '/api/github-installations': typeof ApiGithubInstallationsRoute
   '/api/healthz': typeof ApiHealthzRoute
   '/api/hello': typeof ApiHelloRoute
   '/api/inngest': typeof ApiInngestRoute
@@ -252,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blob/upload': typeof ApiBlobUploadRoute
+  '/api/github/callback': typeof ApiGithubCallbackRoute
   '/api/shape/$': typeof ApiShapeSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
@@ -269,6 +283,7 @@ export interface FileRoutesByTo {
   '/api/awareness-updates': typeof ApiAwarenessUpdatesRoute
   '/api/document-updates': typeof ApiDocumentUpdatesRoute
   '/api/documents': typeof ApiDocumentsRoute
+  '/api/github-installations': typeof ApiGithubInstallationsRoute
   '/api/healthz': typeof ApiHealthzRoute
   '/api/hello': typeof ApiHelloRoute
   '/api/inngest': typeof ApiInngestRoute
@@ -286,6 +301,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blob/upload': typeof ApiBlobUploadRoute
+  '/api/github/callback': typeof ApiGithubCallbackRoute
   '/api/shape/$': typeof ApiShapeSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/$orgSlug': typeof AuthenticatedOrgSlugIndexRoute
@@ -307,6 +323,7 @@ export interface FileRoutesById {
   '/api/awareness-updates': typeof ApiAwarenessUpdatesRoute
   '/api/document-updates': typeof ApiDocumentUpdatesRoute
   '/api/documents': typeof ApiDocumentsRoute
+  '/api/github-installations': typeof ApiGithubInstallationsRoute
   '/api/healthz': typeof ApiHealthzRoute
   '/api/hello': typeof ApiHelloRoute
   '/api/inngest': typeof ApiInngestRoute
@@ -324,6 +341,7 @@ export interface FileRoutesById {
   '/_authenticated/_active-org/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blob/upload': typeof ApiBlobUploadRoute
+  '/api/github/callback': typeof ApiGithubCallbackRoute
   '/api/shape/$': typeof ApiShapeSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/_authenticated/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
@@ -344,6 +362,7 @@ export interface FileRouteTypes {
     | '/api/awareness-updates'
     | '/api/document-updates'
     | '/api/documents'
+    | '/api/github-installations'
     | '/api/healthz'
     | '/api/hello'
     | '/api/inngest'
@@ -361,6 +380,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/auth/$'
     | '/api/blob/upload'
+    | '/api/github/callback'
     | '/api/shape/$'
     | '/api/trpc/$'
     | '/$orgSlug/'
@@ -378,6 +398,7 @@ export interface FileRouteTypes {
     | '/api/awareness-updates'
     | '/api/document-updates'
     | '/api/documents'
+    | '/api/github-installations'
     | '/api/healthz'
     | '/api/hello'
     | '/api/inngest'
@@ -395,6 +416,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/auth/$'
     | '/api/blob/upload'
+    | '/api/github/callback'
     | '/api/shape/$'
     | '/api/trpc/$'
     | '/$orgSlug'
@@ -415,6 +437,7 @@ export interface FileRouteTypes {
     | '/api/awareness-updates'
     | '/api/document-updates'
     | '/api/documents'
+    | '/api/github-installations'
     | '/api/healthz'
     | '/api/hello'
     | '/api/inngest'
@@ -432,6 +455,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_active-org/settings'
     | '/api/auth/$'
     | '/api/blob/upload'
+    | '/api/github/callback'
     | '/api/shape/$'
     | '/api/trpc/$'
     | '/_authenticated/$orgSlug/'
@@ -450,6 +474,7 @@ export interface RootRouteChildren {
   ApiAwarenessUpdatesRoute: typeof ApiAwarenessUpdatesRoute
   ApiDocumentUpdatesRoute: typeof ApiDocumentUpdatesRoute
   ApiDocumentsRoute: typeof ApiDocumentsRoute
+  ApiGithubInstallationsRoute: typeof ApiGithubInstallationsRoute
   ApiHealthzRoute: typeof ApiHealthzRoute
   ApiHelloRoute: typeof ApiHelloRoute
   ApiInngestRoute: typeof ApiInngestRoute
@@ -465,6 +490,7 @@ export interface RootRouteChildren {
   ApiUserInvitationsRoute: typeof ApiUserInvitationsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBlobUploadRoute: typeof ApiBlobUploadRoute
+  ApiGithubCallbackRoute: typeof ApiGithubCallbackRoute
   ApiShapeSplatRoute: typeof ApiShapeSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
@@ -583,6 +609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthzRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/github-installations': {
+      id: '/api/github-installations'
+      path: '/api/github-installations'
+      fullPath: '/api/github-installations'
+      preLoaderRoute: typeof ApiGithubInstallationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/documents': {
       id: '/api/documents'
       path: '/api/documents'
@@ -651,6 +684,13 @@ declare module '@tanstack/react-router' {
       path: '/api/shape/$'
       fullPath: '/api/shape/$'
       preLoaderRoute: typeof ApiShapeSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/callback': {
+      id: '/api/github/callback'
+      path: '/api/github/callback'
+      fullPath: '/api/github/callback'
+      preLoaderRoute: typeof ApiGithubCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/blob/upload': {
@@ -805,6 +845,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAwarenessUpdatesRoute: ApiAwarenessUpdatesRoute,
   ApiDocumentUpdatesRoute: ApiDocumentUpdatesRoute,
   ApiDocumentsRoute: ApiDocumentsRoute,
+  ApiGithubInstallationsRoute: ApiGithubInstallationsRoute,
   ApiHealthzRoute: ApiHealthzRoute,
   ApiHelloRoute: ApiHelloRoute,
   ApiInngestRoute: ApiInngestRoute,
@@ -820,6 +861,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiUserInvitationsRoute: ApiUserInvitationsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBlobUploadRoute: ApiBlobUploadRoute,
+  ApiGithubCallbackRoute: ApiGithubCallbackRoute,
   ApiShapeSplatRoute: ApiShapeSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
