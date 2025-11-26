@@ -235,6 +235,11 @@ export const sitesTable = pgTable(
     githubRepoFullName: text("github_repo_full_name"),
     githubBranch: text("github_branch"),
     githubConfigPath: text("github_config_path"),
+    githubConfigStatus: text("github_config_status").default("idle").notNull(),
+    githubConfigSyncedAt: timestamp("github_config_synced_at"),
+    githubConfigSha: text("github_config_sha"),
+    githubConfigVersion: integer("github_config_version").default(1).notNull(),
+    githubConfigError: text("github_config_error"),
   },
   (t) => ({
     orgSlugUnique: uniqueIndex("sites_org_slug_unique").on(
@@ -327,6 +332,36 @@ export const siteBuildsTable = pgTable(
   })
 )
 
+export const siteRepoSyncsTable = pgTable(
+  "site_repo_syncs",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    siteId: text("site_id")
+      .notNull()
+      .references(() => sitesTable.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    status: text("status").notNull(), // idle|queued|running|success|failed
+    error: text("error"),
+    configSha: text("config_sha"),
+    commitSha: text("commit_sha"),
+    branch: text("branch"),
+    configPath: text("config_path"),
+    triggeredBy: text("triggered_by"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+    finishedAt: timestamp("finished_at"),
+  },
+  (t) => ({
+    siteIdx: index("site_repo_syncs_site_idx").on(t.siteId),
+    orgIdx: index("site_repo_syncs_org_idx").on(t.organizationId),
+  })
+)
+
 export const siteContentBlobsTable = pgTable(
   "site_content_blobs",
   {
@@ -354,6 +389,7 @@ export const selectSitesSchema = createSelectSchema(sitesTable)
 export const selectSiteSpacesSchema = createSelectSchema(siteSpacesTable)
 export const selectSiteDomainsSchema = createSelectSchema(siteDomainsTable)
 export const selectSiteBuildsSchema = createSelectSchema(siteBuildsTable)
+export const selectSiteRepoSyncsSchema = createSelectSchema(siteRepoSyncsTable)
 export const selectSiteContentBlobsSchema = createSelectSchema(
   siteContentBlobsTable
 )

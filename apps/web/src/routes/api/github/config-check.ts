@@ -4,6 +4,8 @@ import { db } from "@/db/connection"
 import { githubInstallations } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { GithubRequestError, getFileContent } from "@/lib/github"
+import { validateDocufyConfig } from "@/lib/docufy-config"
+import * as path from "node:path"
 
 export const Route = createFileRoute("/api/github/config-check")({
   server: {
@@ -23,7 +25,7 @@ export const Route = createFileRoute("/api/github/config-check")({
         const installationId = url.searchParams.get("installationId")
         const repoFullName = url.searchParams.get("repo")
         const branch = url.searchParams.get("branch")
-        const path = url.searchParams.get("path")
+        const configPath = url.searchParams.get("path")
 
         if (!orgId) {
           return new Response(
@@ -34,7 +36,7 @@ export const Route = createFileRoute("/api/github/config-check")({
             }
           )
         }
-        if (!installationId || !repoFullName || !branch || !path) {
+        if (!installationId || !repoFullName || !branch || !configPath) {
           return new Response(
             JSON.stringify({ error: "Missing required parameters" }),
             {
@@ -91,11 +93,31 @@ export const Route = createFileRoute("/api/github/config-check")({
             installationId,
             owner,
             repo,
-            path,
+            path: configPath,
             ref: branch,
           })
           const previewLimit = 2000
           const preview = content.slice(0, previewLimit)
+          const configDir = path.posix.dirname(configPath)
+          const validated = validateDocufyConfig(content, {
+            configDir,
+          })
+          if (!validated.ok) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                exists: true,
+                error: validated.error,
+                issues: validated.issues,
+                preview,
+                truncated: content.length > preview.length,
+              }),
+              {
+                status: 422,
+                headers: { "content-type": "application/json" },
+              }
+            )
+          }
 
           return new Response(
             JSON.stringify({
@@ -103,6 +125,11 @@ export const Route = createFileRoute("/api/github/config-check")({
               exists: true,
               preview,
               truncated: content.length > preview.length,
+              summary: {
+                siteName: validated.config.site.name,
+                layout: validated.config.site.layout,
+                buttons: validated.config.navigation.buttons.length,
+              },
             }),
             {
               headers: { "content-type": "application/json" },

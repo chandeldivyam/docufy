@@ -147,3 +147,28 @@ export async function getFileContent(params: {
   const buf = Buffer.from(res.data.content, res.data.encoding as BufferEncoding)
   return buf.toString("utf8")
 }
+
+export async function getFileBinary(params: {
+  installationId: string
+  owner: string
+  repo: string
+  path: string
+  ref: string
+}) {
+  const client = await getInstallationClient(params.installationId)
+  const res = await withGithubError("Failed to fetch file content", () =>
+    client.request("GET /repos/{owner}/{repo}/contents/{path}", {
+      owner: params.owner,
+      repo: params.repo,
+      path: params.path,
+      ref: params.ref,
+    })
+  )
+
+  if (!("content" in res.data)) {
+    throw new Error("Requested path is not a file")
+  }
+
+  const buf = Buffer.from(res.data.content, res.data.encoding as BufferEncoding)
+  return { content: buf, sha: res.data.sha as string | undefined }
+}

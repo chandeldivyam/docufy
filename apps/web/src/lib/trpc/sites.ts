@@ -163,7 +163,7 @@ export const sitesRouter = router({
       const storeId = process.env.VITE_PUBLIC_VERCEL_BLOB_STORE_ID ?? ""
       const baseUrl = process.env.VITE_PUBLIC_VERCEL_BLOB_BASE_URL ?? ""
 
-      return await ctx.db.transaction(async (tx) => {
+      const result = await ctx.db.transaction(async (tx) => {
         await tx.insert(sitesTable).values({
           id,
           organizationId: input.organizationId,
@@ -175,6 +175,8 @@ export const sitesRouter = router({
           layout: input.layout ?? undefined,
           buttons: input.buttons ?? [],
           contentSource,
+          githubConfigStatus: contentSource === "github" ? "queued" : "idle",
+          githubConfigError: null,
           githubInstallationId:
             contentSource === "github"
               ? (input.githubInstallationId ?? null)
@@ -193,6 +195,13 @@ export const sitesRouter = router({
         const txid = await generateTxId(tx)
         return { txid }
       })
+      if (contentSource === "github") {
+        await inngest.send({
+          name: "site/github-config/sync",
+          data: { siteId: id, triggeredBy: userId },
+        })
+      }
+      return result
     }),
 
   update: authedProcedure
@@ -679,6 +688,51 @@ export const sitesRouter = router({
         const txid = await generateTxId(tx)
         return { txid, buildId }
       })
+    }),
+
+  syncGithubConfig: authedProcedure
+    .input(z.object({ siteId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id
+      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" })
+
+      const site = (
+        await ctx.db
+          .select({
+            id: sitesTable.id,
+            orgId: sitesTable.organizationId,
+            contentSource: sitesTable.contentSource,
+          })
+          .from(sitesTable)
+          .where(eq(sitesTable.id, input.siteId))
+          .limit(1)
+      )[0]
+      if (!site) throw new TRPCError({ code: "NOT_FOUND" })
+      if (site.contentSource !== "github") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Site is not sourced from GitHub",
+        })
+      }
+      await assertOrgRole(ctx.db, userId, site.orgId, ["owner", "admin"])
+
+      await ctx.db.transaction(async (tx) => {
+        await tx
+          .update(sitesTable)
+          .set({
+            githubConfigStatus: "queued",
+            githubConfigError: null,
+          })
+          .where(eq(sitesTable.id, input.siteId))
+        await generateTxId(tx)
+      })
+
+      await inngest.send({
+        name: "site/github-config/sync",
+        data: { siteId: input.siteId, triggeredBy: userId },
+      })
+
+      return { enqueued: true }
     }),
 
   revert: authedProcedure

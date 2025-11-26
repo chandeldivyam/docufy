@@ -536,6 +536,14 @@ const sitesRawSchema = z.object({
   github_repo_full_name: z.string().nullable().optional(),
   github_branch: z.string().nullable().optional(),
   github_config_path: z.string().nullable().optional(),
+  github_config_status: z
+    .enum(["idle", "queued", "running", "success", "failed"])
+    .nullable()
+    .optional(),
+  github_config_synced_at: z.coerce.date().nullable(),
+  github_config_sha: z.string().nullable().optional(),
+  github_config_version: z.coerce.number().default(1),
+  github_config_error: z.string().nullable().optional(),
 })
 export type SiteRow = z.infer<typeof sitesRawSchema>
 
@@ -856,6 +864,45 @@ export function getSiteBuildsCollection(siteId: string) {
     })
   )
 }
+
+const siteRepoSyncRawSchema = z.object({
+  id: z.coerce.number(),
+  site_id: z.string(),
+  organization_id: z.string(),
+  status: z.string(),
+  error: z.string().nullable().optional(),
+  config_sha: z.string().nullable().optional(),
+  commit_sha: z.string().nullable().optional(),
+  branch: z.string().nullable().optional(),
+  config_path: z.string().nullable().optional(),
+  triggered_by: z.string().nullable().optional(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+  finished_at: z.coerce.date().nullable(),
+})
+export type SiteRepoSyncRow = z.infer<typeof siteRepoSyncRawSchema>
+
+export function getSiteRepoSyncsCollection(siteId: string) {
+  return createCollection(
+    electricCollectionOptions({
+      id: `site-repo-syncs:${siteId}`,
+      shapeOptions: {
+        url: getApiUrl(`/api/site-repo-syncs?siteId=${siteId}`),
+        parser: electricParsers,
+      },
+      schema: siteRepoSyncRawSchema,
+      getKey: (r) => String(r.id),
+    })
+  )
+}
+
+export const emptySiteRepoSyncsCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-site-repo-syncs",
+    schema: siteRepoSyncRawSchema,
+    getKey: (r) => String(r.id),
+  })
+)
 
 const siteThemeRawSchema = z.object({
   site_id: z.string(),

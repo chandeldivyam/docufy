@@ -17,6 +17,7 @@ import { Route as ApiSpacesRouteImport } from './routes/api/spaces'
 import { Route as ApiSitesRouteImport } from './routes/api/sites'
 import { Route as ApiSiteThemesRouteImport } from './routes/api/site-themes'
 import { Route as ApiSiteSpacesRouteImport } from './routes/api/site-spaces'
+import { Route as ApiSiteRepoSyncsRouteImport } from './routes/api/site-repo-syncs'
 import { Route as ApiSiteDomainsRouteImport } from './routes/api/site-domains'
 import { Route as ApiSiteBuildsRouteImport } from './routes/api/site-builds'
 import { Route as ApiOrgUserProfilesRouteImport } from './routes/api/org-user-profiles'
@@ -87,6 +88,11 @@ const ApiSiteThemesRoute = ApiSiteThemesRouteImport.update({
 const ApiSiteSpacesRoute = ApiSiteSpacesRouteImport.update({
   id: '/api/site-spaces',
   path: '/api/site-spaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSiteRepoSyncsRoute = ApiSiteRepoSyncsRouteImport.update({
+  id: '/api/site-repo-syncs',
+  path: '/api/site-repo-syncs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSiteDomainsRoute = ApiSiteDomainsRouteImport.update({
@@ -275,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/api/org-user-profiles': typeof ApiOrgUserProfilesRoute
   '/api/site-builds': typeof ApiSiteBuildsRoute
   '/api/site-domains': typeof ApiSiteDomainsRoute
+  '/api/site-repo-syncs': typeof ApiSiteRepoSyncsRoute
   '/api/site-spaces': typeof ApiSiteSpacesRoute
   '/api/site-themes': typeof ApiSiteThemesRoute
   '/api/sites': typeof ApiSitesRouteWithChildren
@@ -314,6 +321,7 @@ export interface FileRoutesByTo {
   '/api/org-user-profiles': typeof ApiOrgUserProfilesRoute
   '/api/site-builds': typeof ApiSiteBuildsRoute
   '/api/site-domains': typeof ApiSiteDomainsRoute
+  '/api/site-repo-syncs': typeof ApiSiteRepoSyncsRoute
   '/api/site-spaces': typeof ApiSiteSpacesRoute
   '/api/site-themes': typeof ApiSiteThemesRoute
   '/api/sites': typeof ApiSitesRouteWithChildren
@@ -357,6 +365,7 @@ export interface FileRoutesById {
   '/api/org-user-profiles': typeof ApiOrgUserProfilesRoute
   '/api/site-builds': typeof ApiSiteBuildsRoute
   '/api/site-domains': typeof ApiSiteDomainsRoute
+  '/api/site-repo-syncs': typeof ApiSiteRepoSyncsRoute
   '/api/site-spaces': typeof ApiSiteSpacesRoute
   '/api/site-themes': typeof ApiSiteThemesRoute
   '/api/sites': typeof ApiSitesRouteWithChildren
@@ -399,6 +408,7 @@ export interface FileRouteTypes {
     | '/api/org-user-profiles'
     | '/api/site-builds'
     | '/api/site-domains'
+    | '/api/site-repo-syncs'
     | '/api/site-spaces'
     | '/api/site-themes'
     | '/api/sites'
@@ -438,6 +448,7 @@ export interface FileRouteTypes {
     | '/api/org-user-profiles'
     | '/api/site-builds'
     | '/api/site-domains'
+    | '/api/site-repo-syncs'
     | '/api/site-spaces'
     | '/api/site-themes'
     | '/api/sites'
@@ -480,6 +491,7 @@ export interface FileRouteTypes {
     | '/api/org-user-profiles'
     | '/api/site-builds'
     | '/api/site-domains'
+    | '/api/site-repo-syncs'
     | '/api/site-spaces'
     | '/api/site-themes'
     | '/api/sites'
@@ -520,6 +532,7 @@ export interface RootRouteChildren {
   ApiOrgUserProfilesRoute: typeof ApiOrgUserProfilesRoute
   ApiSiteBuildsRoute: typeof ApiSiteBuildsRoute
   ApiSiteDomainsRoute: typeof ApiSiteDomainsRoute
+  ApiSiteRepoSyncsRoute: typeof ApiSiteRepoSyncsRoute
   ApiSiteSpacesRoute: typeof ApiSiteSpacesRoute
   ApiSiteThemesRoute: typeof ApiSiteThemesRoute
   ApiSitesRoute: typeof ApiSitesRouteWithChildren
@@ -590,6 +603,13 @@ declare module '@tanstack/react-router' {
       path: '/api/site-spaces'
       fullPath: '/api/site-spaces'
       preLoaderRoute: typeof ApiSiteSpacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/site-repo-syncs': {
+      id: '/api/site-repo-syncs'
+      path: '/api/site-repo-syncs'
+      fullPath: '/api/site-repo-syncs'
+      preLoaderRoute: typeof ApiSiteRepoSyncsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/site-domains': {
@@ -915,6 +935,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOrgUserProfilesRoute: ApiOrgUserProfilesRoute,
   ApiSiteBuildsRoute: ApiSiteBuildsRoute,
   ApiSiteDomainsRoute: ApiSiteDomainsRoute,
+  ApiSiteRepoSyncsRoute: ApiSiteRepoSyncsRoute,
   ApiSiteSpacesRoute: ApiSiteSpacesRoute,
   ApiSiteThemesRoute: ApiSiteThemesRoute,
   ApiSitesRoute: ApiSitesRouteWithChildren,

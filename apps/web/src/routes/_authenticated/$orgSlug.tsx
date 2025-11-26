@@ -803,6 +803,7 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
   >("idle")
   const [configMessage, setConfigMessage] = useState<string | null>(null)
   const [configPreview, setConfigPreview] = useState<string | null>(null)
+  const [configIssues, setConfigIssues] = useState<string[]>([])
   const [repoDropdownOpen, setRepoDropdownOpen] = useState(false)
 
   const slugifyValue = useCallback((input: string) => {
@@ -840,6 +841,7 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
     setConfigStatus("idle")
     setConfigMessage(null)
     setConfigPreview(null)
+    setConfigIssues([])
   }, [branch, configPath, selectedRepoId, source])
 
   useEffect(() => {
@@ -857,6 +859,7 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
       setConfigStatus("idle")
       setConfigMessage(null)
       setConfigPreview(null)
+      setConfigIssues([])
       setError(null)
       setRepoSearch("")
       setRepoDropdownOpen(false)
@@ -948,6 +951,7 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
     setConfigStatus("checking")
     setConfigMessage(null)
     setConfigPreview(null)
+    setConfigIssues([])
 
     try {
       const params = new URLSearchParams({
@@ -960,16 +964,29 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
       const res = await fetch(`/api/github/config-check?${params.toString()}`)
       const data = await res.json()
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error ?? "Config not found at that path")
+        setConfigStatus("error")
+        setConfigMessage(
+          data?.error ?? "Config not found at that path or is invalid"
+        )
+        setConfigPreview(data?.preview ?? null)
+        setConfigIssues(
+          Array.isArray(data?.issues)
+            ? data.issues.map((i: unknown) => String(i))
+            : []
+        )
+        return
       }
       setConfigStatus("ok")
       setConfigMessage("Config file verified in repository")
       setConfigPreview(data.preview ?? null)
+      setConfigIssues([])
     } catch (err) {
       setConfigStatus("error")
+      console.log(err)
       setConfigMessage(
         err instanceof Error ? err.message : "Could not verify config file"
       )
+      setConfigIssues([])
     }
   }, [
     branch,
@@ -1033,6 +1050,7 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
           source === "github" ? (selectedRepo?.full_name ?? null) : null,
         github_branch: source === "github" ? branch.trim() : null,
         github_config_path: source === "github" ? configPath.trim() : null,
+        github_config_synced_at: null,
       })
       setOpen(false)
       setName("")
@@ -1291,6 +1309,13 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
                         validate it before creating the site.
                       </p>
                     )}
+                    {configIssues.length ? (
+                      <ul className="text-xs text-destructive list-disc pl-5 space-y-1">
+                        {configIssues.map((issue) => (
+                          <li key={issue}>{issue}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                     {configPreview ? (
                       <pre className="max-h-28 overflow-auto rounded border bg-muted/40 p-2 text-xs">
                         {configPreview}
