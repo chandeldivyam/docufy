@@ -52,16 +52,31 @@ async function uploadAsset(opts: {
   const ext = path.posix.extname(assetPath) || ""
   const key = `sites/${siteId}/assets/${hash}${ext}`
   const contentType = mimeFromFilename(assetPath)
-  await blobPut(key, content, contentType, {
-    immutable: true,
-  })
   const trimmedBase =
     baseUrl.endsWith("/") && baseUrl.length > 1 ? baseUrl.slice(0, -1) : baseUrl
+
+  try {
+    await blobPut(key, content, contentType, {
+      immutable: true,
+      overwrite: true, // make sync idempotent when the same asset hash is re-processed
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message.toLowerCase() : ""
+    const status =
+      typeof err === "object" && err && "status" in err
+        ? (err as { status?: number }).status
+        : undefined
+    // If the blob already exists, keep the existing URL and move on
+    if (status !== 409 && !message.includes("already exists")) {
+      throw err
+    }
+  }
+
   return { url: `${trimmedBase}/${key}` }
 }
 
 export const siteGithubConfigSync = inngest.createFunction(
-  { id: "site-github-config-sync" },
+  { id: "site-github-config-sync", retries: 0 },
   { event: "site/github-config/sync" },
   async ({ event }) => {
     const { siteId, triggeredBy } = event.data as EventPayload
