@@ -144,7 +144,12 @@ export async function getFileContent(params: {
     throw new Error("Requested path is not a file")
   }
 
-  const buf = Buffer.from(res.data.content, res.data.encoding as BufferEncoding)
+  const encoding =
+    typeof res.data.encoding === "string" &&
+    Buffer.isEncoding(res.data.encoding)
+      ? (res.data.encoding as BufferEncoding)
+      : "base64"
+  const buf = Buffer.from(res.data.content, encoding)
   return buf.toString("utf8")
 }
 
@@ -169,6 +174,27 @@ export async function getFileBinary(params: {
     throw new Error("Requested path is not a file")
   }
 
-  const buf = Buffer.from(res.data.content, res.data.encoding as BufferEncoding)
+  // Handle the "none" encoding case for large files (1-100 MB)
+  if (res.data.encoding === "none" || !res.data.content) {
+    // For large files, use the download_url instead
+    if (!res.data.download_url) {
+      throw new Error("File too large and no download URL available")
+    }
+
+    const downloadRes = await client.request("GET {url}", {
+      url: res.data.download_url,
+    })
+
+    const buf = Buffer.from(downloadRes.data as string, "binary")
+    return { content: buf, sha: res.data.sha as string | undefined }
+  }
+
+  // Normal case: base64 encoded content
+  const encoding =
+    typeof res.data.encoding === "string" &&
+    Buffer.isEncoding(res.data.encoding)
+      ? (res.data.encoding as BufferEncoding)
+      : "base64"
+  const buf = Buffer.from(res.data.content, encoding)
   return { content: buf, sha: res.data.sha as string | undefined }
 }

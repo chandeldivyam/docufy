@@ -384,6 +384,62 @@ export const siteContentBlobsTable = pgTable(
   })
 )
 
+export const siteGithubDocsTable = pgTable(
+  "site_github_docs",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    siteId: text("site_id")
+      .notNull()
+      .references(() => sitesTable.id, { onDelete: "cascade" }),
+    branch: text("branch").notNull(),
+    path: text("path").notNull(),
+    sha: text("sha").notNull(),
+    contentBlobHash: text("content_blob_hash").notNull(),
+    title: text("title").notNull(),
+    headings: jsonb("headings").$type<string[]>().notNull().default([]),
+    plain: text("plain").notNull().default(""),
+    size: integer("size").notNull(),
+    kind: text("kind").$type<"page" | "group" | "api">().default("page"),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => ({
+    siteBranchPathIdx: uniqueIndex("site_github_docs_site_branch_path_idx").on(
+      t.siteId,
+      t.branch,
+      t.path
+    ),
+  })
+)
+
+export const siteGithubAssetsTable = pgTable(
+  "site_github_assets",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    siteId: text("site_id")
+      .notNull()
+      .references(() => sitesTable.id, { onDelete: "cascade" }),
+    branch: text("branch").notNull(),
+    path: text("path").notNull(),
+    sha: text("sha").notNull(),
+    blobKey: text("blob_key").notNull(),
+    url: text("url").notNull(),
+    mimeType: text("mime_type").notNull(),
+    size: integer("size").notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => ({
+    siteBranchPathIdx: uniqueIndex(
+      "site_github_assets_site_branch_path_idx"
+    ).on(t.siteId, t.branch, t.path),
+  })
+)
+
 // Zod schemas
 export const selectSitesSchema = createSelectSchema(sitesTable)
 export const selectSiteSpacesSchema = createSelectSchema(siteSpacesTable)
@@ -392,6 +448,11 @@ export const selectSiteBuildsSchema = createSelectSchema(siteBuildsTable)
 export const selectSiteRepoSyncsSchema = createSelectSchema(siteRepoSyncsTable)
 export const selectSiteContentBlobsSchema = createSelectSchema(
   siteContentBlobsTable
+)
+export const selectSiteGithubDocsSchema =
+  createSelectSchema(siteGithubDocsTable)
+export const selectSiteGithubAssetsSchema = createSelectSchema(
+  siteGithubAssetsTable
 )
 
 export const createSiteSchema = createInsertSchema(sitesTable)

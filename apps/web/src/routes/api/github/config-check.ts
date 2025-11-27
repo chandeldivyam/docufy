@@ -4,8 +4,30 @@ import { db } from "@/db/connection"
 import { githubInstallations } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { GithubRequestError, getFileContent } from "@/lib/github"
-import { validateDocufyConfig } from "@/lib/docufy-config"
+import {
+  type NormalizedNavNode,
+  validateDocufyConfig,
+} from "@/lib/docufy-config"
 import * as path from "node:path"
+
+function summarizeNav(nodes: NormalizedNavNode[]) {
+  const byType: Record<string, number> = {}
+  let total = 0
+
+  const walk = (node: NormalizedNavNode) => {
+    if (node.path) {
+      total += 1
+      const key = node.type ?? "page"
+      byType[key] = (byType[key] ?? 0) + 1
+    }
+    for (const child of node.children ?? []) {
+      walk(child)
+    }
+  }
+
+  for (const n of nodes) walk(n)
+  return { total, byType }
+}
 
 export const Route = createFileRoute("/api/github/config-check")({
   server: {
@@ -119,6 +141,17 @@ export const Route = createFileRoute("/api/github/config-check")({
             )
           }
 
+          const spaceSummaries = validated.config.navigation.spaces.map((s) => {
+            const stats = summarizeNav(s.tree)
+            return {
+              slug: s.slug,
+              name: s.name,
+              layout: s.style,
+              docs: stats.total,
+              types: stats.byType,
+            }
+          })
+
           return new Response(
             JSON.stringify({
               ok: true,
@@ -129,6 +162,7 @@ export const Route = createFileRoute("/api/github/config-check")({
                 siteName: validated.config.site.name,
                 layout: validated.config.site.layout,
                 buttons: validated.config.navigation.buttons.length,
+                spaces: spaceSummaries,
               },
             }),
             {

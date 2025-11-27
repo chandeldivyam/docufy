@@ -895,24 +895,58 @@ function SiteDetailPage() {
                     <div>
                       <p className="font-medium">Deploy latest docufy.config</p>
                       <p className="text-sm text-muted-foreground">
-                        TODO: trigger a new Inngest task to unpack the GitHub
-                        config and deploy the site.
+                        Starts the GitHub-backed publish pipeline (enumerates
+                        nav + docs). Rendering happens in the next step of the
+                        implementation.
                       </p>
                     </div>
                   </div>
                   <Button
-                    onClick={() =>
-                      toast.info("TODO: trigger GitHub deploy via Inngest job")
-                    }
+                    onClick={async () => {
+                      const busy = (builds ?? []).some(
+                        (b) =>
+                          b.status === "running" ||
+                          b.status === "queued" ||
+                          b.status === "waiting"
+                      )
+                      if (busy) {
+                        toast.info("A deploy is already in progress")
+                        return
+                      }
+                      try {
+                        await siteBuildsCol.insert({
+                          id: -Date.now(),
+                          site_id: siteId,
+                          build_id: `local:${crypto.randomUUID()}`,
+                          status: "running",
+                          operation: "publish",
+                          actor_user_id: "me",
+                          selected_space_ids_snapshot: [],
+                          target_build_id: null,
+                          items_total: 0,
+                          items_done: 0,
+                          pages_written: 0,
+                          bytes_written: 0,
+                          started_at: new Date(),
+                          finished_at: null,
+                        })
+                        toast.success("GitHub deploy started")
+                      } catch (err) {
+                        console.error(err)
+                        toast.error("Failed to start GitHub deploy")
+                      }
+                    }}
+                    disabled={(builds ?? []).some(
+                      (b) =>
+                        b.status === "running" ||
+                        b.status === "queued" ||
+                        b.status === "waiting"
+                    )}
                   >
                     <Rocket className="h-4 w-4 mr-2" />
                     Deploy
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  We will wire this to a dedicated Inngest task; for now this is
-                  a placeholder.
-                </p>
               </CardContent>
             </Card>
 

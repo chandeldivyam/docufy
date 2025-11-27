@@ -8,6 +8,7 @@ export const ButtonPositionZ = z.enum([
   "topbar_left",
   "topbar_right",
 ])
+const DocTypeZ = z.enum(["page", "group", "api"])
 const ButtonZ = z.object({
   label: z.string().min(1),
   href: z.string().min(1),
@@ -15,6 +16,34 @@ const ButtonZ = z.object({
   icon: z.string().nullable().optional(),
   target: z.enum(["_self", "_blank"]).default("_self"),
   rank: z.number().int().nonnegative().optional(),
+})
+
+export type NavNode = {
+  title: string
+  path?: string
+  icon?: string | null
+  type?: "page" | "group" | "api"
+  children?: NavNode[]
+}
+
+const NavNodeZ: z.ZodType<NavNode> = z.lazy(() =>
+  z.object({
+    title: z.string().min(1),
+    path: z.string().min(1).optional(),
+    icon: z.string().nullable().optional(),
+    type: DocTypeZ.optional(),
+    children: z.array(NavNodeZ).optional(),
+  })
+)
+
+const SpaceZ = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  style: LayoutZ.optional(),
+  // Defaults to the config directory so users can make all paths relative to the config file
+  rootDir: z.string().min(1).default("."),
+  entry: z.string().min(1).optional(),
+  tree: z.array(NavNodeZ).default([]),
 })
 
 const ThemeZ = z
@@ -50,6 +79,7 @@ export const DocufyConfigV1Z = z
     navigation: z
       .object({
         buttons: z.array(ButtonZ).default([]),
+        spaces: z.array(SpaceZ).default([]),
       })
       .default({}),
     assets: z
@@ -81,8 +111,24 @@ export type NormalizedDocufyConfig = {
         rank: number
       }
     >
+    spaces: Array<{
+      slug: string
+      name: string
+      style: z.infer<typeof LayoutZ>
+      rootDir: string
+      entry?: string
+      tree: NormalizedNavNode[]
+    }>
   }
   assets?: { basePath?: string }
+}
+
+export type NormalizedNavNode = {
+  title: string
+  path?: string
+  icon?: string | null
+  type: z.infer<typeof DocTypeZ>
+  children?: NormalizedNavNode[]
 }
 
 function isExternalUrl(val?: string | null) {
@@ -96,8 +142,24 @@ function resolveAssetPath(
 ): string | undefined {
   if (!value) return undefined
   if (isExternalUrl(value)) return value
-  if (value.startsWith("/")) return value // allow repo-root absolute
+  // Treat leading slash as "relative to configDir" for user-friendliness
+  if (value.startsWith("/")) return path.posix.join(configDir || ".", value)
   return path.posix.join(configDir || ".", value)
+}
+
+function normalizeNavNode(node: NavNode, configDir: string): NormalizedNavNode {
+  const resolvedPath = resolveAssetPath(node.path, configDir)
+  const children = (node.children ?? []).map((child) =>
+    normalizeNavNode(child, configDir)
+  )
+
+  return {
+    title: node.title,
+    path: resolvedPath,
+    icon: node.icon ?? null,
+    type: node.type ?? (resolvedPath ? "page" : "group"),
+    children: children.length ? children : undefined,
+  }
 }
 
 export function normalizeDocufyConfig(
@@ -111,6 +173,22 @@ export function normalizeDocufyConfig(
       rank: btn.rank ?? idx,
     })
   )
+
+  const spaces = (raw.navigation?.spaces ?? []).map((space) => {
+    const rootDirInput = space.rootDir || "."
+    const resolvedRootDir =
+      resolveAssetPath(rootDirInput, configDir) ?? rootDirInput
+    return {
+      slug: space.slug,
+      name: space.name,
+      style: space.style ?? raw.site?.layout ?? "sidebar-dropdown",
+      rootDir: resolvedRootDir,
+      entry: resolveAssetPath(space.entry, configDir),
+      tree: (space.tree ?? []).map((node) =>
+        normalizeNavNode(node, resolvedRootDir)
+      ),
+    }
+  })
 
   return {
     version: 1,
@@ -133,6 +211,7 @@ export function normalizeDocufyConfig(
     },
     navigation: {
       buttons: rankNormalizedButtons,
+      spaces,
     },
     assets: raw.assets ?? {},
   }

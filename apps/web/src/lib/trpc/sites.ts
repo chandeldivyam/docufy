@@ -645,6 +645,7 @@ export const sitesRouter = router({
           .select({
             id: sitesTable.id,
             orgId: sitesTable.organizationId,
+            contentSource: sitesTable.contentSource,
           })
           .from(sitesTable)
           .where(eq(sitesTable.id, input.siteId))
@@ -679,9 +680,13 @@ export const sitesRouter = router({
           organizationId: site.orgId,
         })
 
-        // enqueue Inngest job site.publish with { siteId, buildId, actorUserId }
+        // enqueue Inngest job; route to GitHub or studio pipeline
+        const eventName =
+          site.contentSource === "github"
+            ? "site/github-publish"
+            : "site/publish"
         await inngest.send({
-          name: "site/publish",
+          name: eventName,
           data: { siteId: input.siteId, buildId, actorUserId: userId },
         })
 
