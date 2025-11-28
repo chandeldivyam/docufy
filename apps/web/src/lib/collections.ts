@@ -182,6 +182,116 @@ export const myOrganizationsCollection = createCollection(
   })
 )
 
+const githubInstallationRowSchema = z.object({
+  id: z.string(),
+  organization_id: z.string(),
+  account_login: z.string(),
+  account_type: z.string(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+})
+
+export const githubInstallationsCollection = createCollection(
+  electricCollectionOptions({
+    id: "github-installations",
+    shapeOptions: {
+      url: getApiUrl("/api/github-installations"),
+      parser: electricParsers,
+    },
+    schema: githubInstallationRowSchema,
+    getKey: (item) => item.id,
+  })
+)
+
+type GithubInstallationsCollection = typeof githubInstallationsCollection
+const githubInstallationsByOrg = new Map<
+  string,
+  GithubInstallationsCollection
+>()
+
+export function getOrgGithubInstallationsCollection(
+  orgId: string
+): GithubInstallationsCollection {
+  let col = githubInstallationsByOrg.get(orgId)
+  if (!col) {
+    col = createCollection(
+      electricCollectionOptions({
+        id: `github-installations-${orgId}`,
+        shapeOptions: {
+          url: getApiUrl(`/api/github-installations?orgId=${orgId}`),
+          parser: electricParsers,
+        },
+        schema: githubInstallationRowSchema,
+        getKey: (item) => item.id,
+      })
+    ) as GithubInstallationsCollection
+    githubInstallationsByOrg.set(orgId, col)
+  }
+  return col
+}
+
+export const emptyGithubInstallationsCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-github-installations",
+    schema: githubInstallationRowSchema,
+    getKey: (item) => item.id,
+  })
+)
+
+const githubRepositoryRowSchema = z.object({
+  id: z.coerce.number(),
+  installation_id: z.string(),
+  full_name: z.string(),
+  default_branch: z.string(),
+  private: z.boolean(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+})
+export type GithubRepositoryRow = z.infer<typeof githubRepositoryRowSchema>
+
+function createGithubRepositoriesCollectionFor(url: string) {
+  return createCollection(
+    electricCollectionOptions({
+      id: `github-repositories:${url}`,
+      shapeOptions: {
+        url,
+        parser: electricParsers,
+      },
+      schema: githubRepositoryRowSchema,
+      getKey: (item) => String(item.id),
+    })
+  )
+}
+
+type GithubRepositoriesCollection = ReturnType<
+  typeof createGithubRepositoriesCollectionFor
+>
+const githubReposByInstallation = new Map<
+  string,
+  GithubRepositoriesCollection
+>()
+
+export function getGithubRepositoriesCollection(
+  installationId: string
+): GithubRepositoriesCollection {
+  let col = githubReposByInstallation.get(installationId)
+  if (!col) {
+    col = createGithubRepositoriesCollectionFor(
+      getApiUrl(`/api/github-repositories?installationId=${installationId}`)
+    )
+    githubReposByInstallation.set(installationId, col)
+  }
+  return col
+}
+
+export const emptyGithubRepositoriesCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-github-repositories",
+    schema: githubRepositoryRowSchema,
+    getKey: (item) => String(item.id),
+  })
+)
+
 const spacesRawSchema = z.object({
   id: z.string(),
   organization_id: z.string(),
@@ -421,6 +531,19 @@ const sitesRawSchema = z.object({
       })
     )
     .default([]),
+  content_source: z.enum(["studio", "github"]).default("studio"),
+  github_installation_id: z.string().nullable().optional(),
+  github_repo_full_name: z.string().nullable().optional(),
+  github_branch: z.string().nullable().optional(),
+  github_config_path: z.string().nullable().optional(),
+  github_config_status: z
+    .enum(["idle", "queued", "running", "success", "failed"])
+    .nullable()
+    .optional(),
+  github_config_synced_at: z.coerce.date().nullable(),
+  github_config_sha: z.string().nullable().optional(),
+  github_config_version: z.coerce.number().default(1),
+  github_config_error: z.string().nullable().optional(),
 })
 export type SiteRow = z.infer<typeof sitesRawSchema>
 
@@ -441,6 +564,11 @@ function createSitesCollectionFor(url: string) {
           slug: s.slug,
           layout: s.layout, // pass through if present
           buttons: s.buttons ?? [],
+          contentSource: s.content_source,
+          githubInstallationId: s.github_installation_id ?? undefined,
+          githubRepoFullName: s.github_repo_full_name ?? undefined,
+          githubBranch: s.github_branch ?? undefined,
+          githubConfigPath: s.github_config_path ?? undefined,
         })
         return { txid: result.txid }
       },
@@ -459,6 +587,11 @@ function createSitesCollectionFor(url: string) {
           faviconUrl?: string | null
           layout?: "sidebar-dropdown" | "tabs"
           buttons?: typeof next.buttons
+          contentSource?: "studio" | "github"
+          githubInstallationId?: string | null
+          githubRepoFullName?: string | null
+          githubBranch?: string | null
+          githubConfigPath?: string | null
         } = { id: prev.id }
         if (next.name !== prev.name) payload.name = next.name
         if (next.slug !== prev.slug) payload.slug = next.slug
@@ -478,6 +611,21 @@ function createSitesCollectionFor(url: string) {
           JSON.stringify(prev.buttons ?? [])
         ) {
           payload.buttons = next.buttons ?? []
+        }
+        if (next.content_source !== prev.content_source) {
+          payload.contentSource = next.content_source
+        }
+        if (next.github_installation_id !== prev.github_installation_id) {
+          payload.githubInstallationId = next.github_installation_id ?? null
+        }
+        if (next.github_repo_full_name !== prev.github_repo_full_name) {
+          payload.githubRepoFullName = next.github_repo_full_name ?? null
+        }
+        if (next.github_branch !== prev.github_branch) {
+          payload.githubBranch = next.github_branch ?? null
+        }
+        if (next.github_config_path !== prev.github_config_path) {
+          payload.githubConfigPath = next.github_config_path ?? null
         }
         const result = await trpc.sites.update.mutate(payload)
         return { txid: result.txid }
@@ -667,6 +815,7 @@ const siteBuildsRawSchema = z.object({
   bytes_written: z.coerce.number(),
   started_at: z.coerce.date(),
   finished_at: z.coerce.date().nullable(),
+  source_commit_sha: z.string().nullable().optional(),
 })
 export type SiteBuildRow = z.infer<typeof siteBuildsRawSchema>
 
@@ -715,6 +864,45 @@ export function getSiteBuildsCollection(siteId: string) {
     })
   )
 }
+
+const siteRepoSyncRawSchema = z.object({
+  id: z.coerce.number(),
+  site_id: z.string(),
+  organization_id: z.string(),
+  status: z.string(),
+  error: z.string().nullable().optional(),
+  config_sha: z.string().nullable().optional(),
+  commit_sha: z.string().nullable().optional(),
+  branch: z.string().nullable().optional(),
+  config_path: z.string().nullable().optional(),
+  triggered_by: z.string().nullable().optional(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+  finished_at: z.coerce.date().nullable(),
+})
+export type SiteRepoSyncRow = z.infer<typeof siteRepoSyncRawSchema>
+
+export function getSiteRepoSyncsCollection(siteId: string) {
+  return createCollection(
+    electricCollectionOptions({
+      id: `site-repo-syncs:${siteId}`,
+      shapeOptions: {
+        url: getApiUrl(`/api/site-repo-syncs?siteId=${siteId}`),
+        parser: electricParsers,
+      },
+      schema: siteRepoSyncRawSchema,
+      getKey: (r) => String(r.id),
+    })
+  )
+}
+
+export const emptySiteRepoSyncsCollection = createCollection(
+  localOnlyCollectionOptions({
+    id: "empty-site-repo-syncs",
+    schema: siteRepoSyncRawSchema,
+    getKey: (r) => String(r.id),
+  })
+)
 
 const siteThemeRawSchema = z.object({
   site_id: z.string(),

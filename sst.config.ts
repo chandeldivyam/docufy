@@ -40,6 +40,11 @@ export default $config({
     const VercelToken = new sst.Secret('VercelToken');
     const PosthogKey = new sst.Secret('PosthogKey');
     const PosthogHost = new sst.Secret('PosthogHost');
+    const GithubAppId = new sst.Secret('GithubAppId');
+    const GithubAppClientId = new sst.Secret('GithubAppClientId');
+    const GithubAppClientSecret = new sst.Secret('GithubAppClientSecret');
+    const GithubAppPrivateKey = new sst.Secret('GithubAppPrivateKey');
+    const GithubAppSlug = new sst.Secret('GithubAppSlug');
 
     const web = new sst.aws.Service('Web', {
       cluster,
@@ -51,6 +56,7 @@ export default $config({
           VITE_PUBLIC_POSTHOG_HOST: PosthogHost.value,
           VITE_PUBLIC_VERCEL_BLOB_STORE_ID: VercelBlobStoreId.value,
           VITE_PUBLIC_VERCEL_BLOB_BASE_URL: VercelBlobBaseUrl.value,
+          VITE_PUBLIC_GITHUB_APP_SLUG: GithubAppSlug.value,
         },
       },
       // modest defaults; tune as you learn traffic patterns
@@ -99,6 +105,13 @@ export default $config({
         // Posthog
         VITE_PUBLIC_POSTHOG_KEY: PosthogKey.value,
         VITE_PUBLIC_POSTHOG_HOST: PosthogHost.value,
+
+        // Github app
+        GITHUB_APP_ID: GithubAppId.value,
+        GITHUB_APP_CLIENT_ID: GithubAppClientId.value,
+        GITHUB_APP_CLIENT_SECRET: GithubAppClientSecret.value,
+        GITHUB_APP_PRIVATE_KEY: GithubAppPrivateKey.value,
+        VITE_PUBLIC_GITHUB_APP_SLUG: GithubAppSlug.value,
       },
       // Health: keep it simple; ALB will hit / (200). If you added /api/healthz, you can set health.path.
       health: {

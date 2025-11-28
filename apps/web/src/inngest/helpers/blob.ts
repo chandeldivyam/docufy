@@ -5,12 +5,19 @@ const TOKEN = process.env.BLOB_READ_WRITE_TOKEN
 
 export async function blobPut(
   key: string,
-  content: string,
+  content: string | Buffer | Uint8Array,
   contentType: string,
   opts?: { immutable?: boolean; overwrite?: boolean }
 ) {
   if (!TOKEN) throw new Error("BLOB_READ_WRITE_TOKEN missing")
-  return put(key, content, {
+  const body =
+    typeof content === "string"
+      ? content
+      : Buffer.isBuffer(content)
+        ? content
+        : Buffer.from(content)
+
+  return put(key, body, {
     access: "public",
     contentType,
     cacheControlMaxAge: opts?.immutable ? 31536000 : 0,

@@ -78,18 +78,58 @@ const ButtonZ = z.object({
   rank: z.number().int(),
   target: z.enum(["_self", "_blank"]).optional(),
 })
+const ContentSourceZ = z.enum(["studio", "github"])
 
 export const sitesRouter = router({
   create: authedProcedure
     .input(
-      z.object({
-        id: z.string().uuid().optional(),
-        organizationId: z.string(),
-        name: z.string().min(1),
-        slug: z.string().min(1).optional(),
-        layout: LayoutZ.optional(),
-        buttons: z.array(ButtonZ).optional(),
-      })
+      z
+        .object({
+          id: z.string().uuid().optional(),
+          organizationId: z.string(),
+          name: z.string().min(1),
+          slug: z.string().min(1).optional(),
+          layout: LayoutZ.optional(),
+          buttons: z.array(ButtonZ).optional(),
+          contentSource: ContentSourceZ.optional(),
+          githubInstallationId: z.string().optional(),
+          githubRepoFullName: z.string().optional(),
+          githubBranch: z.string().optional(),
+          githubConfigPath: z.string().optional(),
+        })
+        .superRefine((val, ctx) => {
+          const source = val.contentSource ?? "studio"
+          if (source === "github") {
+            if (!val.githubInstallationId) {
+              ctx.addIssue({
+                path: ["githubInstallationId"],
+                code: "custom",
+                message: "GitHub installation is required",
+              })
+            }
+            if (!val.githubRepoFullName) {
+              ctx.addIssue({
+                path: ["githubRepoFullName"],
+                code: "custom",
+                message: "Select a repository",
+              })
+            }
+            if (!val.githubBranch) {
+              ctx.addIssue({
+                path: ["githubBranch"],
+                code: "custom",
+                message: "Branch is required",
+              })
+            }
+            if (!val.githubConfigPath) {
+              ctx.addIssue({
+                path: ["githubConfigPath"],
+                code: "custom",
+                message: "Config path is required",
+              })
+            }
+          }
+        })
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id
@@ -101,6 +141,7 @@ export const sitesRouter = router({
 
       const id = input.id ?? crypto.randomUUID()
       const slug = input.slug ? slugify(input.slug) : slugify(input.name)
+      const contentSource = input.contentSource ?? "studio"
 
       // org-slug uniqueness
       const exists = await ctx.db
@@ -122,7 +163,7 @@ export const sitesRouter = router({
       const storeId = process.env.VITE_PUBLIC_VERCEL_BLOB_STORE_ID ?? ""
       const baseUrl = process.env.VITE_PUBLIC_VERCEL_BLOB_BASE_URL ?? ""
 
-      return await ctx.db.transaction(async (tx) => {
+      const result = await ctx.db.transaction(async (tx) => {
         await tx.insert(sitesTable).values({
           id,
           organizationId: input.organizationId,
@@ -133,10 +174,34 @@ export const sitesRouter = router({
           primaryHost: allocatePrimaryHost(slug),
           layout: input.layout ?? undefined,
           buttons: input.buttons ?? [],
+          contentSource,
+          githubConfigStatus: contentSource === "github" ? "queued" : "idle",
+          githubConfigError: null,
+          githubInstallationId:
+            contentSource === "github"
+              ? (input.githubInstallationId ?? null)
+              : null,
+          githubRepoFullName:
+            contentSource === "github"
+              ? (input.githubRepoFullName ?? null)
+              : null,
+          githubBranch:
+            contentSource === "github" ? (input.githubBranch ?? null) : null,
+          githubConfigPath:
+            contentSource === "github"
+              ? (input.githubConfigPath ?? null)
+              : null,
         })
         const txid = await generateTxId(tx)
         return { txid }
       })
+      if (contentSource === "github") {
+        await inngest.send({
+          name: "site/github-config/sync",
+          data: { siteId: id, triggeredBy: userId },
+        })
+      }
+      return result
     }),
 
   update: authedProcedure
@@ -154,6 +219,11 @@ export const sitesRouter = router({
         faviconUrl: z.string().url().nullable().optional(),
         layout: LayoutZ.optional(),
         buttons: z.array(ButtonZ).optional(),
+        contentSource: ContentSourceZ.optional(),
+        githubInstallationId: z.string().nullable().optional(),
+        githubRepoFullName: z.string().nullable().optional(),
+        githubBranch: z.string().nullable().optional(),
+        githubConfigPath: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -188,6 +258,23 @@ export const sitesRouter = router({
       if (input.faviconUrl !== undefined) patch.faviconUrl = input.faviconUrl
       if (input.layout !== undefined) patch.layout = input.layout
       if (input.buttons !== undefined) patch.buttons = input.buttons
+      if (input.contentSource !== undefined)
+        patch.contentSource = input.contentSource
+      if (input.githubInstallationId !== undefined)
+        patch.githubInstallationId = input.githubInstallationId
+      if (input.githubRepoFullName !== undefined)
+        patch.githubRepoFullName = input.githubRepoFullName
+      if (input.githubBranch !== undefined)
+        patch.githubBranch = input.githubBranch
+      if (input.githubConfigPath !== undefined)
+        patch.githubConfigPath = input.githubConfigPath
+
+      if (input.contentSource === "studio") {
+        patch.githubInstallationId = null
+        patch.githubRepoFullName = null
+        patch.githubBranch = null
+        patch.githubConfigPath = null
+      }
 
       if (input.slug !== undefined) {
         const next = slugify(input.slug)
@@ -558,6 +645,7 @@ export const sitesRouter = router({
           .select({
             id: sitesTable.id,
             orgId: sitesTable.organizationId,
+            contentSource: sitesTable.contentSource,
           })
           .from(sitesTable)
           .where(eq(sitesTable.id, input.siteId))
@@ -592,15 +680,64 @@ export const sitesRouter = router({
           organizationId: site.orgId,
         })
 
-        // enqueue Inngest job site.publish with { siteId, buildId, actorUserId }
+        // enqueue Inngest job; route to GitHub or studio pipeline
+        const eventName =
+          site.contentSource === "github"
+            ? "site/github-publish"
+            : "site/publish"
         await inngest.send({
-          name: "site/publish",
+          name: eventName,
           data: { siteId: input.siteId, buildId, actorUserId: userId },
         })
 
         const txid = await generateTxId(tx)
         return { txid, buildId }
       })
+    }),
+
+  syncGithubConfig: authedProcedure
+    .input(z.object({ siteId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id
+      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" })
+
+      const site = (
+        await ctx.db
+          .select({
+            id: sitesTable.id,
+            orgId: sitesTable.organizationId,
+            contentSource: sitesTable.contentSource,
+          })
+          .from(sitesTable)
+          .where(eq(sitesTable.id, input.siteId))
+          .limit(1)
+      )[0]
+      if (!site) throw new TRPCError({ code: "NOT_FOUND" })
+      if (site.contentSource !== "github") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Site is not sourced from GitHub",
+        })
+      }
+      await assertOrgRole(ctx.db, userId, site.orgId, ["owner", "admin"])
+
+      await ctx.db.transaction(async (tx) => {
+        await tx
+          .update(sitesTable)
+          .set({
+            githubConfigStatus: "queued",
+            githubConfigError: null,
+          })
+          .where(eq(sitesTable.id, input.siteId))
+        await generateTxId(tx)
+      })
+
+      await inngest.send({
+        name: "site/github-config/sync",
+        data: { siteId: input.siteId, triggeredBy: userId },
+      })
+
+      return { enqueued: true }
     }),
 
   revert: authedProcedure

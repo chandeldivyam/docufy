@@ -6,6 +6,8 @@ import { siteRevert } from "./functions/site-revert"
 import { domainConnect } from "./functions/domain-connect"
 import { domainVerify } from "./functions/domain-verify"
 import { domainRemove } from "./functions/domain-remove"
+import { siteGithubConfigSync } from "./functions/github-config-sync"
+import { siteGithubPublish } from "./functions/site-github-publish"
 
 export const functions = [
   helloWorld,
@@ -14,4 +16,6 @@ export const functions = [
   domainConnect,
   domainVerify,
   domainRemove,
+  siteGithubConfigSync,
+  siteGithubPublish,
 ]

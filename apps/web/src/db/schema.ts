@@ -113,6 +113,35 @@ export const documentsTable = pgTable(
   })
 )
 
+export const githubInstallations = pgTable("github_installations", {
+  id: text("id").primaryKey(), // GitHub installation_id
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  accountLogin: text("account_login").notNull(),
+  accountType: text("account_type").notNull(), // "User" | "Organization"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+})
+
+export const githubRepositories = pgTable("github_repositories", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  installationId: text("installation_id")
+    .notNull()
+    .references(() => githubInstallations.id, { onDelete: "cascade" }),
+  fullName: text("full_name").notNull(), // owner/name
+  defaultBranch: text("default_branch").notNull(),
+  private: boolean("private").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+})
+
 export const selectUsersSchema = createSelectSchema(users)
 export const selectOrganizationsSchema = createSelectSchema(organizations)
 export const selectMembersSchema = createSelectSchema(members)
@@ -195,6 +224,22 @@ export const sitesTable = pgTable(
       >()
       .notNull()
       .default(sql`'[]'::jsonb`),
+    contentSource: text("content_source")
+      .$type<"studio" | "github">()
+      .default("studio")
+      .notNull(),
+    githubInstallationId: text("github_installation_id").references(
+      () => githubInstallations.id,
+      { onDelete: "set null" }
+    ),
+    githubRepoFullName: text("github_repo_full_name"),
+    githubBranch: text("github_branch"),
+    githubConfigPath: text("github_config_path"),
+    githubConfigStatus: text("github_config_status").default("idle").notNull(),
+    githubConfigSyncedAt: timestamp("github_config_synced_at"),
+    githubConfigSha: text("github_config_sha"),
+    githubConfigVersion: integer("github_config_version").default(1).notNull(),
+    githubConfigError: text("github_config_error"),
   },
   (t) => ({
     orgSlugUnique: uniqueIndex("sites_org_slug_unique").on(
@@ -279,10 +324,41 @@ export const siteBuildsTable = pgTable(
     bytesWritten: text("bytes_written").$type<number>().default(0).notNull(),
     startedAt: timestamp("started_at").defaultNow().notNull(),
     finishedAt: timestamp("finished_at"),
+    sourceCommitSha: text("source_commit_sha"),
   },
   (t) => ({
     buildUnique: uniqueIndex("site_builds_build_unique").on(t.buildId),
     siteIdx: index("site_builds_site_idx").on(t.siteId),
+  })
+)
+
+export const siteRepoSyncsTable = pgTable(
+  "site_repo_syncs",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    siteId: text("site_id")
+      .notNull()
+      .references(() => sitesTable.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    status: text("status").notNull(), // idle|queued|running|success|failed
+    error: text("error"),
+    configSha: text("config_sha"),
+    commitSha: text("commit_sha"),
+    branch: text("branch"),
+    configPath: text("config_path"),
+    triggeredBy: text("triggered_by"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+    finishedAt: timestamp("finished_at"),
+  },
+  (t) => ({
+    siteIdx: index("site_repo_syncs_site_idx").on(t.siteId),
+    orgIdx: index("site_repo_syncs_org_idx").on(t.organizationId),
   })
 )
 
@@ -308,13 +384,77 @@ export const siteContentBlobsTable = pgTable(
   })
 )
 
+export const siteGithubDocsTable = pgTable(
+  "site_github_docs",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    siteId: text("site_id")
+      .notNull()
+      .references(() => sitesTable.id, { onDelete: "cascade" }),
+    branch: text("branch").notNull(),
+    path: text("path").notNull(),
+    sha: text("sha").notNull(),
+    contentBlobHash: text("content_blob_hash").notNull(),
+    title: text("title").notNull(),
+    headings: jsonb("headings").$type<string[]>().notNull().default([]),
+    plain: text("plain").notNull().default(""),
+    size: integer("size").notNull(),
+    kind: text("kind")
+      .$type<"page" | "group" | "api" | "api_spec" | "api_tag">()
+      .default("page"),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => ({
+    siteBranchPathIdx: uniqueIndex("site_github_docs_site_branch_path_idx").on(
+      t.siteId,
+      t.branch,
+      t.path
+    ),
+  })
+)
+
+export const siteGithubAssetsTable = pgTable(
+  "site_github_assets",
+  {
+    id: bigserial({ mode: "number" }).primaryKey(),
+    siteId: text("site_id")
+      .notNull()
+      .references(() => sitesTable.id, { onDelete: "cascade" }),
+    branch: text("branch").notNull(),
+    path: text("path").notNull(),
+    sha: text("sha").notNull(),
+    blobKey: text("blob_key").notNull(),
+    url: text("url").notNull(),
+    mimeType: text("mime_type").notNull(),
+    size: integer("size").notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => ({
+    siteBranchPathIdx: uniqueIndex(
+      "site_github_assets_site_branch_path_idx"
+    ).on(t.siteId, t.branch, t.path),
+  })
+)
+
 // Zod schemas
 export const selectSitesSchema = createSelectSchema(sitesTable)
 export const selectSiteSpacesSchema = createSelectSchema(siteSpacesTable)
 export const selectSiteDomainsSchema = createSelectSchema(siteDomainsTable)
 export const selectSiteBuildsSchema = createSelectSchema(siteBuildsTable)
+export const selectSiteRepoSyncsSchema = createSelectSchema(siteRepoSyncsTable)
 export const selectSiteContentBlobsSchema = createSelectSchema(
   siteContentBlobsTable
+)
+export const selectSiteGithubDocsSchema =
+  createSelectSchema(siteGithubDocsTable)
+export const selectSiteGithubAssetsSchema = createSelectSchema(
+  siteGithubAssetsTable
 )
 
 export const createSiteSchema = createInsertSchema(sitesTable)

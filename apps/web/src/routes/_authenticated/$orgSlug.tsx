@@ -8,7 +8,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router"
 import { authClient } from "@/lib/auth-client"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -37,6 +37,11 @@ import {
   type SpaceRow,
   getOrgSitesCollection,
   emptySitesCollection,
+  getOrgGithubInstallationsCollection,
+  emptyGithubInstallationsCollection,
+  getGithubRepositoriesCollection,
+  emptyGithubRepositoriesCollection,
+  type GithubRepositoryRow,
 } from "@/lib/collections"
 import {
   Dialog,
@@ -46,11 +51,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { DynamicIcon } from "lucide-react/dynamic"
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import {
+  CheckCircle2,
+  GitBranch,
+  Github,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react"
 import { IconPickerGrid } from "@/components/icons/icon-picker"
 import { type IconName } from "lucide-react/dynamic"
 import {
@@ -61,6 +82,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CommandPalette } from "@/components/command-palette"
 import { toast } from "sonner"
 import { usePostHogIdentify } from "@/lib/use-posthog-identify"
@@ -728,7 +751,8 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
   const { data: myOrgs } = useLiveQuery((q) =>
     q.from({ myOrganizations: myOrganizationsCollection })
   )
-  const orgId = myOrgs?.find((o) => o.org_slug === currentSlug)?.organization_id
+  const org = myOrgs?.find((o) => o.org_slug === currentSlug)
+  const orgId = org?.organization_id
 
   const sitesCollection = orgId
     ? getOrgSitesCollection(orgId)
@@ -739,31 +763,263 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
     [sitesCollection]
   )
 
+  const installationsCollection = orgId
+    ? getOrgGithubInstallationsCollection(orgId)
+    : emptyGithubInstallationsCollection
+  const { data: installations } = useLiveQuery(
+    (q) => q.from({ installations: installationsCollection }),
+    [installationsCollection]
+  )
+  const installation = installations?.[0] ?? null
+  const installationId = installation?.id ?? null
+
+  const reposCollection =
+    installationId && orgId
+      ? getGithubRepositoriesCollection(installationId)
+      : emptyGithubRepositoriesCollection
+  const { data: repos } = useLiveQuery(
+    (q) => q.from({ repos: reposCollection }),
+    [reposCollection]
+  )
+
   // Create dialog state
   const [open, setOpen] = useState(false)
+  const [source, setSource] = useState<"studio" | "github">("studio")
   const [name, setName] = useState("")
   const [slug, setSlug] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [slugTouched, setSlugTouched] = useState(false)
+  const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null)
+  const [repoSearch, setRepoSearch] = useState("")
+  const [branch, setBranch] = useState("")
+  const [branchDirty, setBranchDirty] = useState(false)
+  const [branchSuggestions, setBranchSuggestions] = useState<string[]>([])
+  const [branchLoading, setBranchLoading] = useState(false)
+  const [branchError, setBranchError] = useState<string | null>(null)
+  const [configPath, setConfigPath] = useState("docufy.config.json")
+  const [configStatus, setConfigStatus] = useState<
+    "idle" | "checking" | "ok" | "error"
+  >("idle")
+  const [configMessage, setConfigMessage] = useState<string | null>(null)
+  const [configPreview, setConfigPreview] = useState<string | null>(null)
+  const [configIssues, setConfigIssues] = useState<string[]>([])
+  const [repoDropdownOpen, setRepoDropdownOpen] = useState(false)
 
-  function slugify(input: string) {
+  const slugifyValue = useCallback((input: string) => {
     return input
       .toLowerCase()
       .trim()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)+/g, "")
-  }
+  }, [])
 
   useEffect(() => {
     if (!slugTouched) {
-      setSlug(name ? slugify(name) : "")
+      setSlug(name ? slugifyValue(name) : "")
     }
-  }, [name, slugTouched])
+  }, [name, slugTouched, slugifyValue])
+
+  const selectedRepo: GithubRepositoryRow | null = useMemo(
+    () => repos?.find((r) => String(r.id) === selectedRepoId) ?? null,
+    [repos, selectedRepoId]
+  )
+
+  useEffect(() => {
+    if (source !== "github" || !selectedRepo) return
+    const repoName =
+      selectedRepo.full_name.split("/").pop() ?? selectedRepo.full_name
+    setName(repoName)
+    if (!slugTouched) {
+      setSlug(slugifyValue(repoName))
+    }
+    setBranch(selectedRepo.default_branch || "main")
+    setBranchDirty(false)
+  }, [selectedRepo, slugifyValue, slugTouched, source])
+
+  useEffect(() => {
+    setConfigStatus("idle")
+    setConfigMessage(null)
+    setConfigPreview(null)
+    setConfigIssues([])
+  }, [branch, configPath, selectedRepoId, source])
+
+  useEffect(() => {
+    if (!open) {
+      setSource("studio")
+      setName("")
+      setSlug("")
+      setSlugTouched(false)
+      setSelectedRepoId(null)
+      setBranch("")
+      setBranchDirty(false)
+      setBranchSuggestions([])
+      setBranchError(null)
+      setConfigPath("docufy.config.json")
+      setConfigStatus("idle")
+      setConfigMessage(null)
+      setConfigPreview(null)
+      setConfigIssues([])
+      setError(null)
+      setRepoSearch("")
+      setRepoDropdownOpen(false)
+    }
+  }, [open])
+
+  const loadBranches = useCallback(
+    async (search?: string) => {
+      if (
+        source !== "github" ||
+        !installationId ||
+        !selectedRepo?.full_name ||
+        !orgId
+      ) {
+        return
+      }
+
+      setBranchLoading(true)
+      setBranchError(null)
+      try {
+        const params = new URLSearchParams({
+          installationId,
+          repo: selectedRepo.full_name,
+          orgId,
+        })
+        if (selectedRepo.default_branch) {
+          params.set("defaultBranch", selectedRepo.default_branch)
+        }
+        const trimmed = search?.trim()
+        if (trimmed) params.set("q", trimmed)
+        const res = await fetch(`/api/github/branches?${params.toString()}`)
+        const data = await res.json()
+        if (!res.ok) {
+          throw new Error(data?.error ?? "Failed to load branches")
+        }
+        setBranchSuggestions(data.branches ?? [])
+      } catch (err) {
+        setBranchSuggestions([])
+        setBranchError(
+          err instanceof Error ? err.message : "Failed to load branches"
+        )
+      } finally {
+        setBranchLoading(false)
+      }
+    },
+    [installationId, orgId, selectedRepo, source]
+  )
+
+  useEffect(() => {
+    if (source !== "github" || !selectedRepo || !installationId || !orgId) {
+      return
+    }
+    loadBranches()
+  }, [installationId, loadBranches, orgId, selectedRepo, source])
+
+  useEffect(() => {
+    if (source !== "github" || !selectedRepo || !installationId || !orgId) {
+      return
+    }
+    const handle = setTimeout(() => {
+      const searchTerm = branchDirty ? branch.trim() : ""
+      loadBranches(searchTerm || undefined)
+    }, 250)
+    return () => clearTimeout(handle)
+  }, [
+    branch,
+    branchDirty,
+    installationId,
+    loadBranches,
+    orgId,
+    selectedRepo,
+    source,
+  ])
+
+  const verifyConfigPath = useCallback(async () => {
+    if (
+      source !== "github" ||
+      !installationId ||
+      !selectedRepo?.full_name ||
+      !branch.trim() ||
+      !configPath.trim() ||
+      !orgId
+    ) {
+      setConfigStatus("error")
+      setConfigMessage("Pick a repo, branch, and config path first")
+      return
+    }
+
+    setConfigStatus("checking")
+    setConfigMessage(null)
+    setConfigPreview(null)
+    setConfigIssues([])
+
+    try {
+      const params = new URLSearchParams({
+        installationId,
+        repo: selectedRepo.full_name,
+        branch: branch.trim(),
+        path: configPath.trim(),
+        orgId,
+      })
+      const res = await fetch(`/api/github/config-check?${params.toString()}`)
+      const data = await res.json()
+      if (!res.ok || !data?.ok) {
+        setConfigStatus("error")
+        setConfigMessage(
+          data?.error ?? "Config not found at that path or is invalid"
+        )
+        setConfigPreview(data?.preview ?? null)
+        setConfigIssues(
+          Array.isArray(data?.issues)
+            ? data.issues.map((i: unknown) => String(i))
+            : []
+        )
+        return
+      }
+      setConfigStatus("ok")
+      setConfigMessage("Config file verified in repository")
+      setConfigPreview(data.preview ?? null)
+      setConfigIssues([])
+    } catch (err) {
+      setConfigStatus("error")
+      console.log(err)
+      setConfigMessage(
+        err instanceof Error ? err.message : "Could not verify config file"
+      )
+      setConfigIssues([])
+    }
+  }, [
+    branch,
+    configPath,
+    installationId,
+    orgId,
+    selectedRepo?.full_name,
+    source,
+  ])
+
+  const filteredRepos = useMemo(
+    () =>
+      (repos ?? []).filter((repo) =>
+        repo.full_name.toLowerCase().includes(repoSearch.toLowerCase())
+      ),
+    [repoSearch, repos]
+  )
 
   async function createSite(e: React.FormEvent) {
     e.preventDefault()
     if (!orgId || !name.trim()) return
+
+    if (source === "github") {
+      if (!installationId || !selectedRepo || !branch.trim() || !configPath) {
+        setError("Select a repository, branch, and config path")
+        return
+      }
+      if (configStatus !== "ok") {
+        setError("Verify the config path before creating the site")
+        return
+      }
+    }
+
     setSubmitting(true)
     setError(null)
     try {
@@ -779,7 +1035,7 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
         id: siteId,
         organization_id: orgId,
         name: name.trim(),
-        slug: slug || slugify(name),
+        slug: slug || slugifyValue(name),
         base_url: blobStoreUrl,
         store_id: blobStoreId,
         primary_host: null,
@@ -787,10 +1043,27 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
         updated_at: new Date(),
         last_build_id: null,
         last_published_at: null,
+        content_source: source,
+        github_installation_id:
+          source === "github" ? (installationId ?? null) : null,
+        github_repo_full_name:
+          source === "github" ? (selectedRepo?.full_name ?? null) : null,
+        github_branch: source === "github" ? branch.trim() : null,
+        github_config_path: source === "github" ? configPath.trim() : null,
+        github_config_synced_at: null,
       })
       setOpen(false)
       setName("")
       setSlug("")
+      setSource("studio")
+      setSlugTouched(false)
+      setSelectedRepoId(null)
+      setBranch("")
+      setBranchSuggestions([])
+      setConfigPath("docufy.config.json")
+      setConfigStatus("idle")
+      setConfigMessage(null)
+      setConfigPreview(null)
       navigate({
         to: "/$orgSlug/sites/$siteId",
         params: { orgSlug: currentSlug, siteId },
@@ -801,6 +1074,16 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
       setSubmitting(false)
     }
   }
+
+  const githubBlocked = source === "github" && !installationId
+  const githubReady =
+    !!installationId &&
+    !!selectedRepo &&
+    !!branch.trim() &&
+    !!configPath.trim() &&
+    configStatus === "ok"
+  const canSubmit =
+    !!orgId && !!name.trim() && (source === "studio" ? true : githubReady)
 
   return (
     <div className="space-y-2">
@@ -815,52 +1098,257 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
               <span className="sr-only">Create site</span>
             </Button>
           </DialogTrigger>
-          <DialogContent aria-label="Create site">
+          <DialogContent aria-label="Create site" className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Create site</DialogTitle>
               <DialogDescription>
-                Publish selected spaces to a public site.
+                Publish from Docufy Studio or a GitHub repository.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={createSite} className="space-y-3">
+            <form onSubmit={createSite} className="space-y-4">
+              <div className="grid gap-2">
+                <Label>Source</Label>
+                <Tabs
+                  value={source}
+                  onValueChange={(val) =>
+                    setSource((val as "studio" | "github") ?? "studio")
+                  }
+                  className="w-full"
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="studio">Docufy Studio</TabsTrigger>
+                    <TabsTrigger value="github">
+                      <Github className="mr-2 h-4 w-4" />
+                      GitHub
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
               <div className="grid gap-2">
                 <Label>Name</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  placeholder="Product docs"
                 />
               </div>
               <div className="grid gap-2">
                 <Label>Slug</Label>
                 <Input
                   value={slug}
-                  disabled
                   onChange={(e) => {
-                    const v = slugify(e.target.value)
+                    const v = slugifyValue(e.target.value)
                     setSlug(v)
-                    setSlugTouched(v.length > 0) // if cleared, re-enable auto-sync
+                    setSlugTouched(v.length > 0)
                   }}
+                  placeholder="product-docs"
                 />
+                <p className="text-xs text-muted-foreground">
+                  The slug is used in the site URL and domain defaults.
+                </p>
               </div>
+
+              {source === "github" ? (
+                <>
+                  <div className="grid gap-2">
+                    <Label className="flex items-center gap-2">
+                      <Github className="h-4 w-4" />
+                      Repository
+                    </Label>
+                    {!installationId ? (
+                      <div className="rounded-md border border-dashed bg-muted/40 p-3 text-sm">
+                        Connect the Docufy GitHub App in{" "}
+                        <Link
+                          to="/$orgSlug/settings"
+                          params={{ orgSlug: currentSlug }}
+                          className="font-medium underline"
+                        >
+                          settings
+                        </Link>{" "}
+                        to browse repositories for this workspace.
+                      </div>
+                    ) : (
+                      <div className="rounded-md border">
+                        <Command>
+                          <CommandInput
+                            value={repoSearch}
+                            onValueChange={(val) => {
+                              setRepoSearch(val)
+                              setRepoDropdownOpen(true)
+                            }}
+                            placeholder="Search repositories"
+                            onFocus={() => setRepoDropdownOpen(true)}
+                            onBlur={() => {
+                              // Delay to allow click on items
+                              setTimeout(() => setRepoDropdownOpen(false), 120)
+                            }}
+                          />
+                          {repoDropdownOpen ? (
+                            <CommandList className="max-h-56 overflow-auto border-t">
+                              <CommandEmpty>
+                                {repos === undefined
+                                  ? "Syncing repositories…"
+                                  : "No repositories found"}
+                              </CommandEmpty>
+                              <CommandGroup>
+                                {filteredRepos.map((repo) => (
+                                  <CommandItem
+                                    key={repo.id}
+                                    value={repo.full_name}
+                                    onSelect={() => {
+                                      setSelectedRepoId(String(repo.id))
+                                      setRepoSearch(repo.full_name)
+                                      setRepoDropdownOpen(false)
+                                    }}
+                                    className="flex items-start gap-3"
+                                  >
+                                    <div className="flex flex-col">
+                                      <span className="font-medium leading-tight">
+                                        {repo.full_name}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">
+                                        Default branch: {repo.default_branch} ·{" "}
+                                        {repo.private ? "Private" : "Public"}
+                                      </span>
+                                    </div>
+                                    {selectedRepoId === String(repo.id) ? (
+                                      <CheckCircle2 className="ml-auto h-4 w-4 text-emerald-500" />
+                                    ) : null}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          ) : null}
+                        </Command>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label className="flex items-center gap-2">
+                      <GitBranch className="h-4 w-4" />
+                      Branch
+                    </Label>
+                    <Input
+                      value={branch}
+                      onChange={(e) => {
+                        setBranch(e.target.value)
+                        setBranchDirty(true)
+                      }}
+                      placeholder={selectedRepo?.default_branch || "main"}
+                      disabled={!selectedRepo}
+                    />
+                    {branchLoading ? (
+                      <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading branch suggestions…
+                      </p>
+                    ) : null}
+                    {branchError ? (
+                      <p className="text-sm text-destructive">{branchError}</p>
+                    ) : null}
+                    {branchSuggestions.length ? (
+                      <div className="flex flex-wrap gap-2">
+                        {branchSuggestions.slice(0, 6).map((b) => (
+                          <Button
+                            key={b}
+                            type="button"
+                            variant={branch === b ? "secondary" : "outline"}
+                            size="sm"
+                            onClick={() => setBranch(b)}
+                          >
+                            {b}
+                          </Button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Config path in repo</Label>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Input
+                        value={configPath}
+                        onChange={(e) => setConfigPath(e.target.value)}
+                        placeholder="docs/docufy.config.json"
+                        disabled={!selectedRepo}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={verifyConfigPath}
+                        disabled={
+                          !selectedRepo ||
+                          !branch.trim() ||
+                          !configPath.trim() ||
+                          configStatus === "checking"
+                        }
+                      >
+                        {configStatus === "checking" ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        Verify config
+                      </Button>
+                    </div>
+                    {configMessage ? (
+                      <p
+                        className={cn(
+                          "text-sm",
+                          configStatus === "ok"
+                            ? "text-emerald-600"
+                            : "text-destructive"
+                        )}
+                      >
+                        {configMessage}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Provide the path to your Docufy config file. We’ll
+                        validate it before creating the site.
+                      </p>
+                    )}
+                    {configIssues.length ? (
+                      <ul className="text-xs text-destructive list-disc pl-5 space-y-1">
+                        {configIssues.map((issue) => (
+                          <li key={issue}>{issue}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {configPreview ? (
+                      <pre className="max-h-28 overflow-auto rounded border bg-muted/40 p-2 text-xs">
+                        {configPreview}
+                        {configStatus === "ok" && configPreview.length >= 2000
+                          ? "\n…"
+                          : null}
+                      </pre>
+                    ) : null}
+                  </div>
+                </>
+              ) : null}
+
               {error ? (
                 <p className="text-sm text-destructive">{error}</p>
               ) : null}
+
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setOpen(false)
-                    setName("")
-                    setSlug("")
-                    setSlugTouched(false)
-                  }}
+                  onClick={() => setOpen(false)}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={submitting || !name}>
-                  {submitting ? "Creating…" : "Create"}
+                <Button
+                  type="submit"
+                  disabled={submitting || !canSubmit || githubBlocked}
+                >
+                  {submitting
+                    ? "Creating…"
+                    : source === "github"
+                      ? "Create GitHub site"
+                      : "Create site"}
                 </Button>
               </div>
             </form>
@@ -883,6 +1371,14 @@ function SitesSection({ currentSlug }: { currentSlug: string }) {
                 title={s.name}
               >
                 <span className="truncate">{s.name}</span>
+                {s.content_source === "github" ? (
+                  <Badge
+                    variant="outline"
+                    className="ml-auto text-[10px] uppercase tracking-wide"
+                  >
+                    GitHub
+                  </Badge>
+                ) : null}
               </Link>
             </li>
           ))}

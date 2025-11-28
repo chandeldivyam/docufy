@@ -9,6 +9,7 @@ import {
   getOrgSitesCollection,
   emptySitesCollection,
   emptySpacesCollection,
+  getSiteRepoSyncsCollection,
   type SpaceRow,
   type SiteRow,
 } from "@/lib/collections"
@@ -63,6 +64,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { trpc } from "@/lib/trpc-client"
+
+const githubTabs = ["settings", "syncs", "domains", "deploys"] as const
+const defaultTabs = [
+  "settings",
+  "theme",
+  "content",
+  "domains",
+  "deploys",
+] as const
+type SiteTab = (typeof githubTabs | typeof defaultTabs)[number]
 
 export const Route = createFileRoute("/_authenticated/$orgSlug/sites/$siteId")({
   ssr: false,
@@ -117,6 +129,14 @@ function SiteDetailPage() {
     (q) => q.from({ builds: siteBuildsCol }),
     [siteBuildsCol]
   )
+  const repoSyncsCol = useMemo(
+    () => getSiteRepoSyncsCollection(siteId),
+    [siteId]
+  )
+  const { data: repoSyncs } = useLiveQuery(
+    (q) => q.from({ syncs: repoSyncsCol }),
+    [repoSyncsCol]
+  )
   const builds = (buildsRaw ?? [])
     .slice()
     .sort((a, b) => b.started_at.getTime() - a.started_at.getTime())
@@ -138,7 +158,16 @@ function SiteDetailPage() {
   const [isAddingDomain, setIsAddingDomain] = useState(false)
   const [domainToDelete, setDomainToDelete] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState<SiteTab>("settings")
+  const isGithub = site?.content_source === "github"
   const selectionLoaded = selection !== undefined
+
+  useEffect(() => {
+    const allowed: readonly SiteTab[] = isGithub ? githubTabs : defaultTabs
+    if (!allowed.includes(activeTab) && allowed[0]) {
+      setActiveTab(allowed[0])
+    }
+  }, [isGithub, siteId, activeTab])
 
   if (!site || site == undefined) {
     return (
@@ -416,6 +445,370 @@ function SiteDetailPage() {
     (a, b) => b.started_at.getTime() - a.started_at.getTime()
   )[0]
 
+  const domainsTab = (
+    <TabsContent value="domains" className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Custom Domains</CardTitle>
+          <CardDescription>
+            Configure custom domains for your documentation site
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Add domain form */}
+          <div className="flex gap-2">
+            <Input
+              value={newDomain}
+              onChange={(e) => setNewDomain(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addDomain()}
+              placeholder="docs.example.com"
+              className="flex-1"
+            />
+            <Button onClick={addDomain} disabled={!newDomain || isAddingDomain}>
+              {isAddingDomain ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Add Domain
+            </Button>
+          </div>
+
+          {/* Domains list */}
+          {domains && domains.length > 0 ? (
+            <div className="space-y-2">
+              {domains.map((domain) => (
+                <div
+                  key={domain.id}
+                  className="border rounded-lg overflow-hidden"
+                >
+                  {/* Main domain info */}
+                  <div className="flex items-center justify-between p-3">
+                    <div className="flex items-center gap-3">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{domain.domain}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {domain.error ? (
+                            <Badge variant="destructive" className="text-xs">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Error
+                            </Badge>
+                          ) : domain.verified ? (
+                            <Badge variant="outline" className="text-xs">
+                              <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" />
+                              Verified
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">
+                              <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />
+                              Pending verification
+                            </Badge>
+                          )}
+                          {domain.last_checked_at && (
+                            <span className="text-xs text-muted-foreground">
+                              Last checked{" "}
+                              {domain.last_checked_at.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {!domain.verified && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            toast.info("Verifying domain...")
+                            domainsCol.update(domain.id, (d) => {
+                              d.last_checked_at = new Date()
+                            })
+                          }}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-1" />
+                          Check now
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDomainToDelete(domain.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* DNS Instructions for unverified domains */}
+                  {(!domain.verified || domain.error) && (
+                    <div className="border-t bg-muted/30 p-4">
+                      <div className="space-y-3">
+                        {domain.error && (
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-destructive">
+                                Verification failed
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1 break-all">
+                                {domain.error}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                              DNS Configuration Required
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Add this CNAME record to your DNS provider to
+                              verify domain ownership
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-background rounded-lg border p-3 space-y-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                Record Type
+                              </Label>
+                              <div className="flex items-center gap-2">
+                                <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
+                                  CNAME
+                                </code>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => copyToClipboard("CNAME")}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                Name/Host
+                              </Label>
+                              <div className="flex items-center gap-2">
+                                <code className="text-sm bg-muted px-2 py-1 rounded font-mono flex-1 min-w-0 truncate">
+                                  {(() => {
+                                    const parts = domain.domain.split(".")
+                                    if (parts.length <= 2) return "@"
+                                    return parts[0]
+                                  })()}
+                                </code>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 flex-shrink-0"
+                                  onClick={() => {
+                                    const parts = domain.domain.split(".")
+                                    const nameValue =
+                                      parts.length <= 2 ? "@" : parts[0]
+                                    copyToClipboard(nameValue!)
+                                  }}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {(() => {
+                                  const parts = domain.domain.split(".")
+                                  if (parts.length <= 2) {
+                                    return "Use @ for apex domain or leave blank if @ is not supported"
+                                  }
+                                  return `Just the subdomain part of ${domain.domain}`
+                                })()}
+                              </p>
+                            </div>
+
+                            <div className="space-y-1 sm:col-span-2">
+                              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                Value/Target
+                              </Label>
+                              <div className="flex items-center gap-2">
+                                <code className="text-sm bg-muted px-2 py-1 rounded font-mono flex-1 min-w-0">
+                                  cname.vercel-dns.com.
+                                </code>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 flex-shrink-0"
+                                  onClick={() =>
+                                    copyToClipboard("cname.vercel-dns.com.")
+                                  }
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t">
+                            <details className="group">
+                              <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
+                                <span>Need help with DNS configuration?</span>
+                                <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
+                              </summary>
+                              <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                                <p>
+                                  1. Log in to your domain registrar or DNS
+                                  provider
+                                </p>
+                                <p>
+                                  2. Navigate to DNS management or DNS records
+                                </p>
+                                <p>
+                                  3. Add a new CNAME record with the values
+                                  above
+                                </p>
+                                <p>
+                                  4. Save the changes and wait for propagation
+                                  (up to 24 hours)
+                                </p>
+                                <p>
+                                  5. Click "Check now" to verify the
+                                  configuration
+                                </p>
+                              </div>
+                            </details>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Globe className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No custom domains configured</p>
+              <p className="text-xs mt-1">Add a domain to get started</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </TabsContent>
+  )
+
+  function renderBuildHistory(options: { allowRevert?: boolean } = {}) {
+    if (!builds || builds.length === 0) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No deployments yet</p>
+          <p className="text-xs mt-1">
+            Your deployment history will appear here
+          </p>
+        </div>
+      )
+    }
+
+    return (
+      <div className="space-y-2">
+        {builds
+          .slice()
+          .sort((a, b) => b.started_at.getTime() - a.started_at.getTime())
+          .slice(0, 10)
+          .map((build) => (
+            <div
+              key={build.id}
+              className="flex items-center justify-between p-3 border rounded-lg"
+            >
+              <div className="flex items-center gap-3">
+                {build.operation === "publish" ? (
+                  <Rocket className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                )}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">
+                      {build.operation === "publish" ? "Deploy" : "Revert"} #
+                      {build.build_id}
+                    </p>
+                    <Badge
+                      variant={
+                        build.status === "success"
+                          ? "default"
+                          : build.status === "failed"
+                            ? "destructive"
+                            : build.status === "running"
+                              ? "secondary"
+                              : "outline"
+                      }
+                      className="text-xs"
+                    >
+                      {build.status}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {new Date(build.started_at).toLocaleString()}
+                    </span>
+                    {build.finished_at && (
+                      <span>
+                        Duration:{" "}
+                        {Math.round(
+                          (new Date(build.finished_at).getTime() -
+                            new Date(build.started_at).getTime()) /
+                            1000
+                        )}
+                        s
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {options.allowRevert &&
+                build.operation === "publish" &&
+                build.status === "success" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      const busy = (builds ?? []).some(
+                        (b) => b.status === "running" || b.status === "queued"
+                      )
+                      if (busy) return
+                      await siteBuildsCol.insert({
+                        id: -Date.now(),
+                        site_id: siteId,
+                        build_id: `local:${crypto.randomUUID()}`,
+                        status: "running",
+                        operation: "revert",
+                        actor_user_id: "me",
+                        selected_space_ids_snapshot: [],
+                        target_build_id: build.build_id,
+                        items_total: 1,
+                        items_done: 0,
+                        pages_written: 0,
+                        bytes_written: 0,
+                        started_at: new Date(),
+                        finished_at: null,
+                      })
+                    }}
+                  >
+                    Revert
+                  </Button>
+                )}
+            </div>
+          ))}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -458,752 +851,503 @@ function SiteDetailPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="settings" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5 max-w-lg">
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="theme">Theme</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="domains">Domains</TabsTrigger>
-          <TabsTrigger value="deploys">Deploys</TabsTrigger>
-        </TabsList>
+      {isGithub ? (
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as SiteTab)}
+          className="space-y-4"
+        >
+          <TabsList className="grid w-full max-w-xl grid-cols-4">
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="syncs">Sync Logs</TabsTrigger>
+            <TabsTrigger value="domains">Domains</TabsTrigger>
+            <TabsTrigger value="deploys">Deploy</TabsTrigger>
+          </TabsList>
 
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Site Configuration</CardTitle>
-              <CardDescription>
-                Basic settings for your documentation site
-              </CardDescription>
-            </CardHeader>
-            <BrandingCard />
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="site-name">Site Name</Label>
-                  <Input
-                    id="site-name"
-                    value={site.name}
-                    onChange={(e) =>
-                      sitesCol?.update(
-                        site.id,
-                        (d) => void (d.name = e.target.value)
-                      )
-                    }
-                    placeholder="My Documentation"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Display name for your site
-                  </p>
-                </div>
+          <TabsContent value="settings" className="space-y-4">
+            <GithubSettingsCard
+              site={site}
+              onRefetch={async () => {
+                await trpc.sites.syncGithubConfig.mutate({ siteId })
+              }}
+            />
+          </TabsContent>
 
-                <div className="space-y-2">
-                  <Label htmlFor="site-slug">URL Slug</Label>
-                  <Input
-                    id="site-slug"
-                    value={site.slug}
-                    onChange={(e) =>
-                      sitesCol?.update(
-                        site.id,
-                        (d) => void (d.slug = e.target.value)
-                      )
-                    }
-                    disabled
-                    placeholder="my-docs"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    URL-friendly identifier
-                  </p>
-                </div>
-              </div>
+          <TabsContent value="syncs" className="space-y-4">
+            <GithubSyncLogs site={site} repoSyncs={repoSyncs ?? []} />
+          </TabsContent>
 
-              {site.primary_host && (
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Primary URL:</span>
-                      <code className="text-sm bg-background px-2 py-0.5 rounded">
-                        https://{site.primary_host}
-                      </code>
+          {domainsTab}
+
+          <TabsContent value="deploys" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Deployment History</CardTitle>
+                <CardDescription>
+                  View and manage your site deployments
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <Rocket className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Publish to production</p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        copyToClipboard(`https://${site.primary_host}`)
-                      }
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="theme" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Theme</CardTitle>
-              <CardDescription>
-                Customize colors, surfaces, and layout tokens
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Layout selection */}
-              <div className="space-y-2">
-                <Label htmlFor="site-layout">Layout</Label>
-                <div className="flex items-center gap-3">
-                  <Select
-                    value={site.layout as string}
-                    onValueChange={(value) =>
-                      sitesCol?.update(
-                        site.id,
-                        (d) =>
-                          void (d.layout = value as "sidebar-dropdown" | "tabs")
-                      )
-                    }
-                  >
-                    <SelectTrigger id="site-layout" className="w-[240px]">
-                      <SelectValue placeholder="Choose layout" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sidebar-dropdown">
-                        Sidebar + Dropdown
-                      </SelectItem>
-                      <SelectItem value="tabs">Tabs</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Choose how spaces are presented in navigation.
-                  </p>
-                </div>
-                <div className="h-px bg-border" />
-              </div>
-              <ThemeStudio siteId={siteId} orgId={activeOrgId!} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Content Tab */}
-        <TabsContent value="content" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Spaces</CardTitle>
-              <CardDescription>
-                Select and organize the spaces to include in your site
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 lg:grid-cols-2">
-                {/* Selected Spaces */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium">
-                      Selected Spaces ({selected.length})
-                    </h4>
-                    {selected.length > 0 && (
-                      <Badge variant="outline" className="text-xs">
-                        {selected.length} space
-                        {selected.length !== 1 ? "s" : ""} selected
-                      </Badge>
-                    )}
-                  </div>
-
-                  {selected.length === 0 ? (
-                    <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                      <p className="text-muted-foreground text-sm">
-                        No spaces selected yet
-                      </p>
-                      <p className="text-muted-foreground text-xs mt-1">
-                        Add spaces from the available list
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {selected.map((space, idx) => (
-                        <div
-                          key={space.id}
-                          className="flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{space.name}</p>
-                            {space.description && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {space.description}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              disabled={
-                                !selectionLoaded || idx === 0 || isSaving
-                              }
-                              onClick={() => {
-                                const arr = selected.map((s) => s.id)
-                                const current = arr[idx]
-                                const swapWith = arr[idx - 1]
-                                if (!current || !swapWith) return
-                                arr[idx] = swapWith
-                                arr[idx - 1] = current
-                                applySelection(arr)
-                              }}
-                            >
-                              <ArrowUp className="h-4 w-4" />
-                            </Button>
-
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              disabled={
-                                !selectionLoaded ||
-                                idx === selected.length - 1 ||
-                                isSaving
-                              }
-                              onClick={() => {
-                                const arr = selected.map((s) => s.id)
-                                const current = arr[idx]
-                                const next = arr[idx + 1]
-                                if (!current || !next) return
-                                arr[idx] = next
-                                arr[idx + 1] = current
-                                applySelection(arr)
-                              }}
-                            >
-                              <ArrowDown className="h-4 w-4" />
-                            </Button>
-
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              disabled={!selectionLoaded || isSaving}
-                              onClick={() => {
-                                const arr = selected
-                                  .map((s) => s.id)
-                                  .filter((id) => id !== space.id)
-                                applySelection(arr)
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Available Spaces */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium">
-                      Available Spaces ({available.length})
-                    </h4>
-                  </div>
-
-                  {available.length === 0 ? (
-                    <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                      <p className="text-muted-foreground text-sm">
-                        All spaces have been selected
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                      {available.map((space) => (
-                        <div
-                          key={space.id}
-                          className="flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{space.name}</p>
-                            {space.description && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {space.description}
-                              </p>
-                            )}
-                          </div>
-
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            disabled={!selectionLoaded || isSaving}
-                            onClick={() => {
-                              const arr = [
-                                ...selected.map((s) => s.id),
-                                space.id,
-                              ]
-                              applySelection(arr)
-                            }}
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {/* TODO - we need to a beautiful UX for the user to add his buttons for renderer here. They should also have the ability to edit and delete the buttons and change the rank */}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Navigation Buttons</CardTitle>
-              <CardDescription>
-                Configure quick-access buttons and where they appear in the UI.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <ButtonsEditor site={site} sitesCol={sitesCol} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Domains Tab */}
-        <TabsContent value="domains" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Custom Domains</CardTitle>
-              <CardDescription>
-                Configure custom domains for your documentation site
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Add domain form */}
-              <div className="flex gap-2">
-                <Input
-                  value={newDomain}
-                  onChange={(e) => setNewDomain(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addDomain()}
-                  placeholder="docs.example.com"
-                  className="flex-1"
-                />
-                <Button
-                  onClick={addDomain}
-                  disabled={!newDomain || isAddingDomain}
-                >
-                  {isAddingDomain ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-2" />
-                  )}
-                  Add Domain
-                </Button>
-              </div>
-
-              {/* Domains list */}
-              {domains && domains.length > 0 ? (
-                <div className="space-y-2">
-                  {domains.map((domain) => (
-                    <div
-                      key={domain.id}
-                      className="border rounded-lg overflow-hidden"
-                    >
-                      {/* Main domain info */}
-                      <div className="flex items-center justify-between p-3">
-                        <div className="flex items-center gap-3">
-                          <Globe className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">{domain.domain}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              {domain.error ? (
-                                <Badge
-                                  variant="destructive"
-                                  className="text-xs"
-                                >
-                                  <AlertCircle className="h-3 w-3 mr-1" />
-                                  Error
-                                </Badge>
-                              ) : domain.verified ? (
-                                <Badge variant="outline" className="text-xs">
-                                  <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" />
-                                  Verified
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-xs">
-                                  <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />
-                                  Pending verification
-                                </Badge>
-                              )}
-                              {domain.last_checked_at && (
-                                <span className="text-xs text-muted-foreground">
-                                  Last checked{" "}
-                                  {domain.last_checked_at.toLocaleString()}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {!domain.verified && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => {
-                                toast.info("Verifying domain...")
-                                domainsCol.update(domain.id, (d) => {
-                                  d.last_checked_at = new Date()
-                                })
-                              }}
-                            >
-                              <RefreshCw className="h-4 w-4 mr-1" />
-                              Check now
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDomainToDelete(domain.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* DNS Instructions for unverified domains */}
-                      {(!domain.verified || domain.error) && (
-                        <div className="border-t bg-muted/30 p-4">
-                          <div className="space-y-3">
-                            {domain.error && (
-                              <div className="flex items-start gap-2">
-                                <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-destructive">
-                                    Verification failed
-                                  </p>
-                                  <p className="text-xs text-muted-foreground mt-1 break-all">
-                                    {domain.error}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            <div className="flex items-start gap-2">
-                              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                                  DNS Configuration Required
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Add this CNAME record to your DNS provider to
-                                  verify domain ownership
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="bg-background rounded-lg border p-3 space-y-3">
-                              <div className="grid gap-3 sm:grid-cols-2">
-                                <div className="space-y-1">
-                                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                    Record Type
-                                  </Label>
-                                  <div className="flex items-center gap-2">
-                                    <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
-                                      CNAME
-                                    </code>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 w-6 p-0"
-                                      onClick={() => copyToClipboard("CNAME")}
-                                    >
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                    Name/Host
-                                  </Label>
-                                  <div className="flex items-center gap-2">
-                                    <code className="text-sm bg-muted px-2 py-1 rounded font-mono flex-1 min-w-0 truncate">
-                                      {(() => {
-                                        const parts = domain.domain.split(".")
-                                        // If it's an apex domain (e.g., example.com), use @ or blank
-                                        if (parts.length <= 2) return "@"
-                                        // Otherwise, return just the subdomain part (e.g., 'test' from 'test.learno.fun')
-                                        return parts[0]
-                                      })()}
-                                    </code>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 w-6 p-0 flex-shrink-0"
-                                      onClick={() => {
-                                        const parts = domain.domain.split(".")
-                                        const nameValue =
-                                          parts.length <= 2 ? "@" : parts[0]
-                                        copyToClipboard(nameValue!)
-                                      }}
-                                    >
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    {(() => {
-                                      const parts = domain.domain.split(".")
-                                      if (parts.length <= 2) {
-                                        return "Use @ for apex domain or leave blank if @ is not supported"
-                                      }
-                                      return `Just the subdomain part of ${domain.domain}`
-                                    })()}
-                                  </p>
-                                </div>
-
-                                <div className="space-y-1 sm:col-span-2">
-                                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                    Value/Target
-                                  </Label>
-                                  <div className="flex items-center gap-2">
-                                    <code className="text-sm bg-muted px-2 py-1 rounded font-mono flex-1 min-w-0">
-                                      cname.vercel-dns.com.
-                                    </code>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 w-6 p-0 flex-shrink-0"
-                                      onClick={() =>
-                                        copyToClipboard("cname.vercel-dns.com.")
-                                      }
-                                    >
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="pt-2 border-t">
-                                <details className="group">
-                                  <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
-                                    <span>
-                                      Need help with DNS configuration?
-                                    </span>
-                                    <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
-                                  </summary>
-                                  <div className="mt-2 text-xs text-muted-foreground space-y-1">
-                                    <p>
-                                      1. Log in to your domain registrar or DNS
-                                      provider
-                                    </p>
-                                    <p>
-                                      2. Navigate to DNS management or DNS
-                                      records
-                                    </p>
-                                    <p>
-                                      3. Add a new CNAME record with the values
-                                      above
-                                    </p>
-                                    <p>
-                                      4. Save the changes and wait for
-                                      propagation (up to 24 hours)
-                                    </p>
-                                    <p>
-                                      5. Click "Check now" to verify the
-                                      configuration
-                                    </p>
-                                  </div>
-                                </details>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Globe className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No custom domains configured</p>
-                  <p className="text-xs mt-1">Add a domain to get started</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Deploys Tab */}
-        <TabsContent value="deploys" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Deployment History</CardTitle>
-              <CardDescription>
-                View and manage your site deployments
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Placeholder for publish functionality */}
-              <div className="mb-6 p-4 bg-muted rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Rocket className="h-5 w-5 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="font-medium">Publish to Production</p>
-                    <p className="text-sm text-muted-foreground">
-                      Deployment functionality coming soon
-                    </p>
                   </div>
                   <Button
                     onClick={async () => {
-                      // Block if another build is running/queued
                       const busy = (builds ?? []).some(
-                        (b) => b.status === "running" || b.status === "queued"
+                        (b) =>
+                          b.status === "running" ||
+                          b.status === "queued" ||
+                          b.status === "waiting"
                       )
-                      if (busy || selected.length === 0) return
-
-                      // Insert a client-only synthetic row with negative id
-                      await siteBuildsCol.insert({
-                        id: -Date.now(),
-                        site_id: siteId,
-                        build_id: `local:${crypto.randomUUID()}`,
-                        status: "running",
-                        operation: "publish",
-                        actor_user_id: "me", // or from session
-                        selected_space_ids_snapshot: selected.map((s) => s.id),
-                        target_build_id: null,
-                        items_total: selected.length || 1,
-                        items_done: 0,
-                        pages_written: 0,
-                        bytes_written: 0,
-                        started_at: new Date(),
-                        finished_at: null,
-                      })
-                      // onInsert on the collection will enqueue the real publish
+                      if (busy) {
+                        toast.info("A deploy is already in progress")
+                        return
+                      }
+                      try {
+                        await siteBuildsCol.insert({
+                          id: -Date.now(),
+                          site_id: siteId,
+                          build_id: `local:${crypto.randomUUID()}`,
+                          status: "running",
+                          operation: "publish",
+                          actor_user_id: "me",
+                          selected_space_ids_snapshot: [],
+                          target_build_id: null,
+                          items_total: 0,
+                          items_done: 0,
+                          pages_written: 0,
+                          bytes_written: 0,
+                          started_at: new Date(),
+                          finished_at: null,
+                        })
+                        toast.success("GitHub deploy started")
+                      } catch (err) {
+                        console.error(err)
+                        toast.error("Failed to start GitHub deploy")
+                      }
                     }}
-                    disabled={
-                      selected.length === 0 ||
-                      (builds ?? []).some(
-                        (b) => b.status === "running" || b.status === "queued"
-                      )
-                    }
+                    disabled={(builds ?? []).some(
+                      (b) =>
+                        b.status === "running" ||
+                        b.status === "queued" ||
+                        b.status === "waiting"
+                    )}
                   >
                     <Rocket className="h-4 w-4 mr-2" />
-                    Publish
+                    Deploy
                   </Button>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Build history */}
-              {builds && builds.length > 0 ? (
-                <div className="space-y-2">
-                  {builds
-                    .sort(
-                      (a, b) => b.started_at.getTime() - a.started_at.getTime()
-                    )
-                    .slice(0, 10)
-                    .map((build) => (
-                      <div
-                        key={build.id}
-                        className="flex items-center justify-between p-3 border rounded-lg"
+            <Card>
+              <CardHeader>
+                <CardTitle>Deployment History</CardTitle>
+                <CardDescription>
+                  Recent deploy and revert events
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {renderBuildHistory({ allowRevert: false })}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as SiteTab)}
+          className="space-y-4"
+        >
+          <TabsList className="grid w-full grid-cols-5 max-w-lg">
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="theme">Theme</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="domains">Domains</TabsTrigger>
+            <TabsTrigger value="deploys">Deploys</TabsTrigger>
+          </TabsList>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Site Configuration</CardTitle>
+                <CardDescription>
+                  Basic settings for your documentation site
+                </CardDescription>
+              </CardHeader>
+              <BrandingCard />
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="site-name">Site Name</Label>
+                    <Input
+                      id="site-name"
+                      value={site.name}
+                      onChange={(e) =>
+                        sitesCol?.update(
+                          site.id,
+                          (d) => void (d.name = e.target.value)
+                        )
+                      }
+                      placeholder="My Documentation"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Display name for your site
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="site-slug">URL Slug</Label>
+                    <Input
+                      id="site-slug"
+                      value={site.slug}
+                      onChange={(e) =>
+                        sitesCol?.update(
+                          site.id,
+                          (d) => void (d.slug = e.target.value)
+                        )
+                      }
+                      disabled
+                      placeholder="my-docs"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      URL-friendly identifier
+                    </p>
+                  </div>
+                </div>
+
+                {site.primary_host && (
+                  <div className="mt-4 p-3 bg-muted rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                          Primary URL:
+                        </span>
+                        <code className="text-sm bg-background px-2 py-0.5 rounded">
+                          https://{site.primary_host}
+                        </code>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          copyToClipboard(`https://${site.primary_host}`)
+                        }
                       >
-                        <div className="flex items-center gap-3">
-                          {build.operation === "publish" ? (
-                            <Rocket className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <RefreshCw className="h-4 w-4 text-muted-foreground" />
-                          )}
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">
-                                {build.operation === "publish"
-                                  ? "Deploy"
-                                  : "Revert"}{" "}
-                                #{build.build_id}
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="theme" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Theme</CardTitle>
+                <CardDescription>
+                  Customize colors, surfaces, and layout tokens
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Layout selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="site-layout">Layout</Label>
+                  <div className="flex items-center gap-3">
+                    <Select
+                      value={site.layout as string}
+                      onValueChange={(value) =>
+                        sitesCol?.update(
+                          site.id,
+                          (d) =>
+                            void (d.layout = value as
+                              | "sidebar-dropdown"
+                              | "tabs")
+                        )
+                      }
+                    >
+                      <SelectTrigger id="site-layout" className="w-[240px]">
+                        <SelectValue placeholder="Choose layout" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sidebar-dropdown">
+                          Sidebar + Dropdown
+                        </SelectItem>
+                        <SelectItem value="tabs">Tabs</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Choose how spaces are presented in navigation.
+                    </p>
+                  </div>
+                  <div className="h-px bg-border" />
+                </div>
+                <ThemeStudio siteId={siteId} orgId={activeOrgId!} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Content Tab */}
+          <TabsContent value="content" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Content Spaces</CardTitle>
+                <CardDescription>
+                  Select and organize the spaces to include in your site
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  {/* Selected Spaces */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium">
+                        Selected Spaces ({selected.length})
+                      </h4>
+                      {selected.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {selected.length} space
+                          {selected.length !== 1 ? "s" : ""} selected
+                        </Badge>
+                      )}
+                    </div>
+
+                    {selected.length === 0 ? (
+                      <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                        <p className="text-muted-foreground text-sm">
+                          No spaces selected yet
+                        </p>
+                        <p className="text-muted-foreground text-xs mt-1">
+                          Add spaces from the available list
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {selected.map((space, idx) => (
+                          <div
+                            key={space.id}
+                            className="flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">
+                                {space.name}
                               </p>
-                              <Badge
-                                variant={
-                                  build.status === "success"
-                                    ? "default"
-                                    : build.status === "failed"
-                                      ? "destructive"
-                                      : build.status === "running"
-                                        ? "secondary"
-                                        : "outline"
-                                }
-                                className="text-xs"
-                              >
-                                {build.status}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {new Date(build.started_at).toLocaleString()}
-                              </span>
-                              {build.finished_at && (
-                                <span>
-                                  Duration:{" "}
-                                  {Math.round(
-                                    (new Date(build.finished_at).getTime() -
-                                      new Date(build.started_at).getTime()) /
-                                      1000
-                                  )}
-                                  s
-                                </span>
+                              {space.description && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {space.description}
+                                </p>
                               )}
                             </div>
-                          </div>
-                        </div>
 
-                        {build.operation === "publish" &&
-                          build.status === "success" && (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                                disabled={
+                                  !selectionLoaded || idx === 0 || isSaving
+                                }
+                                onClick={() => {
+                                  const arr = selected.map((s) => s.id)
+                                  const current = arr[idx]
+                                  const swapWith = arr[idx - 1]
+                                  if (!current || !swapWith) return
+                                  arr[idx] = swapWith
+                                  arr[idx - 1] = current
+                                  applySelection(arr)
+                                }}
+                              >
+                                <ArrowUp className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                                disabled={
+                                  !selectionLoaded ||
+                                  idx === selected.length - 1 ||
+                                  isSaving
+                                }
+                                onClick={() => {
+                                  const arr = selected.map((s) => s.id)
+                                  const current = arr[idx]
+                                  const next = arr[idx + 1]
+                                  if (!current || !next) return
+                                  arr[idx] = next
+                                  arr[idx + 1] = current
+                                  applySelection(arr)
+                                }}
+                              >
+                                <ArrowDown className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                disabled={!selectionLoaded || isSaving}
+                                onClick={() => {
+                                  const arr = selected
+                                    .map((s) => s.id)
+                                    .filter((id) => id !== space.id)
+                                  applySelection(arr)
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Available Spaces */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium">
+                        Available Spaces ({available.length})
+                      </h4>
+                    </div>
+
+                    {available.length === 0 ? (
+                      <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                        <p className="text-muted-foreground text-sm">
+                          All spaces have been selected
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                        {available.map((space) => (
+                          <div
+                            key={space.id}
+                            className="flex items-center gap-2 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">
+                                {space.name}
+                              </p>
+                              {space.description && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {space.description}
+                                </p>
+                              )}
+                            </div>
+
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={async () => {
-                                const busy = (builds ?? []).some(
-                                  (b) =>
-                                    b.status === "running" ||
-                                    b.status === "queued"
-                                )
-                                if (busy) return
-                                await siteBuildsCol.insert({
-                                  id: -Date.now(),
-                                  site_id: siteId,
-                                  build_id: `local:${crypto.randomUUID()}`,
-                                  status: "running",
-                                  operation: "revert",
-                                  actor_user_id: "me",
-                                  selected_space_ids_snapshot: [],
-                                  target_build_id: build.build_id,
-                                  items_total: 1,
-                                  items_done: 0,
-                                  pages_written: 0,
-                                  bytes_written: 0,
-                                  started_at: new Date(),
-                                  finished_at: null,
-                                })
+                              variant="secondary"
+                              disabled={!selectionLoaded || isSaving}
+                              onClick={() => {
+                                const arr = [
+                                  ...selected.map((s) => s.id),
+                                  space.id,
+                                ]
+                                applySelection(arr)
                               }}
                             >
-                              Revert
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add
                             </Button>
-                          )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No deployments yet</p>
-                  <p className="text-xs mt-1">
-                    Your deployment history will appear here
-                  </p>
+                {/* TODO - we need to a beautiful UX for the user to add his buttons for renderer here. They should also have the ability to edit and delete the buttons and change the rank */}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Navigation Buttons</CardTitle>
+                <CardDescription>
+                  Configure quick-access buttons and where they appear in the
+                  UI.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <ButtonsEditor site={site} sitesCol={sitesCol} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {domainsTab}
+
+          {/* Deploys Tab */}
+          <TabsContent value="deploys" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Deployment History</CardTitle>
+                <CardDescription>
+                  View and manage your site deployments
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Placeholder for publish functionality */}
+                <div className="mb-6 p-4 bg-muted rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Rocket className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <p className="font-medium">Publish to production</p>
+                    </div>
+                    <Button
+                      onClick={async () => {
+                        // Block if another build is running/queued
+                        const busy = (builds ?? []).some(
+                          (b) => b.status === "running" || b.status === "queued"
+                        )
+                        if (busy || selected.length === 0) return
+
+                        // Insert a client-only synthetic row with negative id
+                        await siteBuildsCol.insert({
+                          id: -Date.now(),
+                          site_id: siteId,
+                          build_id: `local:${crypto.randomUUID()}`,
+                          status: "running",
+                          operation: "publish",
+                          actor_user_id: "me", // or from session
+                          selected_space_ids_snapshot: selected.map(
+                            (s) => s.id
+                          ),
+                          target_build_id: null,
+                          items_total: selected.length || 1,
+                          items_done: 0,
+                          pages_written: 0,
+                          bytes_written: 0,
+                          started_at: new Date(),
+                          finished_at: null,
+                        })
+                        // onInsert on the collection will enqueue the real publish
+                      }}
+                      disabled={
+                        selected.length === 0 ||
+                        (builds ?? []).some(
+                          (b) => b.status === "running" || b.status === "queued"
+                        )
+                      }
+                    >
+                      <Rocket className="h-4 w-4 mr-2" />
+                      Publish
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
+                {renderBuildHistory({ allowRevert: true })}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
 
       {/* Delete Domain Confirmation Dialog */}
       <AlertDialog
@@ -1233,12 +1377,189 @@ function SiteDetailPage() {
   )
 }
 
+function GithubSettingsCard({
+  site,
+  onRefetch,
+}: {
+  site: SiteRow
+  onRefetch: () => Promise<void>
+}) {
+  const running = site.github_config_status === "running"
+
+  const statusBadge =
+    site.github_config_status === "success"
+      ? { label: "Synced", variant: "default" as const }
+      : site.github_config_status === "failed"
+        ? { label: "Failed", variant: "destructive" as const }
+        : site.github_config_status === "running"
+          ? { label: "Syncing…", variant: "secondary" as const }
+          : { label: "Queued", variant: "outline" as const }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <CardTitle>{site.name}</CardTitle>
+          <CardDescription>
+            Managed via docufy.config.json in GitHub. Read-only here; edit in
+            your repo and refetch.
+          </CardDescription>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <div>
+              Repo:{" "}
+              <span className="font-mono">
+                {site.github_repo_full_name ?? "—"}
+              </span>
+            </div>
+            <div>
+              Branch:{" "}
+              <span className="font-mono">{site.github_branch ?? "—"}</span>
+            </div>
+            <div>
+              Config path:{" "}
+              <span className="font-mono">
+                {site.github_config_path ?? "—"}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant={statusBadge.variant} className="flex items-center">
+            {running && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+            {statusBadge.label}
+          </Badge>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onRefetch}
+            disabled={running}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refetch config
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="text-sm text-muted-foreground space-y-1">
+          <div>
+            Last sync:{" "}
+            {site.github_config_synced_at
+              ? site.github_config_synced_at.toLocaleString()
+              : "Never"}
+          </div>
+          <div>
+            Config SHA:{" "}
+            {site.github_config_sha ? (
+              <code className="text-xs">{site.github_config_sha}</code>
+            ) : (
+              "—"
+            )}
+          </div>
+          <div>Config version: {site.github_config_version ?? 1}</div>
+        </div>
+        {site.github_config_error ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            {site.github_config_error}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  )
+}
+
+function GithubSyncLogs({
+  site,
+  repoSyncs,
+}: {
+  site: SiteRow
+  repoSyncs: Array<{
+    id: number | string
+    status: string
+    error?: string | null
+    created_at?: Date
+    updated_at?: Date
+    finished_at?: Date | null
+    config_sha?: string | null
+    branch?: string | null
+    config_path?: string | null
+    triggered_by?: string | null
+  }>
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Sync logs</CardTitle>
+        <CardDescription>Latest config pulls from GitHub</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {repoSyncs && repoSyncs.length ? (
+          <div className="space-y-2">
+            {repoSyncs
+              .slice()
+              .sort(
+                (a, b) =>
+                  (b.updated_at?.getTime?.() ?? 0) -
+                  (a.updated_at?.getTime?.() ?? 0)
+              )
+              .slice(0, 8)
+              .map((sync) => (
+                <div
+                  key={sync.id}
+                  className="flex items-start justify-between rounded-lg border p-3"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          sync.status === "success"
+                            ? "default"
+                            : sync.status === "failed"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                      >
+                        {sync.status}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {sync.updated_at?.toLocaleString() ?? "—"}
+                      </span>
+                    </div>
+                    {sync.config_sha ? (
+                      <div className="text-xs text-muted-foreground">
+                        Config SHA: <code>{sync.config_sha}</code>
+                      </div>
+                    ) : null}
+                    {sync.error ? (
+                      <p className="text-xs text-destructive">{sync.error}</p>
+                    ) : null}
+                  </div>
+                  <div className="text-right text-xs text-muted-foreground">
+                    <div>
+                      Branch: {sync.branch ?? site.github_branch ?? "—"}
+                    </div>
+                    <div>
+                      Path: {sync.config_path ?? site.github_config_path ?? "—"}
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No syncs yet.</p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 function ButtonsEditor({
   site,
   sitesCol,
+  readOnly,
 }: {
   site: SiteRow
   sitesCol: ReturnType<typeof getOrgSitesCollection> | null
+  readOnly?: boolean
 }) {
   const positions = [
     { value: "sidebar_top", label: "Sidebar (Top)" },
@@ -1268,10 +1589,12 @@ function ButtonsEditor({
   }
 
   async function apply(next: Btn[]) {
+    if (readOnly) return
     await sitesCol?.update(site.id, (draft) => void (draft.buttons = next))
   }
 
   async function addButton() {
+    if (readOnly) return
     const id = crypto.randomUUID()
     const next: Btn = {
       id,
@@ -1338,7 +1661,7 @@ function ButtonsEditor({
           <code className="px-1">/space/slug/page</code>) or external URLs. Use
           the position and rank to control placement & order.
         </p>
-        <Button size="sm" onClick={addButton}>
+        <Button size="sm" onClick={addButton} disabled={readOnly}>
           <Plus className="h-4 w-4 mr-1" />
           Add Button
         </Button>

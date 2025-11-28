@@ -7,6 +7,8 @@ import {
   emptyInvitationsCollection,
   getOrgUserProfilesCollection,
   getOrgInvitationsCollection,
+  emptyGithubInstallationsCollection,
+  getOrgGithubInstallationsCollection,
 } from "@/lib/collections"
 
 import { useState } from "react"
@@ -27,7 +29,14 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select"
-import { Trash2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import {
+  CheckCircle2,
+  ExternalLink,
+  Github,
+  Loader2,
+  Trash2,
+} from "lucide-react"
 
 export const Route = createFileRoute("/_authenticated/$orgSlug/settings")({
   ssr: false,
@@ -162,6 +171,10 @@ function SettingsPage() {
           </CardContent>
         </Card>
       </section>
+
+      <section>
+        <GitHubIntegrationCard orgId={orgId} />
+      </section>
     </div>
   )
 }
@@ -242,6 +255,82 @@ function InviteForm() {
         <Button onClick={invite} disabled={submitting || !email}>
           {submitting ? "Sending…" : "Send invite"}
         </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+function GitHubIntegrationCard({ orgId }: { orgId?: string }) {
+  const installationsCollection = orgId
+    ? getOrgGithubInstallationsCollection(orgId)
+    : emptyGithubInstallationsCollection
+  const { data: installations } = useLiveQuery(
+    (q) => q.from({ installations: installationsCollection }),
+    [installationsCollection]
+  )
+  const installation = installations?.[0] ?? null
+  const loading = !!orgId && installations === undefined
+
+  const slug = import.meta.env.VITE_PUBLIC_GITHUB_APP_SLUG
+  const installUrl =
+    slug && orgId
+      ? `https://github.com/apps/${slug}/installations/new?state=${encodeURIComponent(
+          JSON.stringify({ organizationId: orgId })
+        )}`
+      : null
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-start justify-between gap-4">
+        <div className="space-y-1">
+          <CardTitle className="flex items-center gap-2">
+            <Github className="h-5 w-5" />
+            GitHub
+          </CardTitle>
+        </div>
+        {installation ? (
+          <Badge variant="outline" className="flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+            Connected
+          </Badge>
+        ) : (
+          <Badge variant="secondary">Not connected</Badge>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {installation ? (
+          <div className="rounded-md border bg-muted/40 p-3 text-sm">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              <span className="font-medium">
+                Installed on {installation.account_login}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Installation ID: {installation.id} · Type:{" "}
+              {installation.account_type}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No GitHub installation found for this organization.
+          </p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild disabled={!installUrl || loading}>
+            <a href={installUrl ?? "#"} target="_blank" rel="noreferrer">
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {installation ? "Manage on GitHub" : "Connect GitHub"}
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </a>
+          </Button>
+          {!installUrl && (
+            <span className="text-xs text-muted-foreground">
+              Set VITE_PUBLIC_GITHUB_APP_SLUG to enable the install link.
+            </span>
+          )}
+        </div>
       </CardContent>
     </Card>
   )

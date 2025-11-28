@@ -6,20 +6,8 @@ import { members as membersTable } from "@/db/auth-schema"
 import crypto from "node:crypto"
 import { sql } from "drizzle-orm/sql"
 
-import * as YAML from "yaml"
-import { dereference } from "@scalar/openapi-parser" // add on server
+import { parseOpenApiSpec, type ParsedOpenApiOperation } from "@/lib/openapi"
 import { and, eq, isNull, ne, inArray } from "drizzle-orm"
-
-const METHODS = [
-  "get",
-  "post",
-  "put",
-  "patch",
-  "delete",
-  "options",
-  "head",
-  "trace",
-] as const
 
 function slugify(input: string) {
   return input
@@ -528,54 +516,23 @@ export const documentsRouter = router({
           code: "BAD_REQUEST",
           message: "No spec provided",
         })
-      let root
+      let parsedSpec
       try {
-        root = raw.trim().startsWith("{") ? JSON.parse(raw) : YAML.parse(raw)
-      } catch {
+        parsedSpec = await parseOpenApiSpec(raw)
+      } catch (err) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Invalid JSON/YAML",
+          message:
+            err instanceof Error ? err.message : "Invalid OpenAPI schema",
         })
       }
-      const { schema } = await dereference(root)
-      if (!schema?.paths) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "No paths in OpenAPI schema",
-        })
-      }
-
-      // 3) compute tag order
-      const tagOrder: string[] = Array.isArray(schema.tags)
-        ? schema.tags.map((t) => t?.name).filter(Boolean)
-        : []
+      const { tagOrder, operations } = parsedSpec
       const tagIndex = new Map(tagOrder.map((t, i) => [t, i]))
 
-      type Op = {
-        path: string
-        method: string
-        title: string
-        tag?: string | null
-      }
-      const ops: Op[] = []
-      for (const [apiPath, pathItem] of Object.entries(schema.paths)) {
-        for (const m of METHODS) {
-          const op = pathItem?.[m]
-          if (!op) continue
-          const title =
-            (typeof op.summary === "string" && op.summary.trim()) ||
-            (typeof op.operationId === "string" && op.operationId.trim()) ||
-            `${m.toUpperCase()} ${apiPath}`
-          const tag =
-            Array.isArray(op.tags) && op.tags[0] ? String(op.tags[0]) : null
-          ops.push({ path: apiPath, method: m.toUpperCase(), title, tag })
-        }
-      }
-
       // group ops by explicit tag; collect untagged separately
-      const byTag = new Map<string, Op[]>()
-      const untaggedOps: Op[] = []
-      for (const op of ops) {
+      const byTag = new Map<string, ParsedOpenApiOperation[]>()
+      const untaggedOps: ParsedOpenApiOperation[] = []
+      for (const op of operations) {
         if (op.tag) {
           const list = byTag.get(op.tag) ?? []
           list.push(op)
@@ -809,7 +766,7 @@ export const documentsRouter = router({
         }
 
         const txid = await generateTxId(tx)
-        return { txid, tags: tagKeys.length, endpoints: ops.length }
+        return { txid, tags: tagKeys.length, endpoints: operations.length }
       })
     }),
 })

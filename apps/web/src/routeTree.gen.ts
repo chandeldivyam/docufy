@@ -17,6 +17,7 @@ import { Route as ApiSpacesRouteImport } from './routes/api/spaces'
 import { Route as ApiSitesRouteImport } from './routes/api/sites'
 import { Route as ApiSiteThemesRouteImport } from './routes/api/site-themes'
 import { Route as ApiSiteSpacesRouteImport } from './routes/api/site-spaces'
+import { Route as ApiSiteRepoSyncsRouteImport } from './routes/api/site-repo-syncs'
 import { Route as ApiSiteDomainsRouteImport } from './routes/api/site-domains'
 import { Route as ApiSiteBuildsRouteImport } from './routes/api/site-builds'
 import { Route as ApiOrgUserProfilesRouteImport } from './routes/api/org-user-profiles'
@@ -25,6 +26,8 @@ import { Route as ApiInvitationsRouteImport } from './routes/api/invitations'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
 import { Route as ApiHelloRouteImport } from './routes/api/hello'
 import { Route as ApiHealthzRouteImport } from './routes/api/healthz'
+import { Route as ApiGithubRepositoriesRouteImport } from './routes/api/github-repositories'
+import { Route as ApiGithubInstallationsRouteImport } from './routes/api/github-installations'
 import { Route as ApiDocumentsRouteImport } from './routes/api/documents'
 import { Route as ApiDocumentUpdatesRouteImport } from './routes/api/document-updates'
 import { Route as ApiAwarenessUpdatesRouteImport } from './routes/api/awareness-updates'
@@ -35,6 +38,9 @@ import { Route as AuthenticatedActiveOrgIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedOrgSlugIndexRouteImport } from './routes/_authenticated/$orgSlug/index'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
 import { Route as ApiShapeSplatRouteImport } from './routes/api/shape/$'
+import { Route as ApiGithubConfigCheckRouteImport } from './routes/api/github/config-check'
+import { Route as ApiGithubCallbackRouteImport } from './routes/api/github/callback'
+import { Route as ApiGithubBranchesRouteImport } from './routes/api/github/branches'
 import { Route as ApiBlobUploadRouteImport } from './routes/api/blob/upload'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedActiveOrgSettingsRouteImport } from './routes/_authenticated/_active-org/settings'
@@ -84,6 +90,11 @@ const ApiSiteSpacesRoute = ApiSiteSpacesRouteImport.update({
   path: '/api/site-spaces',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSiteRepoSyncsRoute = ApiSiteRepoSyncsRouteImport.update({
+  id: '/api/site-repo-syncs',
+  path: '/api/site-repo-syncs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSiteDomainsRoute = ApiSiteDomainsRouteImport.update({
   id: '/api/site-domains',
   path: '/api/site-domains',
@@ -122,6 +133,16 @@ const ApiHelloRoute = ApiHelloRouteImport.update({
 const ApiHealthzRoute = ApiHealthzRouteImport.update({
   id: '/api/healthz',
   path: '/api/healthz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubRepositoriesRoute = ApiGithubRepositoriesRouteImport.update({
+  id: '/api/github-repositories',
+  path: '/api/github-repositories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubInstallationsRoute = ApiGithubInstallationsRouteImport.update({
+  id: '/api/github-installations',
+  path: '/api/github-installations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDocumentsRoute = ApiDocumentsRouteImport.update({
@@ -173,6 +194,21 @@ const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
 const ApiShapeSplatRoute = ApiShapeSplatRouteImport.update({
   id: '/api/shape/$',
   path: '/api/shape/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubConfigCheckRoute = ApiGithubConfigCheckRouteImport.update({
+  id: '/api/github/config-check',
+  path: '/api/github/config-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubCallbackRoute = ApiGithubCallbackRouteImport.update({
+  id: '/api/github/callback',
+  path: '/api/github/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubBranchesRoute = ApiGithubBranchesRouteImport.update({
+  id: '/api/github/branches',
+  path: '/api/github/branches',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBlobUploadRoute = ApiBlobUploadRouteImport.update({
@@ -235,6 +271,8 @@ export interface FileRoutesByFullPath {
   '/api/awareness-updates': typeof ApiAwarenessUpdatesRoute
   '/api/document-updates': typeof ApiDocumentUpdatesRoute
   '/api/documents': typeof ApiDocumentsRoute
+  '/api/github-installations': typeof ApiGithubInstallationsRoute
+  '/api/github-repositories': typeof ApiGithubRepositoriesRoute
   '/api/healthz': typeof ApiHealthzRoute
   '/api/hello': typeof ApiHelloRoute
   '/api/inngest': typeof ApiInngestRoute
@@ -243,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/api/org-user-profiles': typeof ApiOrgUserProfilesRoute
   '/api/site-builds': typeof ApiSiteBuildsRoute
   '/api/site-domains': typeof ApiSiteDomainsRoute
+  '/api/site-repo-syncs': typeof ApiSiteRepoSyncsRoute
   '/api/site-spaces': typeof ApiSiteSpacesRoute
   '/api/site-themes': typeof ApiSiteThemesRoute
   '/api/sites': typeof ApiSitesRouteWithChildren
@@ -252,6 +291,9 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blob/upload': typeof ApiBlobUploadRoute
+  '/api/github/branches': typeof ApiGithubBranchesRoute
+  '/api/github/callback': typeof ApiGithubCallbackRoute
+  '/api/github/config-check': typeof ApiGithubConfigCheckRoute
   '/api/shape/$': typeof ApiShapeSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
@@ -269,6 +311,8 @@ export interface FileRoutesByTo {
   '/api/awareness-updates': typeof ApiAwarenessUpdatesRoute
   '/api/document-updates': typeof ApiDocumentUpdatesRoute
   '/api/documents': typeof ApiDocumentsRoute
+  '/api/github-installations': typeof ApiGithubInstallationsRoute
+  '/api/github-repositories': typeof ApiGithubRepositoriesRoute
   '/api/healthz': typeof ApiHealthzRoute
   '/api/hello': typeof ApiHelloRoute
   '/api/inngest': typeof ApiInngestRoute
@@ -277,6 +321,7 @@ export interface FileRoutesByTo {
   '/api/org-user-profiles': typeof ApiOrgUserProfilesRoute
   '/api/site-builds': typeof ApiSiteBuildsRoute
   '/api/site-domains': typeof ApiSiteDomainsRoute
+  '/api/site-repo-syncs': typeof ApiSiteRepoSyncsRoute
   '/api/site-spaces': typeof ApiSiteSpacesRoute
   '/api/site-themes': typeof ApiSiteThemesRoute
   '/api/sites': typeof ApiSitesRouteWithChildren
@@ -286,6 +331,9 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blob/upload': typeof ApiBlobUploadRoute
+  '/api/github/branches': typeof ApiGithubBranchesRoute
+  '/api/github/callback': typeof ApiGithubCallbackRoute
+  '/api/github/config-check': typeof ApiGithubConfigCheckRoute
   '/api/shape/$': typeof ApiShapeSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/$orgSlug': typeof AuthenticatedOrgSlugIndexRoute
@@ -307,6 +355,8 @@ export interface FileRoutesById {
   '/api/awareness-updates': typeof ApiAwarenessUpdatesRoute
   '/api/document-updates': typeof ApiDocumentUpdatesRoute
   '/api/documents': typeof ApiDocumentsRoute
+  '/api/github-installations': typeof ApiGithubInstallationsRoute
+  '/api/github-repositories': typeof ApiGithubRepositoriesRoute
   '/api/healthz': typeof ApiHealthzRoute
   '/api/hello': typeof ApiHelloRoute
   '/api/inngest': typeof ApiInngestRoute
@@ -315,6 +365,7 @@ export interface FileRoutesById {
   '/api/org-user-profiles': typeof ApiOrgUserProfilesRoute
   '/api/site-builds': typeof ApiSiteBuildsRoute
   '/api/site-domains': typeof ApiSiteDomainsRoute
+  '/api/site-repo-syncs': typeof ApiSiteRepoSyncsRoute
   '/api/site-spaces': typeof ApiSiteSpacesRoute
   '/api/site-themes': typeof ApiSiteThemesRoute
   '/api/sites': typeof ApiSitesRouteWithChildren
@@ -324,6 +375,9 @@ export interface FileRoutesById {
   '/_authenticated/_active-org/settings': typeof AuthenticatedActiveOrgSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/blob/upload': typeof ApiBlobUploadRoute
+  '/api/github/branches': typeof ApiGithubBranchesRoute
+  '/api/github/callback': typeof ApiGithubCallbackRoute
+  '/api/github/config-check': typeof ApiGithubConfigCheckRoute
   '/api/shape/$': typeof ApiShapeSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/_authenticated/$orgSlug/': typeof AuthenticatedOrgSlugIndexRoute
@@ -344,6 +398,8 @@ export interface FileRouteTypes {
     | '/api/awareness-updates'
     | '/api/document-updates'
     | '/api/documents'
+    | '/api/github-installations'
+    | '/api/github-repositories'
     | '/api/healthz'
     | '/api/hello'
     | '/api/inngest'
@@ -352,6 +408,7 @@ export interface FileRouteTypes {
     | '/api/org-user-profiles'
     | '/api/site-builds'
     | '/api/site-domains'
+    | '/api/site-repo-syncs'
     | '/api/site-spaces'
     | '/api/site-themes'
     | '/api/sites'
@@ -361,6 +418,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/auth/$'
     | '/api/blob/upload'
+    | '/api/github/branches'
+    | '/api/github/callback'
+    | '/api/github/config-check'
     | '/api/shape/$'
     | '/api/trpc/$'
     | '/$orgSlug/'
@@ -378,6 +438,8 @@ export interface FileRouteTypes {
     | '/api/awareness-updates'
     | '/api/document-updates'
     | '/api/documents'
+    | '/api/github-installations'
+    | '/api/github-repositories'
     | '/api/healthz'
     | '/api/hello'
     | '/api/inngest'
@@ -386,6 +448,7 @@ export interface FileRouteTypes {
     | '/api/org-user-profiles'
     | '/api/site-builds'
     | '/api/site-domains'
+    | '/api/site-repo-syncs'
     | '/api/site-spaces'
     | '/api/site-themes'
     | '/api/sites'
@@ -395,6 +458,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/auth/$'
     | '/api/blob/upload'
+    | '/api/github/branches'
+    | '/api/github/callback'
+    | '/api/github/config-check'
     | '/api/shape/$'
     | '/api/trpc/$'
     | '/$orgSlug'
@@ -415,6 +481,8 @@ export interface FileRouteTypes {
     | '/api/awareness-updates'
     | '/api/document-updates'
     | '/api/documents'
+    | '/api/github-installations'
+    | '/api/github-repositories'
     | '/api/healthz'
     | '/api/hello'
     | '/api/inngest'
@@ -423,6 +491,7 @@ export interface FileRouteTypes {
     | '/api/org-user-profiles'
     | '/api/site-builds'
     | '/api/site-domains'
+    | '/api/site-repo-syncs'
     | '/api/site-spaces'
     | '/api/site-themes'
     | '/api/sites'
@@ -432,6 +501,9 @@ export interface FileRouteTypes {
     | '/_authenticated/_active-org/settings'
     | '/api/auth/$'
     | '/api/blob/upload'
+    | '/api/github/branches'
+    | '/api/github/callback'
+    | '/api/github/config-check'
     | '/api/shape/$'
     | '/api/trpc/$'
     | '/_authenticated/$orgSlug/'
@@ -450,6 +522,8 @@ export interface RootRouteChildren {
   ApiAwarenessUpdatesRoute: typeof ApiAwarenessUpdatesRoute
   ApiDocumentUpdatesRoute: typeof ApiDocumentUpdatesRoute
   ApiDocumentsRoute: typeof ApiDocumentsRoute
+  ApiGithubInstallationsRoute: typeof ApiGithubInstallationsRoute
+  ApiGithubRepositoriesRoute: typeof ApiGithubRepositoriesRoute
   ApiHealthzRoute: typeof ApiHealthzRoute
   ApiHelloRoute: typeof ApiHelloRoute
   ApiInngestRoute: typeof ApiInngestRoute
@@ -458,6 +532,7 @@ export interface RootRouteChildren {
   ApiOrgUserProfilesRoute: typeof ApiOrgUserProfilesRoute
   ApiSiteBuildsRoute: typeof ApiSiteBuildsRoute
   ApiSiteDomainsRoute: typeof ApiSiteDomainsRoute
+  ApiSiteRepoSyncsRoute: typeof ApiSiteRepoSyncsRoute
   ApiSiteSpacesRoute: typeof ApiSiteSpacesRoute
   ApiSiteThemesRoute: typeof ApiSiteThemesRoute
   ApiSitesRoute: typeof ApiSitesRouteWithChildren
@@ -465,6 +540,9 @@ export interface RootRouteChildren {
   ApiUserInvitationsRoute: typeof ApiUserInvitationsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBlobUploadRoute: typeof ApiBlobUploadRoute
+  ApiGithubBranchesRoute: typeof ApiGithubBranchesRoute
+  ApiGithubCallbackRoute: typeof ApiGithubCallbackRoute
+  ApiGithubConfigCheckRoute: typeof ApiGithubConfigCheckRoute
   ApiShapeSplatRoute: typeof ApiShapeSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
@@ -527,6 +605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSiteSpacesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/site-repo-syncs': {
+      id: '/api/site-repo-syncs'
+      path: '/api/site-repo-syncs'
+      fullPath: '/api/site-repo-syncs'
+      preLoaderRoute: typeof ApiSiteRepoSyncsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/site-domains': {
       id: '/api/site-domains'
       path: '/api/site-domains'
@@ -581,6 +666,20 @@ declare module '@tanstack/react-router' {
       path: '/api/healthz'
       fullPath: '/api/healthz'
       preLoaderRoute: typeof ApiHealthzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github-repositories': {
+      id: '/api/github-repositories'
+      path: '/api/github-repositories'
+      fullPath: '/api/github-repositories'
+      preLoaderRoute: typeof ApiGithubRepositoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github-installations': {
+      id: '/api/github-installations'
+      path: '/api/github-installations'
+      fullPath: '/api/github-installations'
+      preLoaderRoute: typeof ApiGithubInstallationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/documents': {
@@ -651,6 +750,27 @@ declare module '@tanstack/react-router' {
       path: '/api/shape/$'
       fullPath: '/api/shape/$'
       preLoaderRoute: typeof ApiShapeSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/config-check': {
+      id: '/api/github/config-check'
+      path: '/api/github/config-check'
+      fullPath: '/api/github/config-check'
+      preLoaderRoute: typeof ApiGithubConfigCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/callback': {
+      id: '/api/github/callback'
+      path: '/api/github/callback'
+      fullPath: '/api/github/callback'
+      preLoaderRoute: typeof ApiGithubCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/branches': {
+      id: '/api/github/branches'
+      path: '/api/github/branches'
+      fullPath: '/api/github/branches'
+      preLoaderRoute: typeof ApiGithubBranchesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/blob/upload': {
@@ -805,6 +925,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAwarenessUpdatesRoute: ApiAwarenessUpdatesRoute,
   ApiDocumentUpdatesRoute: ApiDocumentUpdatesRoute,
   ApiDocumentsRoute: ApiDocumentsRoute,
+  ApiGithubInstallationsRoute: ApiGithubInstallationsRoute,
+  ApiGithubRepositoriesRoute: ApiGithubRepositoriesRoute,
   ApiHealthzRoute: ApiHealthzRoute,
   ApiHelloRoute: ApiHelloRoute,
   ApiInngestRoute: ApiInngestRoute,
@@ -813,6 +935,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOrgUserProfilesRoute: ApiOrgUserProfilesRoute,
   ApiSiteBuildsRoute: ApiSiteBuildsRoute,
   ApiSiteDomainsRoute: ApiSiteDomainsRoute,
+  ApiSiteRepoSyncsRoute: ApiSiteRepoSyncsRoute,
   ApiSiteSpacesRoute: ApiSiteSpacesRoute,
   ApiSiteThemesRoute: ApiSiteThemesRoute,
   ApiSitesRoute: ApiSitesRouteWithChildren,
@@ -820,6 +943,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiUserInvitationsRoute: ApiUserInvitationsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBlobUploadRoute: ApiBlobUploadRoute,
+  ApiGithubBranchesRoute: ApiGithubBranchesRoute,
+  ApiGithubCallbackRoute: ApiGithubCallbackRoute,
+  ApiGithubConfigCheckRoute: ApiGithubConfigCheckRoute,
   ApiShapeSplatRoute: ApiShapeSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
