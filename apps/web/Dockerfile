@@ -18,7 +18,7 @@ ENV VITE_PUBLIC_POSTHOG_HOST=${VITE_PUBLIC_POSTHOG_HOST}
 ENV VITE_PUBLIC_GITHUB_APP_SLUG=${VITE_PUBLIC_GITHUB_APP_SLUG}
 
 # Bump Node heap size
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV NODE_OPTIONS="--max-old-space-size=8192"
 
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY packages ./packages
