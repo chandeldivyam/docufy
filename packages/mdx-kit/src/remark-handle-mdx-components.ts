@@ -39,7 +39,22 @@ export const remarkHandleMdxComponents: Plugin<[Pick<MdxRenderOptions, 'componen
           const propsStr = props.length > 0 ? ' ' + props.join(' ') : '';
 
           // Convert children to text/html if possible, or just ignore for void tags like img
-          const isVoid = ['img', 'br', 'hr', 'input', 'meta'].includes(name);
+          const isVoid = [
+            'area',
+            'base',
+            'br',
+            'col',
+            'embed',
+            'hr',
+            'img',
+            'input',
+            'link',
+            'meta',
+            'param',
+            'source',
+            'track',
+            'wbr',
+          ].includes(name);
 
           if (isVoid) {
             node.type = 'html';

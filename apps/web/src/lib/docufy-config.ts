@@ -142,9 +142,15 @@ function resolveAssetPath(
 ): string | undefined {
   if (!value) return undefined
   if (isExternalUrl(value)) return value
-  // Treat leading slash as "relative to configDir" for user-friendliness
-  if (value.startsWith("/")) return path.posix.join(configDir || ".", value)
-  return path.posix.join(configDir || ".", value)
+  // Normalize and check for path traversal
+  const resolved = path.posix.normalize(
+    path.posix.join(configDir || ".", value)
+  )
+  const base = path.posix.normalize(configDir || ".")
+  if (!resolved.startsWith(base + "/") && resolved !== base) {
+    throw new Error(`Path traversal detected: ${value}`)
+  }
+  return resolved
 }
 
 function normalizeNavNode(node: NavNode, configDir: string): NormalizedNavNode {

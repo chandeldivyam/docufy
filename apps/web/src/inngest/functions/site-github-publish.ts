@@ -42,6 +42,7 @@ type GithubDoc = {
   type: "page" | "group" | "api" | "api_spec" | "api_tag"
   slug: string
   trail: string[]
+  iconName?: string | null
   apiSpecBlobKey?: string | null
   apiPath?: string | null
   apiMethod?: string | null
@@ -62,6 +63,24 @@ type UiTreeItem = {
     document: string
   }
   children?: UiTreeItem[]
+}
+
+async function fetchIconSvg(iconName: string): Promise<string | null> {
+  if (!iconName) return null
+  try {
+    const res = await fetch(
+      `https://unpkg.com/lucide-static@latest/icons/${iconName}.svg`
+    )
+    if (!res.ok) return null
+    const svgText = await res.text()
+    return svgText
+      .replace(/<!--.*?-->\s*/g, "")
+      .replace(/ width="\d+"/, "")
+      .replace(/ height="\d+"/, "")
+  } catch (e) {
+    console.error(`Failed to fetch icon: ${iconName}`, e)
+    return null
+  }
 }
 
 const slugify = (input: string) =>
@@ -467,6 +486,7 @@ export const siteGithubPublish = inngest.createFunction(
         slug: string
         trail: string[]
         order: number
+        iconName?: string | null
       }> = []
 
       const findSha = (p: string) => blobMap.get(p.replace(/^\.?\//, ""))
@@ -556,6 +576,7 @@ export const siteGithubPublish = inngest.createFunction(
                 slug,
                 trail: nextTrail,
                 apiSpecBlobKey: specBlobUrl,
+                iconName: node.icon ?? null,
                 plain: "",
                 order: navOrder++,
               })
@@ -624,6 +645,7 @@ export const siteGithubPublish = inngest.createFunction(
                     apiMethod: op.method,
                     apiTag: tagName,
                     plain: op.plain,
+                    iconName: node.icon ?? null,
                     order: navOrder++,
                   })
                 }
@@ -651,6 +673,7 @@ export const siteGithubPublish = inngest.createFunction(
                   apiMethod: op.method,
                   apiTag: null,
                   plain: op.plain,
+                  iconName: node.icon ?? null,
                   order: navOrder++,
                 })
               }
@@ -676,6 +699,7 @@ export const siteGithubPublish = inngest.createFunction(
                   type: nodeType,
                   slug,
                   trail: nextTrail,
+                  iconName: node.icon ?? null,
                   order: navOrder++,
                 })
               }
@@ -686,6 +710,7 @@ export const siteGithubPublish = inngest.createFunction(
                 title: node.title,
                 slug,
                 trail: nextTrail,
+                iconName: node.icon ?? null,
                 order: navOrder++,
               })
             }
@@ -713,6 +738,23 @@ export const siteGithubPublish = inngest.createFunction(
           sourceCommitSha: commitSha,
         })
         .where(eq(siteBuildsTable.id, build.id))
+
+      // ---- Icon fetching (lucide) ----
+      const iconNames = new Set<string>()
+      docs.forEach((d) => d.iconName && iconNames.add(d.iconName))
+      groupNodes.forEach((g) => g.iconName && iconNames.add(g.iconName))
+      ;(site.buttons ?? []).forEach(
+        (b) => b.iconName && iconNames.add(b.iconName)
+      )
+
+      const iconSvgCache = new Map<string, string | null>()
+      const iconPromises = Array.from(iconNames).map(async (name) => {
+        const svg = await fetchIconSvg(name)
+        if (svg) iconSvgCache.set(name, svg)
+      })
+      await Promise.all(iconPromises)
+      // ---- end icons ----
+
       const existingDocs = await db
         .select()
         .from(siteGithubDocsTable)
@@ -790,7 +832,9 @@ export const siteGithubPublish = inngest.createFunction(
             title: doc.title,
             slug: doc.slug,
             trail: doc.trail,
-            iconSvg: null as string | null,
+            iconSvg: doc.iconName
+              ? (iconSvgCache.get(doc.iconName) ?? null)
+              : null,
             updatedAt: now,
             type: doc.type,
             apiSpecBlobKey: doc.apiSpecBlobKey ?? null,
@@ -902,7 +946,9 @@ export const siteGithubPublish = inngest.createFunction(
           title: doc.title,
           slug: doc.slug,
           trail: doc.trail,
-          iconSvg: null as string | null,
+          iconSvg: doc.iconName
+            ? (iconSvgCache.get(doc.iconName) ?? null)
+            : null,
           updatedAt: now,
           type: "page" as const,
           rendered: { html, toc },
@@ -1036,7 +1082,10 @@ export const siteGithubPublish = inngest.createFunction(
         pagesIndex[route] = {
           title: d.title,
           space: d.spaceSlug,
-          iconSvg: null,
+          iconSvg:
+            d.iconName && iconSvgCache.has(d.iconName)
+              ? iconSvgCache.get(d.iconName)
+              : null,
           blob: ref.key,
           hash: ref.hash,
           size: sizeNum,
@@ -1086,6 +1135,7 @@ export const siteGithubPublish = inngest.createFunction(
         kind: UiTreeItem["kind"]
         title: string
         slug: string
+        iconName?: string | null
         apiPath?: string | null
         apiMethod?: string | null
         apiSpecBlobKey?: string | null
@@ -1100,6 +1150,7 @@ export const siteGithubPublish = inngest.createFunction(
           kind: doc.type,
           title: doc.title,
           slug: doc.slug,
+          iconName: doc.iconName ?? null,
           apiPath: doc.apiPath ?? null,
           apiMethod: doc.apiMethod ?? null,
           apiSpecBlobKey: doc.apiSpecBlobKey ?? null,
@@ -1113,6 +1164,7 @@ export const siteGithubPublish = inngest.createFunction(
           kind: "group",
           title: group.title,
           slug: group.slug,
+          iconName: group.iconName ?? null,
         })
       }
 
@@ -1133,7 +1185,10 @@ export const siteGithubPublish = inngest.createFunction(
             title: c.title,
             slug: c.slug,
             route: routeFor(space.slug, c.trail, isApiRoute),
-            iconSvg: null,
+            iconSvg:
+              c.iconName && iconSvgCache.has(c.iconName)
+                ? iconSvgCache.get(c.iconName)
+                : null,
           }
           if (
             c.kind === "api" &&
@@ -1245,7 +1300,10 @@ export const siteGithubPublish = inngest.createFunction(
               id: b.id,
               label: b.label,
               href: b.href,
-              iconSvg: null,
+              iconSvg:
+                b.iconName && iconSvgCache.has(b.iconName)
+                  ? iconSvgCache.get(b.iconName)
+                  : null,
               target: b.target ?? "_self",
               slug: b.slug ?? null,
             })
