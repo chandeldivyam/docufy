@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@docufy/content-kit": "workspace:*",
+    "@docufy/mdx-kit": "workspace:*",
     "@electric-sql/client": "^1.0.10",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",

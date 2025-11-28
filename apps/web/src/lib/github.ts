@@ -144,12 +144,7 @@ export async function getFileContent(params: {
     throw new Error("Requested path is not a file")
   }
 
-  const encoding =
-    typeof res.data.encoding === "string" &&
-    Buffer.isEncoding(res.data.encoding)
-      ? (res.data.encoding as BufferEncoding)
-      : "base64"
-  const buf = Buffer.from(res.data.content, encoding)
+  const buf = Buffer.from(res.data.content, res.data.encoding as BufferEncoding)
   return buf.toString("utf8")
 }
 

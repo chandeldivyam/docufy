@@ -27,6 +27,8 @@ import {
 } from "../helpers/blob"
 import { mimeFromFilename } from "@/lib/mime"
 import { makeTypesenseAdminClient } from "../helpers/typesense"
+import { renderMdxToHtml, getGithubMdxComponents } from "@docufy/mdx-kit"
+import type { MdxRenderOptions } from "@docufy/mdx-kit"
 
 type EventPayload = { siteId: string; buildId: string; actorUserId?: string }
 
@@ -41,8 +43,6 @@ type GithubDoc = {
   trail: string[]
 }
 
-type TocItem = { level: number; text: string; id: string }
-
 const slugify = (input: string) =>
   input
     .toLowerCase()
@@ -50,25 +50,6 @@ const slugify = (input: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "")
     .slice(0, 80)
-
-function escapeHtml(str: string) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-}
-
-function toPlain(md: string) {
-  return md
-    .replace(/```[\s\S]*?```/g, "")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/[*_`>#-]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-}
 
 async function ensureGithubAsset(opts: {
   siteId: string
@@ -139,7 +120,7 @@ async function ensureGithubAsset(opts: {
   return url
 }
 
-async function renderGithubMarkdown(opts: {
+async function rewriteGithubAssetsInMarkdown(opts: {
   markdown: string
   siteId: string
   branch: string
@@ -167,7 +148,6 @@ async function renderGithubMarkdown(opts: {
   const resolveAsset = (asset: string) => {
     if (/^https?:\/\//i.test(asset) || asset.startsWith("data:")) return asset
     if (asset.startsWith("/")) {
-      // treat as relative to configDir for user-friendliness
       return path.posix.join(configDir, asset)
     }
     return path.posix.join(docDir, asset)
@@ -194,7 +174,6 @@ async function renderGithubMarkdown(opts: {
     return assetMatches.get(resolved)!
   }
 
-  // Rewrite markdown image/link paths to blob URLs
   let rewritten = markdown
   const mdImageRegex = /!\[[^\]]*\]\(([^)]+)\)/g
   rewritten = await replaceAsync(rewritten, mdImageRegex, async (match, p1) => {
@@ -208,40 +187,63 @@ async function renderGithubMarkdown(opts: {
     return match.replace(p1, url)
   })
 
-  // Build a minimal HTML renderer (headings + paragraphs)
-  const lines = rewritten.split(/\n/)
-  const htmlParts: string[] = []
-  const toc: TocItem[] = []
-  let para: string[] = []
+  const videoTagRegex = /<video[^>]*src=["']([^"']+)["'][^>]*>/gi
+  rewritten = await replaceAsync(
+    rewritten,
+    videoTagRegex,
+    async (match, p1) => {
+      const url = await replaceAsset(p1.trim())
+      return match.replace(p1, url)
+    }
+  )
 
-  const flushPara = () => {
-    if (!para.length) return
-    htmlParts.push(`<p>${para.join(" ")}</p>`)
-    para = []
+  return rewritten
+}
+
+async function renderGithubMarkdown(opts: {
+  markdown: string
+  siteId: string
+  branch: string
+  docPath: string
+  configDir: string
+  installationId: string
+  owner: string
+  repo: string
+  blobBaseUrl: string
+}) {
+  const {
+    markdown,
+    siteId,
+    branch,
+    docPath,
+    configDir,
+    installationId,
+    owner,
+    repo,
+    blobBaseUrl,
+  } = opts
+
+  // 1) Rewrite assets to blob URLs as before
+  const rewritten = await rewriteGithubAssetsInMarkdown({
+    markdown,
+    siteId,
+    branch,
+    docPath,
+    configDir,
+    installationId,
+    owner,
+    repo,
+    blobBaseUrl,
+  })
+
+  // 2) Render MDX to HTML+ToC+plain, with a components map
+  const mdxOptions: MdxRenderOptions = {
+    gfm: true,
+    allowHtml: true,
+    components: getGithubMdxComponents(),
   }
 
-  for (const line of lines) {
-    const headingMatch = /^(#{1,6})\s+(.*)$/.exec(line)
-    if (headingMatch) {
-      flushPara()
-      const level = headingMatch[1] ? Math.min(6, headingMatch[1].length) : 6
-      const text = headingMatch[2] ? headingMatch[2].trim() : ""
-      const id = slugify(text)
-      toc.push({ level, text, id })
-      htmlParts.push(`<h${level} id="${id}">${escapeHtml(text)}</h${level}>`)
-      continue
-    }
-    if (!line.trim()) {
-      flushPara()
-      continue
-    }
-    para.push(escapeHtml(line.trim()))
-  }
-  flushPara()
-
-  const html = htmlParts.join("\n")
-  const plain = toPlain(rewritten)
-  return { html, toc, plain }
+  return await renderMdxToHtml(rewritten, mdxOptions)
 }
 
 async function replaceAsync(

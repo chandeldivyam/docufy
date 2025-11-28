@@ -11,6 +11,7 @@ export default function Logo({
   const light = manifest.site.branding?.logo?.light ?? manifest.site.logoUrl ?? '';
   const dark = manifest.site.branding?.logo?.dark ?? light;
   const name = manifest.site.name ?? '';
+  const logoExists = dark || light;
   const home = `${hrefPrefix || ''}/`.replace(/\/+$/, '/');
   return (
     <Link prefetch href={home} className="inline-flex items-center gap-2 no-underline">
@@ -18,7 +19,9 @@ export default function Logo({
         {light ? <img src={light} alt="Logo" className="object-contain dark:hidden" /> : null}
         {dark ? <img src={dark} alt="Logo" className="hidden object-contain dark:block" /> : null}
       </span>
-      {name ? <span className="font-semibold text-[var(--sidebar-fg)]">{name}</span> : null}
+      {!logoExists && name ? (
+        <span className="font-semibold text-[var(--sidebar-fg)]">{name}</span>
+      ) : null}
     </Link>
   );
 }

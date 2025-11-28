@@ -882,10 +882,9 @@ function SiteDetailPage() {
           <TabsContent value="deploys" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Deploy from GitHub</CardTitle>
+                <CardTitle>Deployment History</CardTitle>
                 <CardDescription>
-                  Deployment orchestration will run via Inngest to unpack your
-                  config.
+                  View and manage your site deployments
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -893,12 +892,7 @@ function SiteDetailPage() {
                   <div className="flex items-start gap-3">
                     <Rocket className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">Deploy latest docufy.config</p>
-                      <p className="text-sm text-muted-foreground">
-                        Starts the GitHub-backed publish pipeline (enumerates
-                        nav + docs). Rendering happens in the next step of the
-                        implementation.
-                      </p>
+                      <p className="font-medium">Publish to production</p>
                     </div>
                   </div>
                   <Button
@@ -1304,10 +1298,7 @@ function SiteDetailPage() {
                   <div className="flex items-center gap-3">
                     <Rocket className="h-5 w-5 text-muted-foreground" />
                     <div className="flex-1">
-                      <p className="font-medium">Publish to Production</p>
-                      <p className="text-sm text-muted-foreground">
-                        Deployment functionality coming soon
-                      </p>
+                      <p className="font-medium">Publish to production</p>
                     </div>
                     <Button
                       onClick={async () => {
