@@ -29,6 +29,7 @@ import { mimeFromFilename } from "@/lib/mime"
 import { makeTypesenseAdminClient } from "../helpers/typesense"
 import { renderMdxToHtml, getGithubMdxComponents } from "@docufy/mdx-kit"
 import type { MdxRenderOptions } from "@docufy/mdx-kit"
+import { parseOpenApiSpec } from "@/lib/openapi"
 
 type EventPayload = { siteId: string; buildId: string; actorUserId?: string }
 
@@ -38,9 +39,29 @@ type GithubDoc = {
   title: string
   path: string
   sha: string
-  type: "page" | "group" | "api"
+  type: "page" | "group" | "api" | "api_spec" | "api_tag"
   slug: string
   trail: string[]
+  apiSpecBlobKey?: string | null
+  apiPath?: string | null
+  apiMethod?: string | null
+  apiTag?: string | null
+  plain?: string
+  order?: number
+}
+
+type UiTreeItem = {
+  kind: "group" | "page" | "api" | "api_spec" | "api_tag"
+  title: string
+  iconSvg?: string | null
+  slug: string
+  route: string
+  api?: {
+    path: string
+    method: string
+    document: string
+  }
+  children?: UiTreeItem[]
 }
 
 const slugify = (input: string) =>
@@ -59,6 +80,7 @@ async function ensureGithubAsset(opts: {
   repo: string
   assetPath: string
   blobBaseUrl: string
+  prefetched?: { content: Buffer; sha?: string | undefined }
 }) {
   const {
     siteId,
@@ -68,6 +90,7 @@ async function ensureGithubAsset(opts: {
     repo,
     assetPath,
     blobBaseUrl,
+    prefetched,
   } = opts
 
   const cached = (
@@ -85,13 +108,15 @@ async function ensureGithubAsset(opts: {
   )[0]
   if (cached) return cached.url
 
-  const { content, sha } = await getFileBinary({
-    installationId,
-    owner,
-    repo,
-    path: assetPath,
-    ref: branch,
-  })
+  const { content, sha } =
+    prefetched ??
+    (await getFileBinary({
+      installationId,
+      owner,
+      repo,
+      path: assetPath,
+      ref: branch,
+    }))
 
   const hash = sha ?? sha256(content.toString("binary"))
   const ext = path.posix.extname(assetPath) || ""
@@ -433,19 +458,208 @@ export const siteGithubPublish = inngest.createFunction(
         }
       }
 
+      const branch = site.githubBranch
       const docs: GithubDoc[] = []
       const missingPaths: string[] = []
+      const groupNodes: Array<{
+        spaceSlug: string
+        title: string
+        slug: string
+        trail: string[]
+        order: number
+      }> = []
 
       const findSha = (p: string) => blobMap.get(p.replace(/^\.?\//, ""))
 
-      normalized.navigation.spaces.forEach((space) => {
-        const walk = (
+      const siblingSlugs = new Map<string, Set<string>>()
+      const reserveSlug = (
+        spaceSlug: string,
+        parentTrail: string[],
+        base: string
+      ) => {
+        const key =
+          `${spaceSlug}:` +
+          (parentTrail.length ? parentTrail.join("/") : "__root__")
+        const set = siblingSlugs.get(key) ?? new Set<string>()
+        let slug = base
+        let attempt = 0
+        while (set.has(slug)) {
+          attempt++
+          slug = `${base}-${attempt.toString(36)}`
+        }
+        set.add(slug)
+        siblingSlugs.set(key, set)
+        return slug
+      }
+
+      let navOrder = 0
+
+      for (const space of normalized.navigation.spaces) {
+        const walk = async (
           nodes: (typeof normalized.navigation.spaces)[number]["tree"],
           trail: string[]
-        ) => {
+        ): Promise<void> => {
           for (const node of nodes) {
-            const slug = slugify(node.title)
+            const baseSlug = slugify(node.title)
+            const slug = reserveSlug(space.slug, trail, baseSlug)
             const nextTrail = trail.concat(slug)
+            const nodeType = node.type ?? (node.path ? "page" : "group")
+
+            if (nodeType === "api_spec" && node.path) {
+              const repoPath = node.path.replace(/^\.?\//, "")
+              const sha = findSha(repoPath)
+              if (!sha) {
+                missingPaths.push(repoPath)
+                if (node.children?.length) {
+                  await walk(node.children, nextTrail)
+                }
+                continue
+              }
+
+              const { content, sha: contentSha } = await getFileBinary({
+                installationId: site.githubInstallationId!,
+                owner,
+                repo,
+                path: repoPath,
+                ref: branch,
+              })
+              const specText = content.toString("utf8")
+              const specBlobUrl = await ensureGithubAsset({
+                siteId,
+                branch,
+                installationId: site.githubInstallationId!,
+                owner,
+                repo,
+                assetPath: repoPath,
+                blobBaseUrl,
+                prefetched: { content, sha: contentSha },
+              })
+
+              let parsed
+              try {
+                parsed = await parseOpenApiSpec(specText)
+              } catch (err) {
+                throw new Error(
+                  `Failed to parse OpenAPI spec at ${repoPath}: ${
+                    err instanceof Error ? err.message : String(err)
+                  }`
+                )
+              }
+
+              docs.push({
+                id: `${space.slug}:${repoPath}`,
+                spaceSlug: space.slug,
+                title: node.title,
+                path: repoPath,
+                sha,
+                type: "api_spec",
+                slug,
+                trail: nextTrail,
+                apiSpecBlobKey: specBlobUrl,
+                plain: "",
+                order: navOrder++,
+              })
+
+              const tagIndex = new Map(parsed.tagOrder.map((t, i) => [t, i]))
+              const tagNames = Array.from(
+                new Set(
+                  parsed.operations
+                    .map((op) => op.tag)
+                    .filter((t): t is string => !!t)
+                )
+              )
+              const sortedTags = tagNames.sort((a, b) => {
+                const ai = tagIndex.has(a)
+                  ? tagIndex.get(a)!
+                  : Number.MAX_SAFE_INTEGER
+                const bi = tagIndex.has(b)
+                  ? tagIndex.get(b)!
+                  : Number.MAX_SAFE_INTEGER
+                return ai === bi ? a.localeCompare(b) : ai - bi
+              })
+
+              for (const tagName of sortedTags) {
+                const tagSlug = reserveSlug(
+                  space.slug,
+                  nextTrail,
+                  slugify(tagName)
+                )
+                const tagTrail = nextTrail.concat(tagSlug)
+                docs.push({
+                  id: `${space.slug}:${repoPath}#tag:${tagSlug}`,
+                  spaceSlug: space.slug,
+                  title: tagName,
+                  path: `${repoPath}#tag:${tagSlug}`,
+                  sha,
+                  type: "api_tag",
+                  slug: tagSlug,
+                  trail: tagTrail,
+                  apiSpecBlobKey: specBlobUrl,
+                  apiTag: tagName,
+                  plain: tagName,
+                  order: navOrder++,
+                })
+
+                const taggedOps = parsed.operations.filter(
+                  (op) => op.tag === tagName
+                )
+                for (const op of taggedOps) {
+                  const opSlug = reserveSlug(
+                    space.slug,
+                    tagTrail,
+                    slugify(op.title)
+                  )
+                  const opTrail = tagTrail.concat(opSlug)
+                  docs.push({
+                    id: `${space.slug}:${repoPath}#${op.method}:${op.path}`,
+                    spaceSlug: space.slug,
+                    title: op.title,
+                    path: `${repoPath}#${op.method}:${op.path}`,
+                    sha,
+                    type: "api",
+                    slug: opSlug,
+                    trail: opTrail,
+                    apiSpecBlobKey: specBlobUrl,
+                    apiPath: op.path,
+                    apiMethod: op.method,
+                    apiTag: tagName,
+                    plain: op.plain,
+                    order: navOrder++,
+                  })
+                }
+              }
+
+              const untagged = parsed.operations.filter((op) => !op.tag)
+              for (const op of untagged) {
+                const opSlug = reserveSlug(
+                  space.slug,
+                  nextTrail,
+                  slugify(op.title)
+                )
+                const opTrail = nextTrail.concat(opSlug)
+                docs.push({
+                  id: `${space.slug}:${repoPath}#${op.method}:${op.path}`,
+                  spaceSlug: space.slug,
+                  title: op.title,
+                  path: `${repoPath}#${op.method}:${op.path}`,
+                  sha,
+                  type: "api",
+                  slug: opSlug,
+                  trail: opTrail,
+                  apiSpecBlobKey: specBlobUrl,
+                  apiPath: op.path,
+                  apiMethod: op.method,
+                  apiTag: null,
+                  plain: op.plain,
+                  order: navOrder++,
+                })
+              }
+
+              if (node.children?.length) {
+                await walk(node.children, nextTrail)
+              }
+              continue
+            }
 
             if (node.path) {
               const repoPath = node.path.replace(/^\.?\//, "")
@@ -459,20 +673,37 @@ export const siteGithubPublish = inngest.createFunction(
                   title: node.title,
                   path: repoPath,
                   sha,
-                  type: node.type ?? "page",
+                  type: nodeType,
                   slug,
                   trail: nextTrail,
+                  order: navOrder++,
                 })
               }
+            } else {
+              // Group without a backing file
+              groupNodes.push({
+                spaceSlug: space.slug,
+                title: node.title,
+                slug,
+                trail: nextTrail,
+                order: navOrder++,
+              })
             }
 
             if (node.children?.length) {
-              walk(node.children, nextTrail)
+              await walk(node.children, nextTrail)
             }
           }
         }
-        walk(space.tree, [])
-      })
+
+        await walk(space.tree, [])
+      }
+
+      if (missingPaths.length) {
+        console.warn(
+          `Missing configured GitHub doc paths: ${missingPaths.join(", ")}`
+        )
+      }
 
       await db
         .update(siteBuildsTable)
@@ -482,8 +713,6 @@ export const siteGithubPublish = inngest.createFunction(
           sourceCommitSha: commitSha,
         })
         .where(eq(siteBuildsTable.id, build.id))
-
-      const branch = site.githubBranch
       const existingDocs = await db
         .select()
         .from(siteGithubDocsTable)
@@ -551,6 +780,103 @@ export const siteGithubPublish = inngest.createFunction(
           }
         }
 
+        if (
+          doc.type === "api" ||
+          doc.type === "api_spec" ||
+          doc.type === "api_tag"
+        ) {
+          const bundle = {
+            id: doc.id,
+            title: doc.title,
+            slug: doc.slug,
+            trail: doc.trail,
+            iconSvg: null as string | null,
+            updatedAt: now,
+            type: doc.type,
+            apiSpecBlobKey: doc.apiSpecBlobKey ?? null,
+            apiPath: doc.apiPath ?? null,
+            apiMethod: doc.apiMethod ?? null,
+            rendered: { html: "", toc: [] as unknown[] },
+            plain: doc.plain ?? "",
+            markdown: undefined as string | undefined,
+            source: { kind: "github-openapi", path: doc.path },
+          }
+
+          const body = JSON.stringify(bundle)
+          const hash = sha256(body)
+          const key = `orgs/${orgId}/blobs/${hash}.json`
+          const size = byteLengthUtf8(body)
+
+          const existingBlob = (
+            await db
+              .select({ id: siteContentBlobsTable.id })
+              .from(siteContentBlobsTable)
+              .where(
+                and(
+                  eq(siteContentBlobsTable.organizationId, orgId),
+                  eq(siteContentBlobsTable.hash, hash)
+                )
+              )
+              .limit(1)
+          )[0]
+
+          if (!existingBlob) {
+            await blobPut(key, body, "application/json", { immutable: true })
+            await db.insert(siteContentBlobsTable).values({
+              organizationId: orgId,
+              hash,
+              key,
+              size,
+            })
+            pagesWritten++
+            bytesWritten += size
+          }
+
+          pageRefById.set(doc.id, { key, hash, size })
+          docMetadata.set(doc.id, { headings: [], plain: doc.plain ?? "" })
+
+          await db
+            .insert(siteGithubDocsTable)
+            .values({
+              siteId,
+              branch,
+              path: doc.path,
+              sha: doc.sha,
+              contentBlobHash: hash,
+              title: doc.title,
+              headings: [],
+              plain: doc.plain ?? "",
+              size,
+              kind: doc.type,
+              updatedAt: now,
+            })
+            .onConflictDoUpdate({
+              target: [
+                siteGithubDocsTable.siteId,
+                siteGithubDocsTable.branch,
+                siteGithubDocsTable.path,
+              ],
+              set: {
+                sha: doc.sha,
+                contentBlobHash: hash,
+                title: doc.title,
+                headings: [],
+                plain: doc.plain ?? "",
+                size,
+                kind: doc.type,
+                updatedAt: now,
+              },
+            })
+
+          itemsDone++
+          await db
+            .update(siteBuildsTable)
+            .set({ itemsDone, pagesWritten, bytesWritten })
+            .where(eq(siteBuildsTable.id, build.id))
+
+          continue
+        }
+
         const raw = await getFileContent({
           installationId: site.githubInstallationId,
           owner,
@@ -578,7 +904,7 @@ export const siteGithubPublish = inngest.createFunction(
           trail: doc.trail,
           iconSvg: null as string | null,
           updatedAt: now,
-          type: doc.type === "api" ? "api" : ("page" as const),
+          type: "page" as const,
           rendered: { html, toc },
           plain,
           markdown: raw,
@@ -660,8 +986,10 @@ export const siteGithubPublish = inngest.createFunction(
 
       // Build manifest + tree
       const nowMs = Date.now()
-      const routeFor = (spaceSlug: string, trail: string[]) =>
-        `/${spaceSlug}/${trail.join("/")}`
+      const routeFor = (spaceSlug: string, trail: string[], isApi?: boolean) =>
+        isApi
+          ? `/api-reference/${spaceSlug}/${trail.join("/")}`
+          : `/${spaceSlug}/${trail.join("/")}`
 
       const navSpaces = normalized.navigation.spaces.map((s, idx) => ({
         slug: s.slug,
@@ -682,7 +1010,12 @@ export const siteGithubPublish = inngest.createFunction(
           hash: string
           size: number
           lastModified: number
-          kind?: "page" | "api"
+          kind?: "page" | "api" | "api_spec" | "api_tag"
+          api?: {
+            document?: string
+            path?: string
+            method?: string
+          } | null
           previous?: { title: string; route: string }
           next?: { title: string; route: string }
         }
@@ -691,11 +1024,12 @@ export const siteGithubPublish = inngest.createFunction(
       const routesBySpace = new Map<string, string[]>()
 
       for (const d of docs) {
+        if (d.type !== "page" && d.type !== "api") continue
         const ref = pageRefById.get(d.id)
         if (!ref) continue
         const sizeNum =
           typeof ref.size === "string" ? Number(ref.size) : ref.size
-        const route = routeFor(d.spaceSlug, d.trail)
+        const route = routeFor(d.spaceSlug, d.trail, d.type === "api")
         if (!routesBySpace.has(d.spaceSlug)) routesBySpace.set(d.spaceSlug, [])
         routesBySpace.get(d.spaceSlug)!.push(route)
 
@@ -708,6 +1042,13 @@ export const siteGithubPublish = inngest.createFunction(
           size: sizeNum,
           lastModified: nowMs,
           kind: d.type === "api" ? "api" : "page",
+        }
+        if (d.type === "api" && d.apiPath && d.apiMethod && d.apiSpecBlobKey) {
+          pagesIndex[route].api = {
+            path: d.apiPath,
+            method: d.apiMethod,
+            document: d.apiSpecBlobKey,
+          }
         }
       }
 
@@ -738,38 +1079,88 @@ export const siteGithubPublish = inngest.createFunction(
         ns.entry = routes[0]
       }
 
-      type UiTreeItem = {
-        kind: "group" | "page"
+      type TreeCandidate = {
+        spaceSlug: string
+        trail: string[]
+        order: number
+        kind: UiTreeItem["kind"]
         title: string
-        iconSvg?: string | null
         slug: string
-        route: string
-        children?: UiTreeItem[]
+        apiPath?: string | null
+        apiMethod?: string | null
+        apiSpecBlobKey?: string | null
+      }
+
+      const treeCandidates: TreeCandidate[] = []
+      for (const doc of docs) {
+        treeCandidates.push({
+          spaceSlug: doc.spaceSlug,
+          trail: doc.trail,
+          order: doc.order ?? 0,
+          kind: doc.type,
+          title: doc.title,
+          slug: doc.slug,
+          apiPath: doc.apiPath ?? null,
+          apiMethod: doc.apiMethod ?? null,
+          apiSpecBlobKey: doc.apiSpecBlobKey ?? null,
+        })
+      }
+      for (const group of groupNodes) {
+        treeCandidates.push({
+          spaceSlug: group.spaceSlug,
+          trail: group.trail,
+          order: group.order ?? 0,
+          kind: "group",
+          title: group.title,
+          slug: group.slug,
+        })
       }
 
       const uiTreeSpaces = normalized.navigation.spaces.map((space) => {
-        const walk = (
-          nodes: typeof space.tree,
-          trail: string[]
-        ): UiTreeItem[] =>
-          nodes.map((n) => {
-            const slug = slugify(n.title)
-            const nextTrail = trail.concat(slug)
-            const hasPath = !!n.path
-            // Use the group's own slug in the route to keep keys unique even without a path
-            const route = routeFor(space.slug, nextTrail)
-            const children = n.children?.length
-              ? walk(n.children, nextTrail)
-              : undefined
-            return {
-              kind: hasPath ? "page" : "group",
-              title: n.title,
-              slug,
-              route,
-              iconSvg: null,
-              children,
+        const perSpace = treeCandidates
+          .filter((c) => c.spaceSlug === space.slug)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+
+        type NodeWithTrail = { node: UiTreeItem; trail: string[] }
+        const childrenByParent = new Map<string, NodeWithTrail[]>()
+        const parentKey = (trail: string[]) =>
+          `${space.slug}:` + (trail.length ? trail.join("/") : "__root__")
+
+        for (const c of perSpace) {
+          const isApiRoute = c.kind === "api"
+          const node: UiTreeItem = {
+            kind: c.kind,
+            title: c.title,
+            slug: c.slug,
+            route: routeFor(space.slug, c.trail, isApiRoute),
+            iconSvg: null,
+          }
+          if (
+            c.kind === "api" &&
+            c.apiPath &&
+            c.apiMethod &&
+            c.apiSpecBlobKey
+          ) {
+            node.api = {
+              path: c.apiPath,
+              method: c.apiMethod,
+              document: c.apiSpecBlobKey,
             }
-          })
+          }
+          const key = parentKey(c.trail.slice(0, -1))
+          const list = childrenByParent.get(key) ?? []
+          list.push({ node, trail: c.trail })
+          childrenByParent.set(key, list)
+        }
+
+        const build = (trail: string[]): UiTreeItem[] => {
+          const key = parentKey(trail)
+          const entries = childrenByParent.get(key) ?? []
+          return entries.map(({ node, trail: childTrail }) => ({
+            ...node,
+            children: build(childTrail),
+          }))
+        }
 
         return {
           space: {
@@ -777,7 +1168,7 @@ export const siteGithubPublish = inngest.createFunction(
             name: space.name,
             iconSvg: null,
           },
-          items: walk(space.tree, []),
+          items: build([]),
         }
       })
 
@@ -805,7 +1196,7 @@ export const siteGithubPublish = inngest.createFunction(
         },
         nav: { spaces: navSpaces },
         counts: {
-          pages: docs.length,
+          pages: Object.keys(pagesIndex).length,
           newBlobs: pagesWritten,
           reusedBlobs: docs.length - pagesWritten,
         },
@@ -913,21 +1304,23 @@ export const siteGithubPublish = inngest.createFunction(
         { buildId, manifestUrl, treeUrl, themeUrl }
       )
 
-      const pagesForIndex = docs.map((d) => {
-        const meta = docMetadata.get(d.id)
-        return {
-          id: d.id,
-          spaceSlug: d.spaceSlug,
-          route: routeFor(d.spaceSlug, d.trail),
-          title: d.title,
-          kind: d.type === "api" ? "api" : ("page" as "api" | "page"),
-          headings: meta?.headings ?? [],
-          apiPath: null,
-          apiMethod: null,
-          plain: meta?.plain ?? "",
-          updatedAt: nowMs,
-        }
-      })
+      const pagesForIndex = docs
+        .filter((d) => d.type === "page" || d.type === "api")
+        .map((d) => {
+          const meta = docMetadata.get(d.id)
+          return {
+            id: d.id,
+            spaceSlug: d.spaceSlug,
+            route: routeFor(d.spaceSlug, d.trail, d.type === "api"),
+            title: d.title,
+            kind: d.type === "api" ? "api" : ("page" as "api" | "page"),
+            headings: meta?.headings ?? [],
+            apiPath: d.apiPath ?? null,
+            apiMethod: d.apiMethod ?? null,
+            plain: meta?.plain ?? "",
+            updatedAt: nowMs,
+          }
+        })
 
       await indexDocsInTypesense({ siteId, buildId, pages: pagesForIndex })
 

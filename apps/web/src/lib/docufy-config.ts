@@ -8,7 +8,7 @@ export const ButtonPositionZ = z.enum([
   "topbar_left",
   "topbar_right",
 ])
-const DocTypeZ = z.enum(["page", "group", "api"])
+const DocTypeZ = z.enum(["page", "group", "api", "api_spec"])
 const ButtonZ = z.object({
   label: z.string().min(1),
   href: z.string().min(1),
@@ -22,7 +22,7 @@ export type NavNode = {
   title: string
   path?: string
   icon?: string | null
-  type?: "page" | "group" | "api"
+  type?: "page" | "group" | "api" | "api_spec"
   children?: NavNode[]
 }
 

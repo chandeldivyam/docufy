@@ -399,7 +399,9 @@ export const siteGithubDocsTable = pgTable(
     headings: jsonb("headings").$type<string[]>().notNull().default([]),
     plain: text("plain").notNull().default(""),
     size: integer("size").notNull(),
-    kind: text("kind").$type<"page" | "group" | "api">().default("page"),
+    kind: text("kind")
+      .$type<"page" | "group" | "api" | "api_spec" | "api_tag">()
+      .default("page"),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())

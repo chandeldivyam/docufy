@@ -16,7 +16,7 @@ export type PageIndexEntry = {
   hash: string;
   size: number;
   lastModified: number;
-  kind: 'page' | 'api';
+  kind: 'page' | 'api' | 'api_spec' | 'api_tag';
   api: {
     document?: string;
     path?: string;
@@ -120,7 +120,7 @@ export type PageBlob = {
   plain: string;
   markdown?: string;
   source: unknown;
-  type: 'page' | 'api';
+  type: 'page' | 'api' | 'api_spec' | 'api_tag';
   apiSpecBlobKey?: string;
   apiMethod?: string;
   apiPath?: string;
