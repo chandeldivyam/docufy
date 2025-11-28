@@ -17,10 +17,12 @@ function parseOrgId(state: string | null): string | null {
     if (parsed && typeof parsed === "object" && parsed.organizationId) {
       return parsed.organizationId as string
     }
+    return null
   } catch {
     // If state is not JSON, fall through to treat it as raw orgId
+    return null
   }
-  return state
+  return null
 }
 
 function renderHtml(body: string, status = 200) {

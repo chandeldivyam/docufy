@@ -143,11 +143,16 @@ function resolveAssetPath(
   if (!value) return undefined
   if (isExternalUrl(value)) return value
   // Normalize and check for path traversal
-  const resolved = path.posix.normalize(
-    path.posix.join(configDir || ".", value)
-  )
   const base = path.posix.normalize(configDir || ".")
-  if (!resolved.startsWith(base + "/") && resolved !== base) {
+  const joined = path.posix.join(base, value)
+  const resolved = path.posix.normalize(joined)
+  // Ensure resolved path is within or equal to base directory
+  // Handle both "base/..." and "base" cases, plus root "." case
+  const isWithinBase =
+    resolved === base ||
+    resolved.startsWith(base + "/") ||
+    (base === "." && !resolved.startsWith(".."))
+  if (!isWithinBase) {
     throw new Error(`Path traversal detected: ${value}`)
   }
   return resolved
