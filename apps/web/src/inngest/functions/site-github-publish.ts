@@ -27,7 +27,7 @@ import {
 } from "../helpers/blob"
 import { mimeFromFilename } from "@/lib/mime"
 import { makeTypesenseAdminClient } from "../helpers/typesense"
-import { renderMdxToHtml, getGithubMdxComponents } from "@docufy/mdx-kit"
+import { renderMdxToHtml, getDocufyMdxComponents } from "@docufy/mdx-kit"
 import type { MdxRenderOptions } from "@docufy/mdx-kit"
 import { parseOpenApiSpec } from "@/lib/openapi"
 
@@ -284,7 +284,7 @@ async function renderGithubMarkdown(opts: {
   const mdxOptions: MdxRenderOptions = {
     gfm: true,
     allowHtml: true,
-    components: getGithubMdxComponents(),
+    components: getDocufyMdxComponents(),
   }
 
   return await renderMdxToHtml(rewritten, mdxOptions)

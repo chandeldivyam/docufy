@@ -33,7 +33,7 @@ export const rehypeHighlightCode: Plugin<[], Root> = () => async (tree) => {
       // 1. Generate highlighted HTML using Shiki
       const shikiString = await codeToHtml(rawCode, {
         lang,
-        themes: { light: 'github-light', dark: 'github-dark' },
+        themes: { light: 'light-plus', dark: 'slack-dark' },
       });
 
       // 2. Parse the Shiki HTML string back into a HAST tree
