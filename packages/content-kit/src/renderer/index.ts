@@ -100,7 +100,7 @@ async function highlightWithShiki(html: string) {
 
     const shikiHtml = await codeToHtml(raw, {
       lang,
-      themes: { light: 'github-light', dark: 'github-dark' },
+      themes: { light: 'light-plus', dark: 'slack-dark' },
     });
 
     // Adopt Shiki nodes as before

@@ -1939,3 +1939,181 @@ html.dark .shiki span {
 .dfy-last-modified span {
   white-space: nowrap;
 }
+
+.dfy-callout {
+  /* 1. Use the color variable, but default to Blue if missing */
+  --base-color: var(--dfy-callout-color, #3b82f6);
+
+  /* 2. BACKGROUND FIX: 
+     Mix 15% of the color with Transparent. 
+     This acts like an opacity filter, creating a nice tint in Dark or Light mode. */
+  background-color: color-mix(in srgb, var(--base-color) 15%, transparent);
+
+  /* Border: Solid color */
+  border: 1px solid var(--base-color);
+
+  /* Layout & Spacing */
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  display: flex;
+  gap: 0.75rem;
+
+  /* Ensure the body text inherits the standard text color (e.g., White/Grey) 
+     instead of turning Yellow/Green */
+  color: inherit;
+}
+
+/* Color the Icon */
+.dfy-callout-icon {
+  /* 1. Make the wrapper height match the text line-height (usually 1.5 or 1.6) */
+  height: 1.5em;
+
+  /* 2. Vertically center the SVG within this wrapper */
+  display: flex;
+  align-items: center;
+
+  /* 3. Keep width fixed */
+  width: 20px;
+  flex-shrink: 0;
+
+  /* 4. Color */
+  color: var(--base-color);
+}
+
+.dfy-callout-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dfy-callout-body {
+  flex: 1 1 auto;
+  min-width: 0; /* Prevents flex overflow issues */
+}
+
+/* Color the Title */
+.dfy-callout-title {
+  color: var(--base-color);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  line-height: 1.5;
+}
+
+.dfy-callout-content {
+  line-height: 1.6;
+  opacity: 0.9; /* Slightly soften the body text */
+}
+
+.dfy-callout-content > :first-child {
+  margin-top: 0;
+}
+.dfy-callout-content > :last-child {
+  margin-bottom: 0;
+}
+
+.dfy-columns {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0;
+
+  /* default: 2 columns, minmax for nice wrapping */
+  grid-template-columns: repeat(var(--dfy-columns-count, 2), minmax(0, 1fr));
+}
+
+/* Stack on small screens */
+@media (max-width: 768px) {
+  .dfy-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* === Card ============================================ */
+
+.dfy-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  border-radius: 0.75rem;
+
+  /* Fixed: Mapped to your existing globals variables */
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+
+  /* Fixed: Removed underline explicitly */
+  text-decoration: none !important;
+  color: var(--fg);
+
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.dfy-card--link {
+  cursor: pointer;
+}
+
+.dfy-card:hover {
+  /* Fixed: Uses your primary color for border and sidebar-hover for bg */
+  border-color: var(--primary);
+  background-color: var(--sidebar-hover);
+
+  /* Ensure underline stays off on hover */
+  text-decoration: none !important;
+}
+
+/* Horizontal variant: icon+title on the left, text on the right */
+.dfy-card--horizontal {
+  flex-direction: row;
+  align-items: center;
+}
+
+.dfy-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Icon container */
+.dfy-card-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  /* Fixed: Uses your primary token and valid mix syntax */
+  color: var(--primary);
+  background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+}
+
+.dfy-card-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dfy-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--fg);
+}
+
+.dfy-card-body {
+  font-size: 0.9rem;
+  line-height: 1.6;
+
+  /* Fixed: Uses your muted text variable */
+  color: var(--sidebar-fg-muted);
+}
+
+/* Ensure card body content has clean spacing */
+.dfy-card-body > :first-child {
+  margin-top: 0;
+}
+.dfy-card-body > :last-child {
+  margin-bottom: 0;
+}

@@ -37,6 +37,12 @@ export default async function ApiHandler({
             document: blob.apiSpecBlobKey,
             operations: [{ path: blob.apiPath, method: blob.apiMethod.toLowerCase() }],
             hasHead: true,
+            shikiOptions: {
+              themes: {
+                light: 'light-plus',
+                dark: 'slack-dark',
+              },
+            },
           })}
         />
       </div>

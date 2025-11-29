@@ -1,4 +1,4 @@
-// src/compile.ts
+// packages/mdx-kit/src/compile.ts
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkMdx from 'remark-mdx';
@@ -7,13 +7,11 @@ import remarkRehype from 'remark-rehype';
 import rehypeRaw from 'rehype-raw';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeStringify from 'rehype-stringify';
-import rehypeSanitize from 'rehype-sanitize';
 
 import type { MdxRenderOptions, TocItem } from './types.js';
-import { remarkHandleMdxComponents } from './remark-handle-mdx-components.js';
+import { rehypeHandleMdxComponents } from './rehype-handle-mdx-components.js';
 import { collectHeadings } from './rehype-collect-headings.js';
 import { collectPlainText } from './rehype-collect-plain.js';
-import { createSanitizeSchema } from './sanitize.js';
 import { rehypeHighlightCode } from './rehype-highlight-code.js';
 
 type HtmlResult = {
@@ -22,6 +20,9 @@ type HtmlResult = {
   plain: string;
 };
 
+// We only need to pass through MDX JSX nodes, not all MDX node types.
+const mdxJsxNodeTypes = ['mdxJsxFlowElement', 'mdxJsxTextElement'];
+
 export async function renderMdxToHtml(
   markdown: string,
   opts: MdxRenderOptions = {},
@@ -29,32 +30,33 @@ export async function renderMdxToHtml(
   const toc: TocItem[] = [];
   const headingIds = new Set<string>();
 
-  const processor = unified().use(remarkParse).use(remarkMdx);
+  const allowHtml = opts.allowHtml ?? true;
+  const enableGfm = opts.gfm ?? true;
 
-  if (opts.gfm ?? true) {
-    processor.use(remarkGfm);
-  }
+  const processor = unified()
+    .use(remarkParse)
+    .use(enableGfm ? remarkGfm : () => {})
+    .use(remarkMdx)
+    .use(remarkRehype, {
+      allowDangerousHtml: allowHtml,
+      passThrough: mdxJsxNodeTypes,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+    .use(rehypeHandleMdxComponents, { components: opts.components });
 
-  processor.use(remarkHandleMdxComponents, { components: opts.components }).use(remarkRehype, {
-    allowDangerousHtml: opts.allowHtml ?? true,
-  });
-
-  if (opts.allowHtml ?? true) {
+  if (allowHtml) {
+    // Merge any remaining raw HTML into the tree now that MDX nodes are gone.
     processor.use(rehypeRaw);
   }
 
   processor
-    // 1. Sanitize raw HTML first (trusted plugins run after this).
-    .use(rehypeSanitize, createSanitizeSchema())
     .use(rehypeHighlightCode)
-    // 2. Collect headings + assign IDs ourselves.
     .use(collectHeadings, { toc, headingIds })
-    // 3. Add self-link anchors.
     .use(rehypeAutolinkHeadings, {
       behavior: 'prepend',
       properties: {
         className: ['dfy-anchor'],
-        ariaLabel: 'Permalink', // camelCase; will serialize as aria-label
+        ariaLabel: 'Permalink',
       },
     })
     .use(collectPlainText)
