@@ -37,8 +37,11 @@ pnpm-debug.log*
 # LLM Guideliens
 guidelines
 plans
+docs
+user-docs
 .vercel
 .env*.local
 
 # sst
 .sst
+~/Library/Caches/ms-playwright/*

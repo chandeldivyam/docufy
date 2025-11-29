@@ -17,11 +17,47 @@ declare module 'sst' {
       type: 'sst.sst.Secret';
       value: string;
     };
+    DocsSearchSharedSecret: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
     ElectricSourceId: {
       type: 'sst.sst.Secret';
       value: string;
     };
     ElectricSourceSecret: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    GithubAppClientId: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    GithubAppClientSecret: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    GithubAppId: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    GithubAppPrivateKey: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    GithubClientId: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    GithubClientSecret: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    GoogleClientId: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    GoogleClientSecret: {
       type: 'sst.sst.Secret';
       value: string;
     };
@@ -33,7 +69,19 @@ declare module 'sst' {
       type: 'sst.sst.Secret';
       value: string;
     };
+    PosthogHost: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    PosthogKey: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
     ResendApiKey: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    TypesenseApiKey: {
       type: 'sst.sst.Secret';
       value: string;
     };
@@ -42,6 +90,14 @@ declare module 'sst' {
       value: string;
     };
     VercelBlobStoreId: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    VercelRendererProject: {
+      type: 'sst.sst.Secret';
+      value: string;
+    };
+    VercelToken: {
       type: 'sst.sst.Secret';
       value: string;
     };
