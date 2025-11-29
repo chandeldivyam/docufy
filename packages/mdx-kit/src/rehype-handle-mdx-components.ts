@@ -82,6 +82,16 @@ async function fetchIconSvg(iconName: string): Promise<string | null> {
   }
 }
 
+// Tiny helper for boolean-ish props like horizontal, arrow, etc.
+function isTruthyProp(value: unknown): boolean {
+  if (value === true) return true;
+  if (value === '') return true;
+  if (typeof value === 'string') return value.toLowerCase() === 'true';
+  return false;
+}
+
+// --- Callout ---------------------------------------------------------------
+
 type BuiltCallout = {
   root: Element;
   iconNode: Element;
@@ -171,6 +181,123 @@ function buildCalloutElement(
   return { root, iconNode };
 }
 
+// --- NEW: Card -------------------------------------------------------------
+
+type BuiltCard = {
+  root: Element;
+  iconNode?: Element;
+};
+
+function buildCardElement(props: Record<string, unknown>, children: ElementContent[]): BuiltCard {
+  const title = typeof props.title === 'string' ? props.title : undefined;
+  const icon = typeof props.icon === 'string' ? props.icon : undefined;
+  const href = typeof props.href === 'string' ? props.href : undefined;
+  const horizontal = isTruthyProp(props.horizontal);
+
+  const baseClasses: string[] = ['dfy-card'];
+  if (horizontal) baseClasses.push('dfy-card--horizontal');
+  if (href) baseClasses.push('dfy-card--link');
+
+  const tagName = href ? 'a' : 'div';
+
+  const outerProps: Properties = {
+    className: baseClasses,
+  };
+
+  if (href) {
+    outerProps.href = href;
+  }
+
+  let iconNode: Element | undefined;
+
+  if (icon) {
+    iconNode = {
+      type: 'element',
+      tagName: 'div',
+      properties: {
+        className: ['dfy-card-icon'],
+        'aria-hidden': 'true',
+        'data-icon': icon,
+      },
+      children: [],
+    };
+  }
+
+  const headerChildren: ElementContent[] = [];
+  if (iconNode) headerChildren.push(iconNode);
+
+  if (title) {
+    headerChildren.push({
+      type: 'element',
+      tagName: 'div',
+      properties: { className: ['dfy-card-title'] },
+      children: [{ type: 'text', value: title }],
+    });
+  }
+
+  const headerNode: Element | null =
+    headerChildren.length > 0
+      ? {
+          type: 'element',
+          tagName: 'div',
+          properties: { className: ['dfy-card-header'] },
+          children: headerChildren,
+        }
+      : null;
+
+  const bodyNode: Element = {
+    type: 'element',
+    tagName: 'div',
+    properties: { className: ['dfy-card-body'] },
+    children,
+  };
+
+  const root: Element = {
+    type: 'element',
+    tagName,
+    properties: outerProps,
+    children: headerNode ? [headerNode, bodyNode] : [bodyNode],
+  };
+
+  return { root, iconNode };
+}
+
+// --- NEW: Columns / CardGroup ---------------------------------------------
+
+function normalizeCols(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
+  if (typeof value === 'string') {
+    const parsed = parseInt(value, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return 2; // Mintlify default :contentReference[oaicite:2]{index=2}
+}
+
+function buildColumnsElement(props: Record<string, unknown>, children: ElementContent[]): Element {
+  const cols = Math.max(1, Math.min(4, normalizeCols(props.cols)));
+  const stylePieces: string[] = [];
+  stylePieces.push(`--dfy-columns-count:${cols}`);
+
+  if (typeof props.gap === 'string') {
+    stylePieces.push(`--dfy-columns-gap:${props.gap}`);
+  }
+
+  const outerProps: Properties = {
+    className: ['dfy-columns'],
+  };
+
+  if (stylePieces.length > 0) {
+    outerProps.style = stylePieces.join('; ');
+  }
+
+  return {
+    type: 'element',
+    tagName: 'div',
+    properties: outerProps,
+    children,
+  };
+}
+
 // --- Plugin ----------------------------------------------------------------
 
 export const rehypeHandleMdxComponents: Plugin<[Options?], Root> = (options) => async (tree) => {
@@ -221,6 +348,40 @@ export const rehypeHandleMdxComponents: Plugin<[Options?], Root> = (options) => 
         );
       }
 
+      return;
+    }
+
+    // 1b) Built-in <Card>
+    if (name === 'Card') {
+      const { root, iconNode } = buildCardElement(props, children);
+      parent.children[index] = root;
+
+      const iconName = typeof props.icon === 'string' ? props.icon : undefined;
+      if (iconName && iconNode) {
+        tasks.push(
+          (async () => {
+            const svg = await fetchIconSvg(iconName);
+            if (!svg) return;
+
+            const fragment = fromHtml(svg, { fragment: true });
+            const svgElement = fragment.children.find(
+              (c): c is Element => c.type === 'element' && c.tagName === 'svg',
+            );
+
+            if (!svgElement) return;
+
+            iconNode.children = [svgElement];
+          })(),
+        );
+      }
+
+      return;
+    }
+
+    // 1c) Built-in <Columns> and <CardGroup> (alias)
+    if (name === 'Columns' || name === 'CardGroup') {
+      const root = buildColumnsElement(props, children);
+      parent.children[index] = root;
       return;
     }
 
