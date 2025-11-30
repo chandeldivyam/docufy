@@ -1,0 +1,48 @@
+Spaces map to top-level sections in your docs (product lines, personas, environments). The tree defines side navigation, page order, and breadcrumbs.
+
+## Spaces
+
+- Each space needs a unique `slug` and `name`.
+- `style`: inherit from `site.layout` or override per space.
+- `rootDir`: base folder for all `path` values in the space. Keep it scoped (e.g., `docs`, `handbook`, `api`).
+- `entry`: default landing page route within the space; if omitted, the first page is used.
+
+## Trees
+
+- Order is defined by the array order. Use nested groups to create collapsible sections.
+- `group` nodes have no content but keep structure clean.
+- Pages (`path` set) get routes under `/{space}/{trail}`; API pages use `/api-reference/{space}/{trail}`.
+
+### Examples
+
+```json
+{
+  "slug": "docs",
+  "name": "Docs",
+  "rootDir": "docs",
+  "tree": [
+    { "title": "Overview", "path": "overview.mdx", "icon": "book-open" },
+    {
+      "title": "Guides",
+      "icon": "map",
+      "children": [
+        { "title": "Setup", "path": "guides/setup.mdx" },
+        { "title": "Deploy", "path": "guides/deploy.mdx" }
+      ]
+    }
+  ]
+}
+```
+
+## Icons and ordering
+
+- Use Lucide icon names (`rocket`, `book-open`, `git-branch`) for visual cues. Missing icons are skipped safely.
+- Sibling slugs are de-duped automatically; you can reuse titles without clashing.
+- To move a page, change its position in `tree`; Docufy rebuilds routes in order.
+
+## Tips
+
+- Keep sections shallow: 2–3 levels deep is ideal.
+- Use `entry` for each space so visitors land on the intended start page.
+- Group API specs separately from guides to avoid clutter.
+- Avoid very long titles; slugs are trimmed and must stay unique.

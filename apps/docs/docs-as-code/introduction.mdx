@@ -1,3 +1,128 @@
-## Concept
+<Callout icon="git-branch" color="#10b981" title="What you get">
+  Author in GitHub, keep MDX close to your product code, and let Docufy publish the site. Config
+  lives in `docufy.config.json`; the build pulls your branch, renders MDX (with our components and
+  syntax highlighting), uploads assets, and ships a static site.
+</Callout>
 
-- Connecting github and building documents from markdown
+## How it works
+
+1. Install the Docufy GitHub App and grant the repos you want to publish from.
+2. Create a site in Docufy and pick **GitHub** as the content source. Choose the installation, repo, branch, and config path (for example `docufy.config.json`).
+3. We fetch and validate the config, sync branding/theme/buttons, and show a summary in the site view.
+4. On publish, we read the branch at the chosen commit, rewrite and upload assets to Blob, render every MDX page (plus OpenAPI-derived pages), index search, and deploy the static bundle.
+5. Any commit to that branch + path is the source of truth—no Studio editing required.
+
+## Repository layout (recommended)
+
+```text
+.
+├─ docufy.config.json        # Required; path is configurable when linking the site
+├─ docs/                     # Example docs root (match this in space.rootDir)
+│  ├─ introduction.mdx
+│  ├─ guides/quickstart.mdx
+│  └─ api/petstore.yaml      # OpenAPI spec if you want generated API pages
+└─ logo/
+   ├─ docufy-logo-light.png
+   └─ favicon.svg
+```
+
+Paths are resolved relative to the config file by default. `space.rootDir` lets you point navigation to a subfolder; every page path inside that space is resolved from that root. Absolute URLs (`https://…`) and `data:` URIs are passed through untouched; everything else is treated as a repo-relative path and uploaded.
+
+## The config file
+
+Docufy reads `version: 1` configs. Here is a minimal example:
+
+```json
+{
+  "version": 1,
+  "site": { "name": "ACME Docs", "layout": "sidebar-dropdown" },
+  "branding": {
+    "logo": { "light": "logo/light.png", "dark": "logo/dark.png" },
+    "favicon": "logo/favicon.svg"
+  },
+  "theme": {
+    "version": 1,
+    "light": { "--primary": "oklch(0.63 0.12 230)" },
+    "dark": { "--primary": "oklch(0.69 0.12 230)" },
+    "vars": {}
+  },
+  "navigation": {
+    "buttons": [
+      {
+        "label": "Login",
+        "href": "https://app.example.com",
+        "position": "sidebar_bottom",
+        "target": "_blank",
+        "icon": "log-in"
+      }
+    ],
+    "spaces": [
+      {
+        "slug": "docs",
+        "name": "Docs",
+        "rootDir": "docs",
+        "entry": "introduction.mdx",
+        "tree": [
+          { "title": "Introduction", "path": "introduction.mdx", "icon": "book-open" },
+          {
+            "title": "API",
+            "type": "api_spec",
+            "path": "api/petstore.yaml",
+            "icon": "braces"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Field reference
+
+- `site`: `name` (defaults to Documentation) and `layout` (`sidebar-dropdown` or `tabs`; spaces inherit unless they set `style`).
+- `branding`: optional `logo.light`, `logo.dark`, and `favicon`. Relative paths are resolved from the config directory and uploaded to Blob; external URLs are used as-is.
+- `theme`: `version`, plus token maps for `light`, `dark`, and `vars` (CSS variables).
+- `navigation.buttons`: link objects with `label`, `href`, `position` (`sidebar_top`, `sidebar_bottom`, `topbar_left`, `topbar_right`), optional `icon`, `target`, and `rank` (order).
+- `navigation.spaces`: each space needs a unique `slug` and `name`. `rootDir` defaults to `.` (the config directory). `entry` is optional and points to the default page inside that space. `tree` holds your docs hierarchy.
+
+### Tree nodes
+
+- `title`: required.
+- `path`: MDX/Markdown file (for `page`), or OpenAPI file (for `api_spec`). If omitted, the node is a `group`.
+- `type`: defaults to `page` when `path` exists, otherwise `group`. Valid values: `page`, `group`, `api`, `api_spec`. (`api` is used internally for generated endpoints; authoring time uses `api_spec`.)
+- `icon`: optional Lucide name (e.g., `book-open`, `rocket`); we fetch the SVG automatically.
+- `children`: nested nodes. Sibling slugs are de-duped automatically if titles repeat.
+
+## Writing content
+
+- **MDX + GFM**: GitHub-flavored Markdown (tables, task lists, strikethrough) plus MDX. Raw HTML is allowed and sanitized; IDs are preserved for anchors.
+- **Syntax highlighting**: Use fenced code blocks with triple backticks.
+- **Built-in components** (PascalCase in MDX):
+  - `<Callout title="Heads up" icon="alert-circle" color="#f97316">Body</Callout>`
+  - `<Card title="Start here" icon="rocket" href="/docs/intro">Body</Card>` (add `horizontal` for a wide variant)
+  - `<Columns cols={3}>…</Columns>` or `<CardGroup cols={2}>…</CardGroup>`  
+    Unknown uppercase components render as inline code so typos are obvious. Lowercase tags are treated as HTML.
+- **Assets**: Relative image/video sources are rewritten to Blob URLs during the build. Resolution rules: absolute URLs and `data:` URIs are untouched; `/foo.png` resolves from the config directory; keep assets inside the same config/root directory tree to avoid broken links.
+- **TOC and anchors**: Headings get permalinks and feed the sidebar table of contents; plain text is indexed for search.
+
+## OpenAPI support
+
+- Mark a node as `type: "api_spec"` and point `path` to an OpenAPI 3.0/3.1 JSON or YAML file in the repo.
+- Docufy uploads the spec, generates a tag page for each tag, and an endpoint page for every operation. Tag order respects the top-level `tags` array; otherwise tags are alphabetical.
+- The generated pages inherit the parent node’s icon. Endpoints get routes under `/api-reference/{space}/{tag}/{operation}`.
+
+## Build & publish loop
+
+- **Config sync**: When you create or re-sync the site, Docufy fetches the config, validates the schema, uploads branding assets, and updates site/theme/buttons. Issues surface in the GitHub sync status and Repo Syncs tab.
+- **Publish**: Trigger a deploy from the site’s Deploys tab. We pin to the selected branch, compute hashes for deduped blobs, and stream progress (items processed, reused, bytes). Missing files listed in the config are logged but don’t block the build.
+- **Domains**: Attach domains as usual; publishing writes the latest manifest/tree/theme and repoints domain pointers.
+- **Updates**: Merge to the tracked branch or change the config path/branch, then re-publish. Everything is stateless—no Studio documents to drift.
+
+## Best practices
+
+- Keep `docufy.config.json` close to docs (repo root or the docs folder) and avoid `../` paths.
+- Use small, optimized assets; they are uploaded and cached immutably by hash.
+- Declare `entry` for each space to control the landing page; the first listed page is used if omitted.
+- For API specs, keep titles and tag names short—slugs are trimmed to 120 characters.
+- Prefer branch-based workflows (e.g., `docs-main`) so builds stay deterministic; use PR previews by pointing a temporary site at a feature branch if needed.
+- Reuse Lucide icon names across nav/buttons to keep SVGs cached and payloads small.

@@ -1,0 +1,27 @@
+Logos, favicon, and theme tokens live in your config and sync automatically from GitHub.
+
+## Branding assets
+
+- `branding.logo.light` / `branding.logo.dark`: recommended PNG/SVG. If only one is provided, it’s used for both themes.
+- `branding.favicon`: SVG or PNG.
+- Relative paths resolve from the config directory; assets are uploaded to Blob and rewritten to CDN URLs. External URLs are passed through.
+- Keep assets in your repo (e.g., `logo/` folder) and optimize size for faster builds.
+
+## Theme tokens
+
+- `theme.version`: currently `1`.
+- `light` / `dark`: CSS custom properties (e.g., `"--primary": "oklch(...)"`).
+- `vars`: additional global variables for layout or component tweaks.
+- Tokens sync during config validation and are packaged into `theme.json` on publish.
+
+## Layout
+
+- `site.layout`: `sidebar-dropdown` (collapsible navigation) or `tabs` (spaces as top tabs).
+- `space.style`: optional override per space if you want a tabbed API area and a sidebar docs area.
+
+## Tips
+
+- Provide both light and dark logos for better contrast.
+- Reuse `--primary` across light/dark for brand consistency; adjust chroma/lightness per theme.
+- Favicon should be square and simple; avoid large file sizes.
+- When changing logos or tokens, commit the change and re-sync/publish to propagate.

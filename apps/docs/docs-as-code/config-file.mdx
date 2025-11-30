@@ -1,0 +1,44 @@
+Your `docufy.config.json` is the source of truth for the site’s structure, branding, and theme. It must parse against the Docufy v1 schema.
+
+## Required and optional fields
+
+- `version`: must be `1`.
+- `site`: `name` (default “Documentation”), `layout` (`sidebar-dropdown` or `tabs`).
+- `branding`: optional `logo.light`, `logo.dark`, `favicon` (relative paths resolve from the config directory; absolute URLs are used as-is).
+- `theme`: `version`, plus token maps for `light`, `dark`, and `vars` (CSS variables).
+- `navigation.buttons`: CTA links with `label`, `href`, `position` (`sidebar_top`, `sidebar_bottom`, `topbar_left`, `topbar_right`), optional `icon`, `target`, `rank`.
+- `navigation.spaces`: one or more spaces, each with `slug`, `name`, optional `style` (overrides site layout), `rootDir` (default `.`), `entry`, and `tree`.
+- `assets`: optional `basePath` override (rarely needed; most repos keep assets alongside docs).
+
+## Path rules
+
+- Paths are resolved relative to `configDir` (where the config file lives). `space.rootDir` becomes the base for all paths inside that space.
+- External URLs (`https://…`) and `data:` URIs stay untouched.
+- Path traversal outside the config directory is blocked to keep builds safe.
+- Use forward slashes for consistency (`path.posix`).
+
+## Tree node rules
+
+- `title`: required.
+- `path`: MDX/Markdown file for `page`, OpenAPI file for `api_spec`. If omitted, node is a `group`.
+- `type`: defaults to `page` when `path` exists, otherwise `group`. Valid values: `page`, `group`, `api_spec` (Docufy generates `api` endpoint nodes from specs).
+- `icon`: optional Lucide icon name.
+- `children`: nested nodes. Sibling slugs are auto-de-duped (Introduction, Introduction-1, …) to keep routes unique.
+
+## Buttons
+
+- Buttons are rendered by position; `rank` sets order.
+- Use icons for recognition (e.g., `log-in`, `github`), and set `target: "_blank"` for external links.
+
+## Theme tokens
+
+- `light` / `dark`: CSS custom properties (e.g., `"--primary": "oklch(...)"`).
+- `vars`: global CSS variables injected into the site theme.
+- Tokens sync during config validation; no extra API calls required.
+
+## Validation tips
+
+- Keep the config JSON-valid (no trailing commas).
+- Prefer lowercase slugs and keep them short (under 80 chars).
+- Define `entry` for each space so visitors land on the right page.
+- If validation fails, errors list the missing or invalid fields; fix in GitHub and re-sync.

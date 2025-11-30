@@ -1,0 +1,35 @@
+Generate API reference pages by pointing a tree node to an OpenAPI 3.0/3.1 file.
+
+## Authoring an API spec node
+
+- Set `type: "api_spec"` and `path` to a JSON/YAML OpenAPI file in your repo.
+- Example:
+  ```json
+  {
+    "title": "API",
+    "type": "api_spec",
+    "path": "api/petstore.yaml",
+    "icon": "braces"
+  }
+  ```
+- The file is uploaded to Blob and reused across builds by hash.
+
+## What Docufy generates
+
+- A page for the spec itself (metadata, download link).
+- A page for each tag (if tags exist), in the order defined in the top-level `tags` array; otherwise alphabetical.
+- A page for each operation (method + path) under its tag, or under the spec if untagged.
+- Routes follow `/api-reference/{space}/{trail}` and inherit the parent icon.
+
+## Writing better specs
+
+- Provide `summary` and `description` on operations; these become titles and body text.
+- Use tags to create sensible groupings; keep tag names short.
+- Keep operation titles unique within a tag to avoid slug collisions; Docufy de-dupes but short names read better.
+- Valid JSON/YAML only—Docufy validates and will fail the build if the spec cannot parse.
+
+## Updating specs
+
+- Commit changes to the tracked branch; publish to regenerate pages.
+- If you move the spec path, update the config node `path`.
+- Large specs are fine; Docufy streams processing and reuses blobs when the hash is unchanged.

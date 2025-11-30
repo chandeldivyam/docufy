@@ -1,0 +1,41 @@
+Docufy renders GitHub-flavored MDX with built-in components, syntax highlighting, and sanitized HTML.
+
+## Markdown + MDX
+
+- Supports GFM: tables, task lists, strikethrough, autolinks.
+- MDX JSX is allowed; unknown uppercase components render as inline code to surface typos. Lowercase tags are treated as HTML.
+- Raw HTML is merged and sanitized; heading IDs are preserved (no `user-content-` prefix).
+
+## Components you can use
+
+- `<Callout title="Heads up" icon="alert-circle" color="#f97316">Body</Callout>`
+- `<Card title="Start here" icon="rocket" href="/docs/intro">Body</Card>` (`horizontal` for a wide layout)
+- `<Columns cols={3}>…</Columns>` or `<CardGroup cols={2}>…</CardGroup>`
+- Add your own by extending the MDX components map in code; unknown names stay visible as code.
+
+## Code blocks
+
+````md
+```ts
+const hello = 'world';
+```
+````
+
+```
+
+- Highlighted with Shiki (`light-plus` / `slack-dark`).
+- `data-language` is added for downstream styling.
+- Keep fences short and focused; prefer language hints (`ts`, `bash`, `json`).
+
+## Headings, TOC, and search
+
+- Headings get permalinks and feed the table of contents.
+- Plain text is collected for search indexing. Write descriptive headings and lead sentences.
+
+## Authoring tips
+
+- Keep titles concise; slugs are trimmed to 80–120 chars.
+- Use callouts for warnings, requirements, or next steps.
+- Break long guides into multiple pages to keep navigation scannable.
+- Use relative links between docs (`../guides/setup.mdx`); they are rewritten to CDN URLs during publish.
+```

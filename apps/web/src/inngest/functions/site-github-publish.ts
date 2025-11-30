@@ -208,15 +208,25 @@ async function rewriteGithubAssetsInMarkdown(opts: {
     if (!assetMatches.has(resolved)) {
       assetMatches.set(
         resolved,
-        ensureGithubAsset({
-          siteId,
-          branch,
-          installationId,
-          owner,
-          repo,
-          assetPath: resolved,
-          blobBaseUrl,
-        })
+        (async () => {
+          try {
+            return await ensureGithubAsset({
+              siteId,
+              branch,
+              installationId,
+              owner,
+              repo,
+              assetPath: resolved,
+              blobBaseUrl,
+            })
+          } catch (err) {
+            console.log(err)
+            console.warn(
+              `Missing asset for site ${siteId} (${branch}): ${resolved} referenced from ${docPath}. Leaving original path.`
+            )
+            return asset
+          }
+        })()
       )
     }
     return assetMatches.get(resolved)!

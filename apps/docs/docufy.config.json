@@ -191,6 +191,99 @@
             "title": "Introduction",
             "path": "introduction.mdx",
             "icon": "book-open"
+          },
+          {
+            "title": "Quickstart",
+            "path": "quickstart.mdx",
+            "icon": "rocket"
+          },
+          {
+            "title": "Setup & config",
+            "type": "group",
+            "icon": "plug",
+            "children": [
+              {
+                "title": "Connect GitHub and create a site",
+                "path": "connecting-github-and-creating-site.mdx",
+                "icon": "plug"
+              },
+              {
+                "title": "Config file walkthrough",
+                "path": "config-file.mdx",
+                "icon": "file-cog"
+              },
+              {
+                "title": "Navigation and spaces",
+                "path": "navigation-and-spaces.mdx",
+                "icon": "map"
+              },
+              {
+                "title": "Branding and theme",
+                "path": "branding-and-theme.mdx",
+                "icon": "palette"
+              }
+            ]
+          },
+          {
+            "title": "Authoring",
+            "type": "group",
+            "icon": "pencil",
+            "children": [
+              {
+                "title": "MDX authoring essentials",
+                "path": "mdx-authoring.mdx",
+                "icon": "file-pen-line"
+              },
+              {
+                "title": "Assets and media",
+                "path": "assets-and-media.mdx",
+                "icon": "image"
+              },
+              {
+                "title": "OpenAPI and API pages",
+                "path": "openapi-and-api-pages.mdx",
+                "icon": "braces"
+              }
+            ]
+          },
+          {
+            "title": "Workflows",
+            "type": "group",
+            "icon": "git-branch",
+            "children": [
+              {
+                "title": "Branching and environments",
+                "path": "branching-and-environments.mdx",
+                "icon": "git-branch"
+              },
+              {
+                "title": "Previews and staging",
+                "path": "previews-and-staging.mdx",
+                "icon": "beaker"
+              },
+              {
+                "title": "Publishing and rollbacks",
+                "path": "publishing-and-rollbacks.mdx",
+                "icon": "refresh-cw"
+              }
+            ]
+          },
+          {
+            "title": "Troubleshooting & FAQ",
+            "type": "group",
+            "icon": "wrench",
+            "children": [
+              {
+                "title": "Troubleshooting",
+                "path": "troubleshooting.mdx",
+                "icon": "wrench"
+              },
+              {
+                "title": "FAQ",
+                "path": "faq.mdx",
+                "icon": "messages-square"
+              }
+            ]
           }
         ]
       }

@@ -1,0 +1,27 @@
+Docufy rewrites local assets to CDN URLs and uploads them to Blob during publish.
+
+## How resolution works
+
+- Absolute URLs (`https://…`) and `data:` URIs are used as-is.
+- Paths starting with `/` resolve from the config directory.
+- Relative paths resolve from the document’s folder, scoped within the config/root directory tree.
+- Path traversal outside the config directory is blocked.
+
+## Supported tags
+
+- Markdown images: `![alt](./img/diagram.png)`
+- `<img src="...">` and `<video src="...">` tags (with `source` children).
+- Width/height/controls attributes are preserved.
+
+## Recommendations
+
+- Keep assets in a nearby folder (e.g., `docs/assets/` or `docs/img/`).
+- Optimize size (SVG or compressed PNG/WebP) for faster uploads.
+- Use descriptive alt text; it’s kept in the rendered HTML.
+- Avoid huge binaries; Blob supports large files, but deploys are faster when assets are small.
+
+## Troubleshooting
+
+- Missing asset? Ensure the file path exists on the chosen branch and is inside the config/root directory.
+- 404 after publish? Check that the MDX path casing matches the repo file exactly.
+- If an external image fails to load, switch to a repo-relative asset so Docufy can upload and cache it.

@@ -1,0 +1,30 @@
+Use the GitHub App to turn a repo into a Docufy site. This is required for Docs as Code.
+
+## Install and authorize
+
+- From Docufy, click **Connect GitHub** and follow the install flow.
+- Select the organization/user and repos that contain your docs. You can always widen access later in GitHub settings.
+- Private repos work; Docufy stores installation metadata and only fetches the files you reference.
+
+## Create the site (GitHub source)
+
+1. **Create site → Source: GitHub.**
+2. Pick the installation, repository, branch, and `docufy.config.json` path (e.g., `docufy.config.json` or `docs/config/docufy.config.json`).
+3. Save. Docufy validates and syncs: branding, theme tokens, and navigation buttons are pulled from the config.
+
+### GitHub metadata stored on the site
+
+- Installation ID, repo full name, branch, and config path.
+- Config validation status (`queued` → `running` → `success`/`failed`) with errors surfaced in the site header.
+- Latest synced config SHA and timestamp.
+
+## Verify with config check
+
+- After saving, Docufy reads the config file, validates the schema, and previews a snippet (first ~2 KB).
+- If validation fails, the UI shows the issues (e.g., missing required fields, path traversal). Fix in GitHub, commit, and re-sync.
+
+## Change config path or branch later
+
+- Open the site → Settings → GitHub section.
+- Update branch or config path; Docufy re-validates automatically.
+- Use this to point to a different folder (`/docs/` vs `/handbook/`) or to stage changes on a feature branch.

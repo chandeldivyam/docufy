@@ -1,0 +1,26 @@
+Run safe previews for docs changes by pointing a site at a feature or staging branch.
+
+## Staging site pattern
+
+- Create a second Docufy site with the same repo/config path but a staging branch (e.g., `docs-staging`).
+- Publish staging first; verify links, assets, and API pages.
+- Merge staging into your production branch and publish the production site.
+
+## Feature previews
+
+- For big IA changes, spin up a temporary site:
+  - Source: GitHub → choose the feature branch.
+  - Config path: same as prod.
+  - Publish and share the host link internally.
+- Delete the preview site after merging to keep orgs clean.
+
+## Tips
+
+- Keep config paths identical between staging and prod to minimize drift.
+- Use feature flags in content (conditional sections) sparingly; prefer branch-based changes.
+- If you store assets separately, avoid overwriting shared filenames; hashes are reused across builds.
+
+## What’s reused
+
+- Blob uploads are immutable and reused by hash. If your preview branch reuses assets, they won’t be re-uploaded.
+- Search indexing is isolated per site+build, so staging experiments won’t affect production search.

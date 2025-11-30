@@ -1,0 +1,27 @@
+## Can I mix Studio content with GitHub content on one site?
+
+No. A site is either Studio-backed or GitHub-backed. Keep the source of truth in GitHub for Docs as Code.
+
+## Do private repos work?
+
+Yes. The Docufy GitHub App uses installation tokens scoped to the repo you grant. Content and assets are fetched at publish time only.
+
+## How do I preview changes?
+
+Create a staging or preview site pointing to a feature branch, publish there, and share the host link. Delete when done.
+
+## What happens to assets?
+
+Relative assets are uploaded to Blob and served via CDN. External URLs are left as-is. Keep assets inside the config/root directory tree.
+
+## How are API pages generated?
+
+Set `type: "api_spec"` on a node that points to an OpenAPI 3.0/3.1 JSON/YAML file. Docufy creates tag and operation pages automatically.
+
+## Can I customize MDX components?
+
+Docufy includes `Callout`, `Card`, and `Columns`/`CardGroup`. Unknown uppercase components render as inline code. To add more, extend the MDX components map in code.
+
+## How do rollbacks work?
+
+Republish from an earlier commit (or a branch pinned to that commit). Blobs are hashed, so unchanged content is reused and rollbacks are fast.

@@ -1,0 +1,35 @@
+Common issues and how to fix them when publishing from GitHub.
+
+## Config validation fails
+
+- Check the error list in the GitHub section of the site.
+- Typical causes: missing required fields, invalid enum values, trailing commas, path traversal (`../` outside config directory).
+- Fix in GitHub, commit, then re-sync or publish again.
+
+## Missing files
+
+- Logged during publish as “Missing configured GitHub doc paths.”
+- Ensure the path exists on the selected branch and is inside `rootDir`.
+- Case matters; match file names exactly.
+
+## Assets not loading
+
+- Ensure asset paths are relative to the doc or start with `/` from the config directory.
+- External images failing? Move them into the repo so Docufy can upload and serve them.
+- Very large binaries may be slow; compress or split them.
+
+## OpenAPI parsing errors
+
+- Docufy requires valid OpenAPI 3.0/3.1 JSON or YAML. Run a linter locally (e.g., `swagger-cli validate`).
+- Keep `operationId`/`summary` unique per tag to avoid confusing slugs.
+
+## Icon not showing
+
+- Use valid Lucide names (e.g., `rocket`, `book-open`, `git-branch`). If an icon is missing, Docufy skips it and keeps the page.
+- Remove unknown icon names or replace with a known one.
+
+## Publish stuck or failed
+
+- Check Repo Syncs and Deploys tabs for the last error.
+- Ensure GitHub App permissions are intact and the branch exists.
+- If a build repeatedly fails, try a smaller change: revert a recent spec/asset change to isolate the issue.

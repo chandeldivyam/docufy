@@ -1,0 +1,52 @@
+<Callout icon="rocket" color="#10b981" title="Goal: live docs from GitHub in ~10 minutes">
+  Install the Docufy GitHub App, point a site at your repo/branch, add a `docufy.config.json`, and
+  publish.
+</Callout>
+
+## Steps
+
+1. **Install the GitHub App**
+   - From Docufy, choose Install GitHub App and grant access to the repo that holds your docs.
+   - Keep note of the branch you want to ship from (e.g., `docs-main`).
+
+2. **Add `docufy.config.json` to your repo**
+   - Place it at the repo root (or any folder) and reference it when creating the site.
+   - Add a basic tree that points to at least one MDX file. Example:
+
+```json
+{
+  "version": 1,
+  "site": { "name": "ACME Docs" },
+  "navigation": {
+    "spaces": [
+      {
+        "slug": "docs",
+        "name": "Docs",
+        "rootDir": "docs",
+        "entry": "introduction.mdx",
+        "tree": [{ "title": "Introduction", "path": "introduction.mdx" }]
+      }
+    ]
+  }
+}
+```
+
+3. **Create a Docufy site and select GitHub**
+   - Choose the installation, repo, branch, and the config path you just added.
+   - Save. Docufy validates the config and pulls branding/theme/buttons automatically.
+
+4. **Add content**
+   - Commit MDX files under the rootDir you configured (`docs/` in the example).
+   - Use the built-in components (`Callout`, `Card`, `Columns`) and fenced code blocks.
+
+5. **Publish**
+   - Open the site → Deploys → Publish. Watch items processed and reused.
+   - Click the primary host link to verify. Add a custom domain when ready.
+
+## What happens during publish
+
+- We pin to the selected branch, fetch your config, and normalize paths relative to it.
+- Assets referenced in MDX are uploaded to Blob and rewritten to CDN URLs.
+- MDX is rendered with GitHub-flavored markdown, headings get anchors, code is highlighted.
+- OpenAPI specs (`type: "api_spec"`) generate tag pages and endpoint pages automatically.
+- Manifest, nav tree, and theme are written; domains are updated to the new build.

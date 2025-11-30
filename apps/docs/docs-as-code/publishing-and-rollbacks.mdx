@@ -1,0 +1,26 @@
+Publishing turns your GitHub branch into a static Docufy site with search and assets.
+
+## Publish flow
+
+1. Site → Deploys → Publish.
+2. Docufy pulls the selected branch and config path, validates, and begins processing.
+3. Progress shows items processed, reused blobs, and bytes written. Missing files are logged.
+4. Manifest, tree, and theme are written; domain pointers move to the new build.
+
+## Rollbacks
+
+- Re-publish from an earlier commit on the same branch (or temporarily set the branch to that commit via a dedicated branch).
+- Because blobs are hashed, unchanged pages and assets are reused; rollbacks are quick.
+- Keep the config compatible—if you removed paths from the tree, ensure the older commit still matches the current config path.
+
+## Safe practices
+
+- Publish only after config validation is green.
+- Avoid force-pushing over the tracked branch; use merge or fast-forward to keep history.
+- For emergency fixes, create a hotfix branch, point the site to it, publish, then revert to the main branch after merging.
+
+## Custom domains
+
+- Add domains in the site Domains tab. After DNS is verified, republish so the new build is served at the domain.
+- SSL is handled automatically; check status in the Domains tab.
+- Changing domains does not require content changes, but a fresh publish ensures pointers are up to date.

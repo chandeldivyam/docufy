@@ -1571,10 +1571,9 @@ html.dark .shiki span {
   border-radius: 1px;
 }
 
-.dfy-article p code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
-.dfy-article li code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
-.dfy-article td code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
-.dfy-article th code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']) {
+.dfy-article
+  :is(p, li, td, th)
+  code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']):not(:where(pre code)) {
   background: color-mix(in oklab, var(--muted) 8%, transparent);
   color: color-mix(in oklch, var(--foreground) 90%, black);
   padding: 2px 6px;
@@ -1583,10 +1582,10 @@ html.dark .shiki span {
   border: 1px solid color-mix(in oklab, var(--muted) 15%, transparent);
 }
 
-:root.dark .dfy-article p code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
-:root.dark .dfy-article li code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
-:root.dark .dfy-article td code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']),
-:root.dark .dfy-article th code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']) {
+:root.dark
+  .dfy-article
+  :is(p, li, td, th)
+  code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']):not(:where(pre code)) {
   background: color-mix(in oklab, var(--muted) 15%, transparent);
   color: color-mix(in oklch, var(--foreground) 90%, black);
   border-color: color-mix(in oklab, var(--muted) 25%, transparent);

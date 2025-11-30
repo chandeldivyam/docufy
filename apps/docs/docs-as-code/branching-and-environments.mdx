@@ -1,0 +1,24 @@
+Keep Docs as Code deterministic by choosing the right branch strategy.
+
+## Recommended patterns
+
+- **Docs-only branch**: use `docs-main` (or similar) for published docs; developers can merge from `main` as needed.
+- **Separate staging site**: create a second Docufy site pointed at a staging branch (e.g., `docs-staging`).
+- **Feature branches**: for larger rewrites, point a temporary site at `feature/docs-new-ia`; delete when merged.
+
+## Config path per branch
+
+- You can keep multiple configs (e.g., `docufy.config.json` and `docufy.staging.config.json`). Set the appropriate path on each site.
+- Avoid sharing one site across branches; the build always uses the pinned branch+path.
+
+## Determinism
+
+- Builds pin to the commit SHA of the selected branch at publish time.
+- Asset and content blobs are hashed; unchanged files are reused.
+- Keep large assets stable and avoid `../` path tricks to reduce surprises.
+
+## What to avoid
+
+- Mixing Studio and GitHub sources on one site (not supported).
+- Editing published docs in Studio when the site is GitHub-backed (source of truth should be your repo).
+- Changing branch/config path right before a publish without re-validating.
