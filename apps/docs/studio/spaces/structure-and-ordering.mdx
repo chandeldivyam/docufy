@@ -1,0 +1,35 @@
+## Document types
+
+| **Type**                  | **Where**    | **Notes**              |
+| ------------------------- | ------------ | ---------------------- |
+| Group                     | Root only    | Organizes content      |
+| Page                      | Anywhere     | Rich content           |
+| API Spec / Tag / Endpoint | Spec subtree | Generated from OpenAPI |
+
+## Create
+
+- New page: from the tree header or a node’s ••• menu
+- New group: from the tree header (adds at the root)
+
+<img src="https://izfvzcggescmuprs.public.blob.vercel-storage.com/assets/docufy/21c23136-f0de-42fa-afb9-da8f8fa5036a/5c30cba6-778a-42e4-907f-e733d8dbe469-Untitled-4.png" />
+
+## Reorder and nest
+
+- Drag before/after a sibling to change order
+- Drag “inside” a target to nest beneath it
+- Restrictions: Groups must remain at the root level. Managed API items cannot be moved.
+
+## Slugs and ranks
+
+- Slugs are generated from titles and must be unique among siblings
+- When you rename, the slug updates and de‑conflicts automatically
+- Ordering is durable — drops compute a new rank between neighbors to avoid renumbering the whole tree
+
+## Keyboard
+
+- `Alt+Up/Down` from the editor moves to the previous/next visible page in reading order
+
+<Callout title="Tips" icon="lightbulb" color="#d97706">
+  Keep top‑level groups small and descriptive. Avoid deep nesting when a linear sequence works
+  better (use Prev/Next).
+</Callout>

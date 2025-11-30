@@ -63,7 +63,6 @@ export default function SidebarNav({
               </div>
             );
           })()}
-          <span className="font-semibold">{manifest.site.name}</span>
         </div>
         <ThemeToggle />
       </div>

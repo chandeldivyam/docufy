@@ -37,7 +37,7 @@ pnpm-debug.log*
 # LLM Guideliens
 guidelines
 plans
-docs
+/docs/*
 user-docs
 .vercel
 .env*.local

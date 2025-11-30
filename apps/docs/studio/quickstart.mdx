@@ -1,0 +1,79 @@
+<CardGroup cols={2}>
+  <Card title="Onboarding overview" icon="rocket" href="/studio/onboarding/create-a-space">
+    Learn about organizations, spaces, and roles
+  </Card>
+  <Card title="Editor overview" icon="pen" href="studio/editor/blocks-and-formatting">
+    Learn about blocks, media, and collaboration features
+  </Card>
+  <Card title="Spaces overview" icon="folder" href="/studio/spaces/api-managed-subtrees">
+    Organize your content for different products or audiences
+  </Card>
+  <Card title="Sites overview" icon="globe" href="/studio/sites/appearance-and-theme">
+    Publish content, customize themes, and add a domain
+  </Card>
+</CardGroup>
+
+<Callout icon="flag" color="#3b82f6" title="Getting started">
+  This 10–15 minute path takes you from zero to a published, branded docs site.
+</Callout>
+
+## Before you begin
+
+- Account created and signed in
+- You belong to (or created) an organization
+- Role permissions: Member can write; Admin/Owner can create sites, publish, and manage domains
+
+<img src="https://izfvzcggescmuprs.public.blob.vercel-storage.com/assets/docufy/963312bb-c99a-4c53-ab45-c6fc1bc1f1b7/ecd49358-79db-45e9-b13b-de4d89872c14-Untitled-1.png" />
+
+## Create a space
+
+1. Open the sidebar → Spaces → Create space
+2. Name it (for example, “User Guide”), optionally pick an icon and description
+
+<img src="https://izfvzcggescmuprs.public.blob.vercel-storage.com/assets/docufy/963312bb-c99a-4c53-ab45-c6fc1bc1f1b7/929dafd2-3e3c-45c2-b445-9d14f8e9b594-Untitled-2.png" />
+
+<img src="https://izfvzcggescmuprs.public.blob.vercel-storage.com/assets/docufy/963312bb-c99a-4c53-ab45-c6fc1bc1f1b7/7d4f5631-d6e8-4027-80eb-8e166f3ead70-Untitled-3.png" />
+
+## Add your first page
+
+1. Inside the space, click New page
+2. Type a title, then start writing in the editor
+3. Type `/` to open the slash menu for headings, lists, code blocks, tables, tabs, etc.
+
+<img src="https://izfvzcggescmuprs.public.blob.vercel-storage.com/assets/docufy/963312bb-c99a-4c53-ab45-c6fc1bc1f1b7/d8f9db41-2694-4091-89f7-b38ca732b228-Untitled-4.png" />
+
+<img src="https://izfvzcggescmuprs.public.blob.vercel-storage.com/assets/docufy/963312bb-c99a-4c53-ab45-c6fc1bc1f1b7/7cc15194-2e89-4aac-8819-dc58e6a619d4-Untitled-5.png" />
+
+## (Optional) Import API reference
+
+1. Add a document of type “API Spec” (from the space tree actions)
+2. Paste your OpenAPI 3.0/3.1 JSON or YAML and click Upload, then Process
+3. Docufy generates endpoint pages and tag groups under the spec
+
+<img src="https://izfvzcggescmuprs.public.blob.vercel-storage.com/assets/docufy/963312bb-c99a-4c53-ab45-c6fc1bc1f1b7/136af403-e540-4c5d-bd63-3edfa63453df-Untitled-6.png" />
+
+## Create a site and select spaces
+
+1. Sidebar → Sites → Create site
+2. Name and save; open the site page
+3. In Content, add one or more spaces and order them
+
+## Brand and theme
+
+1. In Appearance, upload light/dark logos and a favicon
+2. Open Theme Studio to adjust brand colors, surfaces, and layout tokens
+
+## Publish
+
+1. Go to Deploys → Publish
+2. Watch the build progress and then click the primary host link to view your docs
+3. Blazing fast customer facing documentation is ready!
+
+<img src="https://izfvzcggescmuprs.public.blob.vercel-storage.com/assets/docufy/963312bb-c99a-4c53-ab45-c6fc1bc1f1b7/46fe02e4-2256-4bbf-a8d6-fea24b208b86-Untitled-7.png" />
+
+## Add a custom domain
+
+1. Open Domains → Add domain (e.g., [docs.example.com](http://docs.example.com))
+2. Follow the DNS instructions shown for your domain type (CNAME for subdomains; A/AAAA for apex)
+3. Click Check now to verify; SSL is issued automatically after DNS propagates
+4. Republish the site after verification is completed

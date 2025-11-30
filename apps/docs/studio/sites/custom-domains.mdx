@@ -1,0 +1,33 @@
+## Add a domain
+
+1. Open Domains on your site
+2. Enter your domain (e.g., [docs.example.com](http://docs.example.com)) and click Add Domain
+
+## DNS instructions
+
+| **Domain type**                | **Record** | **Host** | **Target**              |
+| ------------------------------ | ---------- | -------- | ----------------------- |
+| Subdomain (`docs.example.com`) | `CNAME`    | `docs`   | `cname.vercel-dns.com.` |
+
+- Wait for DNS to propagate (can take up to 24 hours)
+
+## Verify and TLS
+
+- Click `Check now` to verify; SSL certs are issued automatically once DNS is correct
+
+## Remove a domain
+
+- From the domain list, use `Remove`; this detaches it from your site
+
+## FAQs
+
+- **What records do I add?**
+  Subdomain (`docs.example.com`): CNAME pointing to `cname.vercel-dns.com`
+- **How long does verification take?**
+  DNS changes may take up to 24 hours globally. After records propagate, click `Check now`; TLS is issued automatically.
+- **Can I use both a primary host and custom domains?**
+  Yes. Your site always has a primary host for quick previews; custom domains can be added any time.
+- **I verified but still see HTTP issues**
+  Some corporate networks enforce strict SSL/headers. Ensure your reverse proxy (if any) forwards `x-forwarded-*` headers intact and doesn’t strip required content types.
+- **Can I remove a domain?**
+  Yes. Removing a domain detaches it from the site; the primary host remains available.

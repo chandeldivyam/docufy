@@ -1,0 +1,25 @@
+## Roles
+
+| **Role** | **Spaces**           | **Documents**               |
+| -------- | -------------------- | --------------------------- |
+| Owner    | Create/Update/Delete | Create/Update/Delete        |
+| Admin    | Create/Update/Delete | Create/Update/Delete        |
+| Member   | View                 | Create/Update (non‑managed) |
+
+<img src="https://izfvzcggescmuprs.public.blob.vercel-storage.com/assets/docufy/4e5ba3a2-adc0-4bfc-a4df-e70c5749324e/672a52f1-c76f-4bcf-abfc-6048b2ebdd68-Untitled-11.png" />
+
+## Operations
+
+| **Operation**     | **Allowed roles**                        |
+| ----------------- | ---------------------------------------- |
+| Create space      | Owner, Admin (Editor if present)         |
+| Update space      | Owner, Admin (Editor if present)         |
+| Delete space      | Owner, Admin                             |
+| Create page/group | Owner, Admin, Member (Editor if present) |
+| Update page/group | Owner, Admin, Member (Editor if present) |
+| Delete page/group | Owner, Admin (Editor if present)         |
+
+<Callout title="API-Generated Content" icon="alert-triangle" color="#d97706">
+  Items under an API Spec marked as managed are **read-only** and cannot be edited or moved
+  manually. This content is solely controlled by the API specification source.
+</Callout>

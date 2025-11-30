@@ -100,6 +100,8 @@ body {
 /* ======= Image lightbox overlay ======= */
 .dfy-article img[data-previewable] {
   cursor: zoom-in;
+  margin-bottom: var(--dfy-content-pad);
+  border-radius: var(--radius);
 }
 
 .dfy-img-overlay {
@@ -2057,7 +2059,6 @@ html.dark .shiki span {
 .dfy-card:hover {
   /* Fixed: Uses your primary color for border and sidebar-hover for bg */
   border-color: var(--primary);
-  background-color: var(--sidebar-hover);
 
   /* Ensure underline stays off on hover */
   text-decoration: none !important;

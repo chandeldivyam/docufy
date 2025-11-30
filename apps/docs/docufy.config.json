@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "site": {
+    "name": "Docufy Documentation",
+    "layout": "sidebar-dropdown"
+  },
+  "branding": {
+    "logo": {
+      "light": "logo/docufy-logo-light.png",
+      "dark": "logo/docufy-logo-dark.png"
+    },
+    "favicon": "logo/favicon.svg"
+  },
+  "theme": {
+    "version": 1,
+    "light": {
+      "--primary": "oklch(0.6171 0.1375 39.0427)"
+    },
+    "dark": {
+      "--primary": "oklch(0.6724 0.1308 38.7559)"
+    }
+  },
+  "navigation": {
+    "buttons": [
+      {
+        "label": "Login",
+        "href": "https://app.trydocufy.com",
+        "position": "sidebar_bottom",
+        "target": "_blank"
+      }
+    ],
+    "spaces": [
+      {
+        "slug": "studio",
+        "name": "Studio",
+        "rootDir": "studio",
+        "entry": "quickstart.mdx",
+        "tree": [
+          {
+            "title": "Quickstart",
+            "path": "quickstart.mdx",
+            "icon": "rocket"
+          },
+          {
+            "title": "Onboarding",
+            "type": "group",
+            "icon": "compass",
+            "children": [
+              {
+                "title": "Sign-in and organizations",
+                "path": "onboarding/sign-in-and-organizations.mdx",
+                "icon": "log-in"
+              },
+              {
+                "title": "Create a space",
+                "path": "onboarding/create-a-space.mdx",
+                "icon": "plus-square"
+              },
+              {
+                "title": "Documents and structure",
+                "path": "onboarding/documents-and-structure.mdx",
+                "icon": "files"
+              }
+            ]
+          },
+          {
+            "title": "Editor",
+            "type": "group",
+            "icon": "pencil",
+            "children": [
+              {
+                "title": "Slash commands",
+                "path": "editor/slash-commands.mdx",
+                "icon": "command"
+              },
+              {
+                "title": "Blocks and formatting",
+                "path": "editor/blocks-and-formatting.mdx",
+                "icon": "layout-template"
+              },
+              {
+                "title": "Tables",
+                "path": "editor/tables.mdx",
+                "icon": "table"
+              },
+              {
+                "title": "Code blocks and syntax highlighting",
+                "path": "editor/code-blocks-and-syntax-highlighting.mdx",
+                "icon": "code-2"
+              },
+              {
+                "title": "Media and uploads",
+                "path": "editor/media-and-uploads.mdx",
+                "icon": "image-plus"
+              },
+              {
+                "title": "Collapsible sections (toggle)",
+                "path": "editor/collapsible-sections-toggle.mdx",
+                "icon": "chevrons-down-up"
+              },
+              {
+                "title": "Custom HTML component",
+                "path": "editor/custom-html-component.mdx",
+                "icon": "braces"
+              },
+              {
+                "title": "Collaboration and shortcuts",
+                "path": "editor/collaboration-and-shortcuts.mdx",
+                "icon": "users"
+              },
+              {
+                "title": "Cheatsheet",
+                "path": "editor/cheatsheet.mdx",
+                "icon": "scroll-text"
+              }
+            ]
+          },
+          {
+            "title": "Spaces",
+            "type": "group",
+            "icon": "layers",
+            "children": [
+              {
+                "title": "Structure and ordering",
+                "path": "spaces/structure-and-ordering.mdx",
+                "icon": "list-ordered"
+              },
+              {
+                "title": "Icons and visuals",
+                "path": "spaces/icons-and-visuals.mdx",
+                "icon": "shapes"
+              },
+              {
+                "title": "Permissions and roles",
+                "path": "spaces/permissions-and-roles.mdx",
+                "icon": "shield-check"
+              },
+              {
+                "title": "API-managed subtrees",
+                "path": "spaces/api-managed-subtrees.mdx",
+                "icon": "git-branch"
+              }
+            ]
+          },
+          {
+            "title": "Sites",
+            "type": "group",
+            "icon": "globe",
+            "children": [
+              {
+                "title": "Create a site and select content",
+                "path": "sites/create-a-site-and-select-content.mdx",
+                "icon": "plus-circle"
+              },
+              {
+                "title": "Appearance and theme",
+                "path": "sites/appearance-and-theme.mdx",
+                "icon": "paintbrush"
+              },
+              {
+                "title": "Branding assets",
+                "path": "sites/branding-assets.mdx",
+                "icon": "sparkles"
+              },
+              {
+                "title": "Layout and navigation recipes",
+                "path": "sites/layout-and-navigation-recipes.mdx",
+                "icon": "layout-dashboard"
+              },
+              {
+                "title": "Navigation buttons",
+                "path": "sites/navigation-buttons.mdx",
+                "icon": "mouse-pointer-click"
+              },
+              {
+                "title": "Custom domains",
+                "path": "sites/custom-domains.mdx",
+                "icon": "link-2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "slug": "docs-as-code",
+        "name": "Docs as Code",
+        "rootDir": "docs-as-code",
+        "entry": "introduction.mdx",
+        "tree": [
+          {
+            "title": "Introduction",
+            "path": "introduction.mdx",
+            "icon": "book-open"
+          }
+        ]
+      }
+    ]
+  },
+  "assets": {
+    "basePath": "."
+  }
+}

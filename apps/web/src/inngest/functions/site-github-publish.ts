@@ -201,6 +201,10 @@ async function rewriteGithubAssetsInMarkdown(opts: {
 
   const replaceAsset = (asset: string) => {
     const resolved = resolveAsset(asset)
+    if (/^https?:\/\//i.test(resolved) || resolved.startsWith("data:")) {
+      // Already an absolute URL or data URI; leave untouched
+      return Promise.resolve(resolved)
+    }
     if (!assetMatches.has(resolved)) {
       assetMatches.set(
         resolved,
