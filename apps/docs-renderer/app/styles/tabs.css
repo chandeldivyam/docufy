@@ -1,0 +1,80 @@
+@layer components {
+  .dfy-tabs-header {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding: 6px;
+    margin: 8px 0 12px 0;
+    color: var(--muted-foreground);
+  }
+
+  .dfy-tab[role='tab'] {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 6px 0;
+    margin: 0;
+    font: inherit;
+    color: var(--muted-foreground);
+    outline: none;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .dfy-tab[role='tab'][aria-selected='true'] {
+    color: var(--primary);
+  }
+
+  .dfy-tab[role='tab'][aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -7px;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 1px;
+  }
+
+  .dfy-tabs-content > [role='tabpanel'][hidden] {
+    display: none !important;
+  }
+
+  /* Make panels look like normal editor blocks */
+  .dfy-tabs-content > [role='tabpanel'] {
+    min-height: 1rem;
+  }
+
+  /* Tab + remove */
+  .dfy-tab-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .dfy-tab {
+    background: none;
+    border: 0;
+    padding: 6px 6px;
+    font: inherit;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    position: relative;
+  }
+
+  .dfy-tab[aria-selected='true'] {
+    color: var(--foreground);
+  }
+
+  .dfy-tab[aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: -7px;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 1px;
+  }
+}

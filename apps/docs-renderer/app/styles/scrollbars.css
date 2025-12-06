@@ -1,0 +1,48 @@
+@layer base {
+  *::-webkit-scrollbar {
+    width: var(--sb-size);
+    height: var(--sb-size);
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 250ms ease;
+  }
+
+  /* Show scrollbar on hover over scrollable container */
+  *:hover::-webkit-scrollbar-thumb {
+    background: var(--sb-thumb);
+  }
+
+  *:hover::-webkit-scrollbar-thumb:hover {
+    background: var(--sb-thumb-hover);
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background: var(--sb-thumb-active);
+  }
+
+  /* Corner where horizontal and vertical scrollbars meet */
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Firefox auto-hide scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 250ms ease;
+  }
+
+  *:hover {
+    scrollbar-color: var(--sb-thumb) transparent;
+  }
+}

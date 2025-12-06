@@ -1,0 +1,199 @@
+@layer components {
+  .dfy-article {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 0 2rem 0;
+  }
+
+  .dfy-article > * {
+    max-width: 100%;
+  }
+
+  .dfy-article h1,
+  .dfy-article h2,
+  .dfy-article h3,
+  .dfy-article p,
+  .dfy-article ul,
+  .dfy-article ol,
+  .dfy-article blockquote {
+    max-width: 75ch; /* Optimal reading width */
+  }
+
+  .dfy-article h1 {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 1rem;
+    line-height: 1.2;
+  }
+
+  .dfy-article h2 {
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
+    font-weight: 500;
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.5rem;
+    scroll-margin-top: 80px;
+  }
+
+  .dfy-article h3 {
+    font-size: clamp(1rem, 1vw, 1.25rem);
+    font-weight: 500;
+    margin: 2rem 0 0.75rem;
+    scroll-margin-top: 80px;
+  }
+
+  .dfy-article p,
+  .dfy-article ul,
+  .dfy-article ol {
+    line-height: 1.75;
+    font-size: 16px;
+    margin-bottom: 1.25rem;
+    color: var(--sidebar-fg-muted);
+  }
+
+  .dfy-article ol {
+    list-style-type: decimal;
+    padding-left: 1.75rem;
+  }
+
+  .dfy-article ul {
+    list-style-type: disc;
+    padding-left: 1.75rem;
+  }
+
+  .dfy-article li {
+    margin-bottom: 0.5rem;
+  }
+
+  .dfy-article li p {
+    margin-bottom: 0;
+  }
+
+  .dfy-article ul ul,
+  .dfy-article ol ol {
+    margin-top: 0.75rem;
+    margin-left: 1.25rem;
+  }
+
+  .dfy-article ul ul li {
+    list-style-type: circle;
+  }
+
+  .dfy-article li > pre,
+  .dfy-article li > div,
+  .dfy-article li > .tt-codeblock-group,
+  .dfy-article li > blockquote {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .dfy-article a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .dfy-article a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .dfy-article blockquote {
+    margin: 16px 0;
+    padding-left: 12px;
+    border-left: 3px solid var(--border);
+    color: var(--muted);
+  }
+
+  .dfy-article blockquote p {
+    margin: 0;
+    padding: 0;
+  }
+
+  .dfy-article hr {
+    border: 0;
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+
+  .dfy-article table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+
+  .dfy-article th,
+  .dfy-article td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+  }
+
+  /* Keep headings anchor-safe under sticky UI */
+  .dfy-article h2,
+  .dfy-article h3 {
+    scroll-margin-top: 80px;
+  }
+
+  /* Let long elements scroll instead of widening the page */
+  .dfy-article pre {
+    overflow-x: auto;
+    max-width: 100%;
+    white-space: pre;
+  }
+
+  @media (max-width: 1099.98px) {
+    .dfy-article table {
+      display: block;
+      width: 100%;
+      overflow-x: auto;
+    }
+  }
+
+  .dfy-article img,
+  .dfy-article video,
+  .dfy-article iframe {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Emoji images keep inline rhythm */
+  .dfy-article img[alt*='emoji'] {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    cursor: default;
+  }
+
+  .dfy-article h1 img[alt*='emoji'],
+  .dfy-article h2 img[alt*='emoji'],
+  .dfy-article h3 img[alt*='emoji'] {
+    height: 1.2em;
+    width: auto;
+    vertical-align: -0.15em;
+  }
+
+  .dfy-article p img[alt*='emoji'],
+  .dfy-article li img[alt*='emoji'],
+  .dfy-article td img[alt*='emoji'] {
+    height: 1.15em;
+    width: auto;
+    vertical-align: -0.12em;
+  }
+
+  .dfy-article img[alt*='emoji'][data-previewable] {
+    cursor: default;
+  }
+
+  .dfy-article img[alt*='emoji']:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}

@@ -1,0 +1,63 @@
+@layer components {
+  .dfy-root {
+    display: grid;
+    grid-template-columns: 1fr; /* phones: content-only */
+    height: 100vh;
+    min-height: 0;
+  }
+
+  @media (min-width: 1100px) {
+    .dfy-root {
+      grid-template-columns: 300px 1fr;
+    }
+  }
+
+  .dfy-main {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dfy-article-wrap {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .dfy-content {
+    height: calc(100vh - var(--dfy-top-offset, 0px));
+    padding: var(--dfy-content-pad);
+    padding-top: 0;
+    content-visibility: auto;
+    contain-intrinsic-size: 800px;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  @media (min-width: 1100px) {
+    .dfy-content {
+      padding-left: 48px;
+      padding-right: 48px;
+    }
+  }
+
+  /* Helper class to define the combined top offset when using tabs layout */
+  .dfy-tabs-chrome {
+    --dfy-top-offset: calc(var(--topbar-h) + var(--tabs-h));
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 1700px;
+    margin: 0 auto;
+  }
+
+  .dfy-tabs-chrome .dfy-root {
+    flex: 1;
+    height: auto; /* Override the fixed height */
+    min-height: 0;
+  }
+}

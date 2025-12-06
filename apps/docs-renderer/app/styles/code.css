@@ -1,0 +1,200 @@
+@layer components {
+  html.dark .shiki,
+  html.dark .shiki span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--background) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+
+  .tt-codeblock-group {
+    margin: 1.2rem 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+  }
+
+  .tt-codeblock-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tt-codeblock-select {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    color: var(--foreground);
+  }
+
+  .tt-codeblock-copy {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.25rem 0.6rem;
+    font-size: 0.875rem;
+    background: var(--sidebar-bg);
+    color: var(--foreground);
+  }
+
+  .tt-codeblock-pre {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    overflow: auto;
+  }
+
+  /* Inline code inside prose */
+  .dfy-article
+    :is(p, li, td, th)
+    code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']):not(:where(pre code)) {
+    background: color-mix(in oklab, var(--muted) 8%, transparent);
+    color: color-mix(in oklch, var(--foreground) 90%, black);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    border: 1px solid color-mix(in oklab, var(--muted) 15%, transparent);
+  }
+
+  :root.dark
+    .dfy-article
+    :is(p, li, td, th)
+    code:not([class*='shiki']):not([class*='fd-']):not([class*='tt-']):not(:where(pre code)) {
+    background: color-mix(in oklab, var(--muted) 15%, transparent);
+    color: color-mix(in oklch, var(--foreground) 90%, black);
+    border-color: color-mix(in oklab, var(--muted) 25%, transparent);
+  }
+
+  /* HTTP method pills */
+  .dfy-http {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    background-color: var(--sidebar-hover);
+    color: var(--sidebar-fg-muted);
+    border: 1px solid var(--sidebar-border);
+  }
+
+  .dfy-http.GET {
+    background: linear-gradient(
+      135deg,
+      oklch(0.94 0.11 145 / 0.85) 0%,
+      oklch(0.92 0.09 145 / 0.7) 100%
+    );
+    color: oklch(0.42 0.14 145);
+    border-color: oklch(0.88 0.1 145 / 0.6);
+    box-shadow: 0 1px 3px oklch(0.88 0.1 145 / 0.15);
+  }
+
+  .dfy-http.POST {
+    background: linear-gradient(
+      135deg,
+      oklch(0.94 0.1 255 / 0.85) 0%,
+      oklch(0.92 0.08 255 / 0.7) 100%
+    );
+    color: oklch(0.45 0.16 255);
+    border-color: oklch(0.88 0.09 255 / 0.6);
+    box-shadow: 0 1px 3px oklch(0.88 0.09 255 / 0.15);
+  }
+
+  .dfy-http.PUT {
+    background: linear-gradient(
+      135deg,
+      oklch(0.96 0.1 95 / 0.85) 0%,
+      oklch(0.94 0.08 95 / 0.7) 100%
+    );
+    color: oklch(0.52 0.13 95);
+    border-color: oklch(0.9 0.09 95 / 0.6);
+    box-shadow: 0 1px 3px oklch(0.9 0.09 95 / 0.15);
+  }
+
+  .dfy-http.PATCH {
+    background: linear-gradient(
+      135deg,
+      oklch(0.95 0.1 65 / 0.85) 0%,
+      oklch(0.93 0.08 65 / 0.7) 100%
+    );
+    color: oklch(0.52 0.15 65);
+    border-color: oklch(0.89 0.09 65 / 0.6);
+    box-shadow: 0 1px 3px oklch(0.89 0.09 65 / 0.15);
+  }
+
+  .dfy-http.DELETE {
+    background: linear-gradient(
+      135deg,
+      oklch(0.94 0.12 25 / 0.75) 0%,
+      oklch(0.92 0.1 25 / 0.6) 100%
+    );
+    color: oklch(0.48 0.19 25);
+    border-color: oklch(0.88 0.11 25 / 0.6);
+    box-shadow: 0 1px 3px oklch(0.88 0.11 25 / 0.15);
+  }
+
+  .dark .dfy-http.GET {
+    background: linear-gradient(
+      135deg,
+      oklch(0.32 0.11 145 / 0.4) 0%,
+      oklch(0.28 0.09 145 / 0.3) 100%
+    );
+    color: oklch(0.82 0.13 145);
+    border-color: oklch(0.35 0.1 145 / 0.7);
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
+  }
+
+  .dark .dfy-http.POST {
+    background: linear-gradient(
+      135deg,
+      oklch(0.34 0.1 255 / 0.4) 0%,
+      oklch(0.3 0.08 255 / 0.3) 100%
+    );
+    color: oklch(0.82 0.13 255);
+    border-color: oklch(0.38 0.09 255 / 0.7);
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
+  }
+
+  .dark .dfy-http.PUT {
+    background: linear-gradient(
+      135deg,
+      oklch(0.36 0.1 95 / 0.4) 0%,
+      oklch(0.32 0.08 95 / 0.3) 100%
+    );
+    color: oklch(0.87 0.13 95);
+    border-color: oklch(0.4 0.09 95 / 0.7);
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
+  }
+
+  .dark .dfy-http.PATCH {
+    background: linear-gradient(
+      135deg,
+      oklch(0.36 0.11 65 / 0.4) 0%,
+      oklch(0.32 0.09 65 / 0.3) 100%
+    );
+    color: oklch(0.85 0.15 65);
+    border-color: oklch(0.4 0.1 65 / 0.7);
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
+  }
+
+  .dark .dfy-http.DELETE {
+    background: linear-gradient(135deg, oklch(0.34 0.12 25 / 0.4) 0%, oklch(0.3 0.1 25 / 0.3) 100%);
+    color: oklch(0.82 0.16 25);
+    border-color: oklch(0.38 0.11 25 / 0.7);
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
+  }
+}

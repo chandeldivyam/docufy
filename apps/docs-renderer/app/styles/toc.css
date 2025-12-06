@@ -1,0 +1,115 @@
+@layer components {
+  .dfy-page {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  @media (min-width: 1100px) {
+    .dfy-page {
+      grid-template-columns: minmax(0, 900px) 240px;
+      gap: 48px;
+      align-items: start;
+    }
+  }
+
+  .dfy-toc-rail {
+    display: none;
+  }
+
+  @media (min-width: 1100px) {
+    .dfy-toc-rail {
+      display: block;
+      position: sticky;
+      top: 24px;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      padding: 4px;
+      margin: 0;
+    }
+  }
+
+  .dfy-toc-inline {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: color-mix(in oklab, var(--sidebar-bg) 60%, transparent);
+    padding: 8px 10px;
+    margin: 0 0 16px;
+  }
+
+  .dfy-toc-inline > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--sidebar-fg);
+    list-style: none;
+  }
+
+  .dfy-toc-inline > summary::marker {
+    content: '';
+  }
+
+  .dfy-toc-inline[open] {
+    padding-bottom: 10px;
+  }
+
+  @media (min-width: 1100px) {
+    .dfy-toc-inline {
+      display: none;
+    }
+  }
+
+  .dfy-toc {
+    position: relative;
+    border-radius: var(--radius);
+    background: color-mix(in oklab, var(--sidebar-bg) 60%, transparent);
+    padding: 8px 10px 8px 16px;
+  }
+
+  .dfy-toc::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: var(--ink-inset);
+    bottom: var(--ink-inset);
+    width: 1px;
+    background: var(--sidebar-border);
+    border-radius: 1px;
+  }
+
+  .dfy-toc li {
+    margin: 4px 0;
+  }
+
+  .dfy-toc li[data-level='3'] {
+    padding-left: 12px;
+  }
+
+  .dfy-toc li[data-level='4'] {
+    padding-left: 24px;
+  }
+
+  .dfy-toc a {
+    display: block;
+    padding: 6px;
+    color: var(--sidebar-fg-muted);
+    text-decoration: none;
+    line-height: 1.35;
+    padding-left: 6px;
+  }
+
+  .dfy-toc a:hover {
+    background-color: var(--sidebar-hover);
+    border-radius: var(--radius);
+  }
+
+  .dfy-toc a.active,
+  .dfy-toc a[aria-current] {
+    color: var(--primary);
+    font-weight: 600;
+  }
+}
