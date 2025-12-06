@@ -171,6 +171,7 @@ function Node({
   const isExpanded = hasChildren && expanded.includes(nodeId);
   const isActive = node.route === currentRoute;
   const isApiRoute = node.kind === 'api';
+  const isRootApiSpec = node.kind === 'api_spec' && depth === 0;
 
   // Get HTTP method from the node (you'll need to pass this through from the tree data)
   const getMethodBadge = (node: UiTreeItem) => {
@@ -227,6 +228,39 @@ function Node({
             ))}
           </ul>
         )}
+      </li>
+    );
+  }
+
+  if (isRootApiSpec && hasChildren) {
+    return (
+      <li role="treeitem" aria-expanded>
+        <div
+          className="mb-1.5 mt-3 flex items-center gap-2 rounded-md px-2 py-1 font-bold tracking-normal text-[var(--sidebar-fg)]"
+          style={{ marginLeft: depth * INDENT }}
+        >
+          {node.iconSvg && (
+            <span
+              className="inline-block h-4 w-4 flex-shrink-0"
+              dangerouslySetInnerHTML={{ __html: node.iconSvg }}
+            />
+          )}
+          <SmartTitle title={node.title} className="text-[15px]" />
+        </div>
+        <ul className="sidebar-nav-group m-0 list-none" role="group">
+          {node.children!.map((child) => (
+            <Node
+              key={child.route || child.slug}
+              node={child}
+              depth={depth + 1}
+              expanded={expanded}
+              onToggle={onToggle}
+              currentRoute={currentRoute}
+              hrefPrefix={hrefPrefix}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </ul>
       </li>
     );
   }
