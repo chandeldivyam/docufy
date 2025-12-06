@@ -82,6 +82,23 @@ async function fetchIconSvg(iconName: string): Promise<string | null> {
   }
 }
 
+function scheduleIconFetch(tasks: Promise<void>[], iconNode: Element, iconName: string): void {
+  tasks.push(
+    (async () => {
+      const svg = await fetchIconSvg(iconName);
+      if (!svg) return;
+
+      const fragment = fromHtml(svg, { fragment: true });
+      const svgElement = fragment.children.find(
+        (c): c is Element => c.type === 'element' && c.tagName === 'svg',
+      );
+      if (!svgElement) return;
+
+      iconNode.children = [svgElement];
+    })(),
+  );
+}
+
 // Tiny helper for boolean-ish props like horizontal, arrow, etc.
 function isTruthyProp(value: unknown): boolean {
   if (value === true) return true;
@@ -181,7 +198,7 @@ function buildCalloutElement(
   return { root, iconNode };
 }
 
-// --- NEW: Card -------------------------------------------------------------
+// --- Card -------------------------------------------------------------------
 
 type BuiltCard = {
   root: Element;
@@ -262,7 +279,137 @@ function buildCardElement(props: Record<string, unknown>, children: ElementConte
   return { root, iconNode };
 }
 
-// --- NEW: Columns / CardGroup ---------------------------------------------
+// --- NEW: Steps -------------------------------------------------------------
+
+type StepTitleSize = 'p' | 'h2' | 'h3';
+
+function normalizeTitleSize(value: unknown): StepTitleSize {
+  if (value === 'h2' || value === 'h3') return value;
+  if (typeof value === 'string') {
+    const v = value.toLowerCase();
+    if (v === 'h2' || v === 'h3') return v as StepTitleSize;
+  }
+  return 'p';
+}
+
+function parseStepNumber(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.floor(value);
+  }
+  if (typeof value === 'string') {
+    const parsed = parseInt(value, 10);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return fallback;
+}
+
+type BuiltStep = {
+  root: Element;
+  iconNode?: Element;
+  iconName?: string;
+};
+
+function buildStepElement(
+  props: Record<string, unknown>,
+  children: ElementContent[],
+  index: number,
+  defaultTitleSize: StepTitleSize,
+): BuiltStep {
+  const title = typeof props.title === 'string' ? props.title : undefined;
+  const rawStepNumber = (props as { stepNumber?: unknown }).stepNumber;
+  const rawTitleSize = (props as { titleSize?: unknown }).titleSize;
+  const rawIcon = (props as { icon?: unknown }).icon;
+
+  const stepNumber = parseStepNumber(rawStepNumber, index);
+  const titleSize = normalizeTitleSize(rawTitleSize ?? defaultTitleSize);
+
+  const iconName = typeof rawIcon === 'string' && rawIcon.trim() ? rawIcon.trim() : undefined;
+
+  const indicatorChildren: ElementContent[] = [];
+  let iconNode: Element | undefined;
+
+  if (iconName) {
+    iconNode = {
+      type: 'element',
+      tagName: 'span',
+      properties: {
+        className: ['dfy-step-icon'],
+        'aria-hidden': 'true',
+        'data-icon': iconName,
+      },
+      children: [],
+    };
+    indicatorChildren.push(iconNode);
+  } else {
+    indicatorChildren.push({
+      type: 'element',
+      tagName: 'span',
+      properties: { className: ['dfy-step-number'] },
+      children: [{ type: 'text', value: String(stepNumber) }],
+    });
+  }
+
+  const indicatorNode: Element = {
+    type: 'element',
+    tagName: 'div',
+    properties: { className: ['dfy-step-indicator'] },
+    children: indicatorChildren,
+  };
+
+  const markerNode: Element = {
+    type: 'element',
+    tagName: 'div',
+    properties: { className: ['dfy-step-marker'] },
+    children: [
+      indicatorNode,
+      {
+        type: 'element',
+        tagName: 'div',
+        properties: { className: ['dfy-step-line'] },
+        children: [],
+      },
+    ],
+  };
+
+  const bodyChildren: ElementContent[] = [];
+
+  if (title) {
+    const titleTagName = titleSize === 'h2' || titleSize === 'h3' ? titleSize : 'p';
+    bodyChildren.push({
+      type: 'element',
+      tagName: titleTagName,
+      properties: {
+        className: ['dfy-step-title', `dfy-step-title--${titleSize}`],
+      },
+      children: [{ type: 'text', value: title }],
+    });
+  }
+
+  bodyChildren.push({
+    type: 'element',
+    tagName: 'div',
+    properties: { className: ['dfy-step-content'] },
+    children,
+  });
+
+  const bodyNode: Element = {
+    type: 'element',
+    tagName: 'div',
+    properties: { className: ['dfy-step-body'] },
+    children: bodyChildren,
+  };
+
+  const root: Element = {
+    type: 'element',
+    tagName: 'li',
+    properties: { className: ['dfy-step', 'step'] },
+    children: [markerNode, bodyNode],
+  };
+
+  return { root, iconNode, iconName };
+}
+
+// --- Columns / CardGroup ---------------------------------------------------
 
 function normalizeCols(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
@@ -270,7 +417,7 @@ function normalizeCols(value: unknown): number {
     const parsed = parseInt(value, 10);
     if (!Number.isNaN(parsed) && parsed > 0) return parsed;
   }
-  return 2; // Mintlify default :contentReference[oaicite:2]{index=2}
+  return 2; // Mintlify default
 }
 
 function buildColumnsElement(props: Record<string, unknown>, children: ElementContent[]): Element {
@@ -322,30 +469,105 @@ export const rehypeHandleMdxComponents: Plugin<[Options?], Root> = (options) => 
       return;
     }
 
+    // --- Steps container ----------------------------------------------------
+    if (name === 'Steps') {
+      const defaultTitleSize = normalizeTitleSize((props as { titleSize?: unknown }).titleSize);
+
+      const stepItems: Element[] = [];
+      let ordinal = 0;
+      const nonStepChildren: string[] = [];
+
+      for (const child of node.children ?? []) {
+        if (
+          !child ||
+          (child.type !== 'mdxJsxFlowElement' && child.type !== 'mdxJsxTextElement') ||
+          child.name !== 'Step'
+        ) {
+          if (
+            typeof process !== 'undefined' &&
+            process.env?.NODE_ENV !== 'production' &&
+            child?.type
+          ) {
+            const childLabel =
+              (child as { name?: string; type?: string }).name ??
+              (child as { type?: string }).type ??
+              'unknown';
+            nonStepChildren.push(childLabel);
+          }
+          continue;
+        }
+
+        const stepProps = mdxAttributesToProps(child.attributes);
+        const stepChildren = (child.children ?? []) as ElementContent[];
+        ordinal += 1;
+
+        const built = buildStepElement(stepProps, stepChildren, ordinal, defaultTitleSize);
+        stepItems.push(built.root);
+
+        if (built.iconNode && built.iconName) {
+          scheduleIconFetch(tasks, built.iconNode, built.iconName);
+        }
+      }
+
+      if (
+        nonStepChildren.length > 0 &&
+        typeof process !== 'undefined' &&
+        process.env?.NODE_ENV !== 'production'
+      ) {
+        const details = nonStepChildren.map((c) => `<${c}>`).join(', ');
+        console.warn(`Ignoring non-<Step> child inside <Steps>: ${details}`);
+      }
+
+      const stepsRoot: Element = {
+        type: 'element',
+        tagName: 'ol',
+        properties: {
+          className: ['dfy-steps', 'steps'],
+        },
+        children: stepItems,
+      };
+
+      parent.children[index] = stepsRoot;
+      return;
+    }
+
+    // --- Single Step outside a Steps container -----------------------------
+    if (name === 'Step') {
+      const defaultTitleSize = normalizeTitleSize((props as { titleSize?: unknown }).titleSize);
+
+      const built = buildStepElement(props, children, 1, defaultTitleSize);
+
+      const stepsRoot: Element = {
+        type: 'element',
+        tagName: 'ol',
+        properties: {
+          className: ['dfy-steps', 'steps'],
+        },
+        children: [built.root],
+      };
+
+      parent.children[index] = stepsRoot;
+
+      if (built.iconNode && built.iconName) {
+        scheduleIconFetch(tasks, built.iconNode, built.iconName);
+      }
+
+      return;
+    }
+
     // 1) Built-in <Callout>
     if (name === 'Callout') {
       const { root, iconNode } = buildCalloutElement(props, children);
       parent.children[index] = root;
 
-      const iconName = typeof props.icon === 'string' ? props.icon : undefined;
+      const iconName =
+        typeof (props as { icon?: unknown }).icon === 'string'
+          ? (props as { icon?: string }).icon
+          : undefined;
+
       if (iconName) {
         // Async: fetch SVG and attach it under iconNode
-        tasks.push(
-          (async () => {
-            const svg = await fetchIconSvg(iconName);
-            if (!svg) return;
-
-            const fragment = fromHtml(svg, { fragment: true });
-            const svgElement = fragment.children.find(
-              (c): c is Element => c.type === 'element' && c.tagName === 'svg',
-            );
-
-            if (!svgElement) return;
-
-            // Overwrite iconNode children with the parsed SVG
-            iconNode.children = [svgElement];
-          })(),
-        );
+        scheduleIconFetch(tasks, iconNode, iconName);
       }
 
       return;
@@ -356,23 +578,13 @@ export const rehypeHandleMdxComponents: Plugin<[Options?], Root> = (options) => 
       const { root, iconNode } = buildCardElement(props, children);
       parent.children[index] = root;
 
-      const iconName = typeof props.icon === 'string' ? props.icon : undefined;
+      const iconName =
+        typeof (props as { icon?: unknown }).icon === 'string'
+          ? (props as { icon?: string }).icon
+          : undefined;
+
       if (iconName && iconNode) {
-        tasks.push(
-          (async () => {
-            const svg = await fetchIconSvg(iconName);
-            if (!svg) return;
-
-            const fragment = fromHtml(svg, { fragment: true });
-            const svgElement = fragment.children.find(
-              (c): c is Element => c.type === 'element' && c.tagName === 'svg',
-            );
-
-            if (!svgElement) return;
-
-            iconNode.children = [svgElement];
-          })(),
-        );
+        scheduleIconFetch(tasks, iconNode, iconName);
       }
 
       return;

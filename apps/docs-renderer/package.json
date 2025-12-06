@@ -18,7 +18,7 @@
     "fumadocs-ui": "^15.8.1",
     "instantsearch.js": "^4.80.0",
     "lucide-react": "^0.542.0",
-    "next": "^15.0.0",
+    "next": "^15.0.5",
     "next-themes": "^0.4.6",
     "postcss": "^8.5.6",
     "react": "^19.0.0",
