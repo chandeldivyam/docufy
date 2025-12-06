@@ -560,7 +560,6 @@
     flex: 1;
     width: 1px;
     background: var(--border);
-    opacity: 1;
   }
 
   .dfy-step-body {

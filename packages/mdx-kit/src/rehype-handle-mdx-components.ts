@@ -82,6 +82,23 @@ async function fetchIconSvg(iconName: string): Promise<string | null> {
   }
 }
 
+function scheduleIconFetch(tasks: Promise<void>[], iconNode: Element, iconName: string): void {
+  tasks.push(
+    (async () => {
+      const svg = await fetchIconSvg(iconName);
+      if (!svg) return;
+
+      const fragment = fromHtml(svg, { fragment: true });
+      const svgElement = fragment.children.find(
+        (c): c is Element => c.type === 'element' && c.tagName === 'svg',
+      );
+      if (!svgElement) return;
+
+      iconNode.children = [svgElement];
+    })(),
+  );
+}
+
 // Tiny helper for boolean-ish props like horizontal, arrow, etc.
 function isTruthyProp(value: unknown): boolean {
   if (value === true) return true;
@@ -357,9 +374,10 @@ function buildStepElement(
   const bodyChildren: ElementContent[] = [];
 
   if (title) {
+    const titleTagName = titleSize === 'h2' || titleSize === 'h3' ? titleSize : 'p';
     bodyChildren.push({
       type: 'element',
-      tagName: 'p',
+      tagName: titleTagName,
       properties: {
         className: ['dfy-step-title', `dfy-step-title--${titleSize}`],
       },
@@ -457,6 +475,7 @@ export const rehypeHandleMdxComponents: Plugin<[Options?], Root> = (options) => 
 
       const stepItems: Element[] = [];
       let ordinal = 0;
+      const nonStepChildren: string[] = [];
 
       for (const child of node.children ?? []) {
         if (
@@ -464,6 +483,17 @@ export const rehypeHandleMdxComponents: Plugin<[Options?], Root> = (options) => 
           (child.type !== 'mdxJsxFlowElement' && child.type !== 'mdxJsxTextElement') ||
           child.name !== 'Step'
         ) {
+          if (
+            typeof process !== 'undefined' &&
+            process.env?.NODE_ENV !== 'production' &&
+            child?.type
+          ) {
+            const childLabel =
+              (child as { name?: string; type?: string }).name ??
+              (child as { type?: string }).type ??
+              'unknown';
+            nonStepChildren.push(childLabel);
+          }
           continue;
         }
 
@@ -475,24 +505,17 @@ export const rehypeHandleMdxComponents: Plugin<[Options?], Root> = (options) => 
         stepItems.push(built.root);
 
         if (built.iconNode && built.iconName) {
-          const iconNode = built.iconNode;
-          const iconName = built.iconName;
-
-          tasks.push(
-            (async () => {
-              const svg = await fetchIconSvg(iconName);
-              if (!svg) return;
-
-              const fragment = fromHtml(svg, { fragment: true });
-              const svgElement = fragment.children.find(
-                (c): c is Element => c.type === 'element' && c.tagName === 'svg',
-              );
-              if (!svgElement) return;
-
-              iconNode.children = [svgElement];
-            })(),
-          );
+          scheduleIconFetch(tasks, built.iconNode, built.iconName);
         }
+      }
+
+      if (
+        nonStepChildren.length > 0 &&
+        typeof process !== 'undefined' &&
+        process.env?.NODE_ENV !== 'production'
+      ) {
+        const details = nonStepChildren.map((c) => `<${c}>`).join(', ');
+        console.warn(`Ignoring non-<Step> child inside <Steps>: ${details}`);
       }
 
       const stepsRoot: Element = {
@@ -526,23 +549,7 @@ export const rehypeHandleMdxComponents: Plugin<[Options?], Root> = (options) => 
       parent.children[index] = stepsRoot;
 
       if (built.iconNode && built.iconName) {
-        const iconNode = built.iconNode;
-        const iconName = built.iconName;
-
-        tasks.push(
-          (async () => {
-            const svg = await fetchIconSvg(iconName);
-            if (!svg) return;
-
-            const fragment = fromHtml(svg, { fragment: true });
-            const svgElement = fragment.children.find(
-              (c): c is Element => c.type === 'element' && c.tagName === 'svg',
-            );
-            if (!svgElement) return;
-
-            iconNode.children = [svgElement];
-          })(),
-        );
+        scheduleIconFetch(tasks, built.iconNode, built.iconName);
       }
 
       return;
@@ -560,22 +567,7 @@ export const rehypeHandleMdxComponents: Plugin<[Options?], Root> = (options) => 
 
       if (iconName) {
         // Async: fetch SVG and attach it under iconNode
-        tasks.push(
-          (async () => {
-            const svg = await fetchIconSvg(iconName);
-            if (!svg) return;
-
-            const fragment = fromHtml(svg, { fragment: true });
-            const svgElement = fragment.children.find(
-              (c): c is Element => c.type === 'element' && c.tagName === 'svg',
-            );
-
-            if (!svgElement) return;
-
-            // Overwrite iconNode children with the parsed SVG
-            iconNode.children = [svgElement];
-          })(),
-        );
+        scheduleIconFetch(tasks, iconNode, iconName);
       }
 
       return;
@@ -592,21 +584,7 @@ export const rehypeHandleMdxComponents: Plugin<[Options?], Root> = (options) => 
           : undefined;
 
       if (iconName && iconNode) {
-        tasks.push(
-          (async () => {
-            const svg = await fetchIconSvg(iconName);
-            if (!svg) return;
-
-            const fragment = fromHtml(svg, { fragment: true });
-            const svgElement = fragment.children.find(
-              (c): c is Element => c.type === 'element' && c.tagName === 'svg',
-            );
-
-            if (!svgElement) return;
-
-            iconNode.children = [svgElement];
-          })(),
-        );
+        scheduleIconFetch(tasks, iconNode, iconName);
       }
 
       return;
