@@ -44,7 +44,11 @@ async function fetchIconSvg(iconName: string): Promise<string | null> {
  * Schedule an async Lucide SVG fetch and mutate the provided icon node
  * once the SVG is available.
  */
-export function scheduleIconFetch(tasks: Promise<void>[], iconNode: Element, iconName: string): void {
+export function scheduleIconFetch(
+  tasks: Promise<void>[],
+  iconNode: Element,
+  iconName: string,
+): void {
   tasks.push(
     (async () => {
       const svg = await fetchIconSvg(iconName);

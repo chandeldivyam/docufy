@@ -15,9 +15,13 @@ export default function Logo({
   const home = `${hrefPrefix || ''}/`.replace(/\/+$/, '/');
   return (
     <Link prefetch href={home} className="inline-flex items-center gap-2 no-underline">
-      <span className="flex w-[110px] shrink-0 items-center justify-center">
-        {light ? <img src={light} alt="Logo" className="object-contain dark:hidden" /> : null}
-        {dark ? <img src={dark} alt="Logo" className="hidden object-contain dark:block" /> : null}
+      <span className="flex h-10 max-w-[160px] shrink-0 items-center">
+        {light ? (
+          <img src={light} alt="Logo" className="max-h-10 w-auto object-contain dark:hidden" />
+        ) : null}
+        {dark ? (
+          <img src={dark} alt="Logo" className="hidden max-h-10 w-auto object-contain dark:block" />
+        ) : null}
       </span>
       {!logoExists && name ? (
         <span className="font-semibold text-[var(--sidebar-fg)]">{name}</span>

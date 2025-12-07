@@ -11,7 +11,9 @@ export type MdxJsxAttribute = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type MdxJsxNode = any;
 
-export function mdxAttributesToProps(attrs: MdxJsxAttribute[] | undefined): Record<string, unknown> {
+export function mdxAttributesToProps(
+  attrs: MdxJsxAttribute[] | undefined,
+): Record<string, unknown> {
   const props: Record<string, unknown> = {};
   if (!attrs) return props;
 

@@ -81,7 +81,11 @@
   .fd-scope h2 + p {
     font-size: 1.1rem;
     color: var(--sidebar-fg-muted);
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .fd-scope p {
+    margin-bottom: 1rem;
   }
 
   .fd-scope form {

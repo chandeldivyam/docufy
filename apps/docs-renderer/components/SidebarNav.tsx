@@ -47,16 +47,24 @@ export default function SidebarNav({
             const light = manifest.site.branding?.logo?.light ?? manifest.site.logoUrl ?? '';
             const dark = manifest.site.branding?.logo?.dark ?? light;
             return (
-              <div className="flex w-[100px] shrink-0 items-center justify-center">
+              <div className="flex h-10 max-w-[160px] shrink-0 items-center">
                 {/* show light in light mode */}
                 {light ? (
-                  <img src={light} alt="Logo" className="object-contain dark:hidden" />
+                  <img
+                    src={light}
+                    alt="Logo"
+                    className="max-h-10 w-auto object-contain dark:hidden"
+                  />
                 ) : (
                   <></>
                 )}
                 {/* show dark in dark mode if different */}
                 {dark ? (
-                  <img src={dark} alt="Logo" className="hidden object-contain dark:block" />
+                  <img
+                    src={dark}
+                    alt="Logo"
+                    className="hidden max-h-10 w-auto object-contain dark:block"
+                  />
                 ) : (
                   <></>
                 )}

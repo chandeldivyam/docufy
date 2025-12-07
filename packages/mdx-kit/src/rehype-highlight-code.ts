@@ -30,11 +30,66 @@ export const rehypeHighlightCode: Plugin<[], Root> = () => async (tree) => {
 
     // Queue the async work
     promises.push(async () => {
-      // 1. Generate highlighted HTML using Shiki
-      const shikiString = await codeToHtml(rawCode, {
-        lang,
-        themes: { light: 'light-plus', dark: 'slack-dark' },
-      });
+      let highlightLang = lang || 'text';
+      let shikiString: string | null = null;
+
+      try {
+        // 1. Generate highlighted HTML using Shiki
+        shikiString = await codeToHtml(rawCode, {
+          lang: highlightLang,
+          themes: { light: 'light-plus', dark: 'slack-dark' },
+        });
+      } catch {
+        // Shiki can throw for unsupported languages; fall back to plain text rendering
+        highlightLang = 'text';
+
+        try {
+          shikiString = await codeToHtml(rawCode, {
+            lang: highlightLang,
+            themes: { light: 'light-plus', dark: 'slack-dark' },
+          });
+        } catch {
+          shikiString = null;
+        }
+      }
+
+      if (!shikiString) {
+        const fallbackCodeNode: Element = {
+          type: 'element',
+          tagName: 'code',
+          properties: {
+            ...codeNode.properties,
+            className: [`language-${highlightLang}`],
+          },
+          children: [{ type: 'text', value: rawCode }],
+        };
+
+        const preNode: Element = {
+          type: 'element',
+          tagName: 'pre',
+          properties: {
+            ...node.properties,
+            className: ['tt-codeblock-pre', `language-${highlightLang}`],
+            'data-language': highlightLang,
+          },
+          children: [fallbackCodeNode],
+        };
+
+        const wrapperNode: Element = {
+          type: 'element',
+          tagName: 'div',
+          properties: {
+            className: ['tt-codeblock-group'],
+          },
+          children: [preNode],
+        };
+
+        if (parent && index !== undefined && index !== null) {
+          parent.children[index] = wrapperNode;
+        }
+
+        return;
+      }
 
       // 2. Parse the Shiki HTML string back into a HAST tree
       const shikiFragment = fromHtml(shikiString, { fragment: true });
@@ -58,7 +113,7 @@ export const rehypeHighlightCode: Plugin<[], Root> = () => async (tree) => {
 
       // 4. Transform the original node
       const combinedClasses = [
-        ...new Set([...shikiClassArray, 'tt-codeblock-pre', `language-${lang}`]),
+        ...new Set([...shikiClassArray, 'tt-codeblock-pre', `language-${highlightLang}`]),
       ].filter((c): c is string => Boolean(c)); // Filter keeps strict string type
 
       const preNode: Element = {
@@ -68,7 +123,7 @@ export const rehypeHighlightCode: Plugin<[], Root> = () => async (tree) => {
           ...node.properties,
           className: combinedClasses,
           style: shikiStyle,
-          'data-language': lang,
+          'data-language': highlightLang,
         },
         children: shikiPre.children as ElementContent[],
       };
